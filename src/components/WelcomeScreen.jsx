@@ -38,7 +38,7 @@ export default function WelcomeScreen({ onStart }) {
           <div>
             <h3 className="font-bold text-white text-base">The Mission</h3>
             <p className="text-xs text-slate-300 leading-relaxed mt-1">
-              A locked souvenir box filled with authentic Dutch treats & exclusive banking gifts awaits you. It is sealed with a <strong className="text-amber-400">4-digit combination padlock</strong>.
+              A mystery box filled with surprise gifts awaits you. It is sealed with a <strong className="text-amber-400">4-digit combination padlock</strong>.
             </p>
           </div>
         </div>
