@@ -140,7 +140,7 @@ export default function App() {
   const currentTeam = QUEST_CONFIG.teams.find(t => t.id === state.stage);
 
   return (
-    <div className="min-h-screen bg-[#031917] text-slate-100 flex flex-col justify-between selection:bg-[#009488] selection:text-white">
+    <div className="min-h-screen bg-[#FFFFFF] text-slate-800 flex flex-col justify-between selection:bg-[#009488] selection:text-white">
       {/* App Header */}
       <Header
         stage={state.stage}
@@ -205,7 +205,7 @@ export default function App() {
       </main>
 
       {/* Footer Branding */}
-      <footer className="py-3 px-4 border-t border-[#009488]/20 bg-[#021715]/95 text-center text-[11px] text-[#878787]">
+      <footer className="py-3 px-4 border-t border-[#009488]/15 bg-[#F8FAFA] text-center text-[11px] text-[#878787]">
         <p>ABN AMRO Data & Analytics Client Quest • Confidential</p>
       </footer>
 

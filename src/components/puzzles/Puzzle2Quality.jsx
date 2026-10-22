@@ -128,36 +128,36 @@ export default function Puzzle2Quality({ onSolved }) {
   return (
     <div className="space-y-4">
       {/* Objective Card */}
-      <div className="glass-card p-3.5 rounded-xl border border-white/10">
+      <div className="glass-card p-3.5 rounded-xl border border-[#009488]/20 bg-white">
         <div className="flex items-center justify-between text-xs mb-1">
-          <span className="font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-            <ShieldAlert className="w-3.5 h-3.5" />
+          <span className="font-bold text-[#009488] uppercase tracking-wider flex items-center gap-1.5">
+            <ShieldAlert className="w-3.5 h-3.5 text-[#009488]" />
             Quality Challenge: The Anomaly Hunter
           </span>
-          <span className="font-mono text-[10px] bg-slate-800 px-2 py-0.5 rounded text-emerald-400">
+          <span className="font-mono text-[10px] bg-[#009488]/10 px-2 py-0.5 rounded text-[#009488] font-bold">
             {currentCaught}/{totalAnomalies} Quarantined
           </span>
         </div>
-        <p className="text-xs text-slate-300">
-          Tap the <strong className="text-rose-400">4 defective banking records</strong> below to purge corrupt data and restore 100% regulatory data health.
+        <p className="text-xs text-slate-600">
+          Tap the <strong className="text-rose-600">4 defective banking asset records</strong> below to purge corrupt data and restore 100% regulatory data health.
         </p>
       </div>
 
       {/* Real-time Data Integrity Meter */}
-      <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-2">
+      <div className="bg-[#F8FAFA] p-3 rounded-xl border border-slate-200 space-y-2">
         <div className="flex items-center justify-between text-xs font-mono">
-          <span className="text-slate-400">DATA INTEGRITY SCORE</span>
-          <span className={`font-bold ${integrityScore === 100 ? 'text-emerald-400 font-extrabold animate-pulse' : 'text-amber-400'}`}>
+          <span className="text-[#878787]">DATA INTEGRITY SCORE</span>
+          <span className={`font-bold ${integrityScore === 100 ? 'text-[#009488] font-extrabold animate-pulse' : 'text-[#F9BD20]'}`}>
             {integrityScore}% {integrityScore === 100 ? '• ABN AMRO CERTIFIED' : '• AUDIT WARNING'}
           </span>
         </div>
         
-        <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800 p-0.5">
+        <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden p-0.5">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
               integrityScore === 100
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-md shadow-emerald-500/50'
-                : 'bg-gradient-to-r from-amber-500 to-orange-500'
+                ? 'bg-gradient-to-r from-[#009488] to-[#00B3A4] shadow-md'
+                : 'bg-gradient-to-r from-[#F9BD20] to-[#E5AC15]'
             }`}
             style={{ width: `${integrityScore}%` }}
           />
@@ -167,8 +167,8 @@ export default function Puzzle2Quality({ onSolved }) {
         {feedbackMsg && (
           <div className={`text-[11px] font-medium px-2 py-1 rounded-md flex items-center gap-1.5 animate-fade-in ${
             feedbackMsg.type === 'success' 
-              ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' 
-              : 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+              ? 'bg-[#F0FDF4] text-[#009488] border border-[#009488]/30' 
+              : 'bg-[#FFFBEB] text-[#D97706] border border-[#F59E0B]/30'
           }`}>
             {feedbackMsg.type === 'success' ? <CheckCircle2 className="w-3 h-3 shrink-0" /> : <AlertTriangle className="w-3 h-3 shrink-0" />}
             <span className="truncate">{feedbackMsg.text}</span>
@@ -185,32 +185,32 @@ export default function Puzzle2Quality({ onSolved }) {
             <div
               key={rec.id}
               onClick={() => handleRowClick(rec)}
-              className={`p-3 rounded-xl border transition-all cursor-pointer select-none active:scale-98 ${
+              className={`p-3 rounded-xl border transition-all cursor-pointer select-none active:scale-98 shadow-sm ${
                 isCaught
-                  ? 'bg-emerald-950/40 border-emerald-500/60 opacity-80'
-                  : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
+                  ? 'bg-[#F0FDF4] border-2 border-[#009488]'
+                  : 'bg-white border-slate-200 hover:border-[#009488]/50'
               }`}
             >
               <div className="flex items-center justify-between text-xs mb-1">
-                <span className="font-mono text-slate-400 font-semibold">{rec.id}</span>
-                <span className="text-slate-300 font-medium">{rec.label}</span>
+                <span className="font-mono text-[#878787] font-semibold">{rec.id}</span>
+                <span className="text-slate-800 font-semibold">{rec.label}</span>
                 {isCaught ? (
-                  <span className="text-[10px] font-mono bg-emerald-500 text-slate-950 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="text-[10px] font-mono bg-[#009488] text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
                     <CheckCircle2 className="w-3 h-3" />
                     QUARANTINED
                   </span>
                 ) : (
-                  <span className="text-[10px] font-mono text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] font-mono text-[#878787] bg-slate-100 px-1.5 py-0.5 rounded">
                     {rec.time}
                   </span>
                 )}
               </div>
 
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className={`text-[11px] ${rec.isAnomaly && !isCaught ? 'text-rose-300 font-semibold' : 'text-slate-300'}`}>
+                <span className={`text-[11px] ${rec.isAnomaly && !isCaught ? 'text-rose-600 font-semibold' : 'text-slate-600'}`}>
                   {rec.iban}
                 </span>
-                <span className={`font-bold ${rec.isAnomaly && !isCaught ? 'text-rose-400' : 'text-emerald-400'}`}>
+                <span className={`font-bold ${rec.isAnomaly && !isCaught ? 'text-rose-600' : 'text-[#009488]'}`}>
                   {rec.amount}
                 </span>
               </div>
@@ -223,24 +223,24 @@ export default function Puzzle2Quality({ onSolved }) {
       <div className="flex items-center justify-between text-xs pt-1">
         <button
           onClick={() => setShowHint(!showHint)}
-          className="flex items-center space-x-1.5 text-slate-400 hover:text-amber-400 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 active:scale-95 transition-all"
+          className="flex items-center space-x-1.5 text-[#878787] hover:text-[#009488] px-3 py-1.5 rounded-lg bg-white border border-slate-200 active:scale-95 transition-all shadow-sm"
         >
-          <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+          <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
           <span>{showHint ? "Hide Hint" : "Need a Hint?"}</span>
         </button>
 
         <button
           onClick={handleAutoSolve}
-          className="text-slate-500 hover:text-slate-300 text-[11px] px-2 py-1 rounded"
+          className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline"
         >
           Auto Cleanse
         </button>
       </div>
 
       {showHint && (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 space-y-1">
-          <p className="font-semibold">💡 Data Quality Hint:</p>
-          <p className="text-slate-300">
+        <div className="p-3 rounded-xl bg-[#F8FAFA] border border-[#009488]/30 text-xs text-slate-700 space-y-1">
+          <p className="font-semibold text-[#009488]">💡 Data Quality Hint:</p>
+          <p className="text-slate-600">
             Check for invalid IBAN codes that don't start with 'NL', impossible negative balances (-€99,999,999), futuristic timestamps from year 2099, and amount 'NaN EUR'!
           </p>
         </div>

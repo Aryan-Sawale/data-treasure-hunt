@@ -106,11 +106,11 @@ export default function VaultScreen({
     <div className="px-4 py-4 max-w-md mx-auto space-y-5">
       {/* Top Banner */}
       <div className="text-center space-y-1">
-        <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#009488]/20 text-[#00B3A4] border border-[#009488]/40 text-xs font-bold uppercase tracking-wider mb-1">
+        <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#FFFBEB] text-[#9E6E00] border border-[#F9BD20] text-xs font-black uppercase tracking-wider mb-1 shadow-xs">
           <Sparkles className="w-3.5 h-3.5 text-[#F9BD20]" />
           <span>ABN AMRO Vault Terminal</span>
         </div>
-        <h2 className="text-2xl font-black text-white tracking-tight">
+        <h2 className="text-2xl font-black text-[#009488] tracking-tight">
           {isOpen ? "The Safe Has Been Cracked!" : "Dial the 4-Digit Combination"}
         </h2>
         <p className="text-xs text-[#878787]">
@@ -121,22 +121,22 @@ export default function VaultScreen({
       </div>
 
       {/* Realistic Combination Lock Visual */}
-      <div className={`p-6 rounded-3xl border transition-all duration-700 relative overflow-hidden ${
+      <div className={`p-6 rounded-3xl border-2 border-t-4 border-t-[#F9BD20] transition-all duration-700 relative overflow-hidden ${
         isOpen
-          ? 'bg-gradient-to-b from-[#093E39] via-[#021A18] to-[#093E39] border-[#F9BD20] shadow-2xl shadow-[#F9BD20]/30'
-          : 'bg-[#04211E]/95 border-[#009488]/40 shadow-2xl'
+          ? 'bg-gradient-to-b from-[#FFFDF5] to-white border-[#F9BD20] shadow-2xl shadow-[#F9BD20]/25'
+          : 'bg-white border-slate-200 shadow-xl'
       }`}>
         {/* Safe Handle / Vault Lock Icon */}
         <div className="flex justify-center mb-6">
           <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-700 border-4 ${
             isOpen
-              ? 'bg-gradient-to-tr from-[#F9BD20] to-[#E5AC15] border-[#FCD34D] text-slate-950 shadow-xl shadow-[#F9BD20]/50 scale-105'
-              : 'bg-[#021715] border-[#009488]/40 text-[#00B3A4]'
+              ? 'bg-[#F9BD20] border-[#D99400] text-slate-950 shadow-xl shadow-[#F9BD20]/40 scale-105'
+              : 'bg-[#FFFDF5] border-[#F9BD20]/50 text-[#009488]'
           }`}>
             {isOpen ? (
               <Unlock className="w-10 h-10 stroke-[2.5]" />
             ) : (
-              <Lock className="w-10 h-10" />
+              <Lock className="w-10 h-10 stroke-[2.5]" />
             )}
           </div>
         </div>
@@ -152,7 +152,7 @@ export default function VaultScreen({
                 {!isOpen && (
                   <button
                     onClick={() => handleDialChange(idx, 1)}
-                    className="p-1.5 rounded-lg text-[#878787] hover:text-white bg-[#062925] hover:bg-[#0A3D38] border border-[#009488]/30 active:scale-90 transition-all mb-1"
+                    className="p-1.5 rounded-lg text-[#878787] hover:text-[#9E6E00] bg-[#F8FAFA] hover:bg-[#FFFDF5] border border-slate-200 hover:border-[#F9BD20] active:scale-90 transition-all mb-1"
                     aria-label={`Increment dial ${idx + 1}`}
                   >
                     <ChevronUp className="w-4 h-4" />
@@ -160,15 +160,15 @@ export default function VaultScreen({
                 )}
 
                 {/* Tumbler Cylinder Display */}
-                <div className={`w-full py-4 rounded-2xl border flex flex-col items-center justify-center relative select-none transition-all ${
+                <div className={`w-full py-4 rounded-2xl border-2 flex flex-col items-center justify-center relative select-none transition-all ${
                   isOpen
-                    ? 'bg-gradient-to-b from-[#0B443F] to-[#021A18] border-[#F9BD20] text-[#F9BD20] shadow-md shadow-[#F9BD20]/25'
-                    : 'bg-[#021715] border-[#009488]/40 text-white'
+                    ? 'bg-[#FFFDF5] border-[#F9BD20] text-[#B45309] shadow-sm'
+                    : 'bg-[#F8FAFA] border-slate-300 text-slate-800'
                 }`}>
-                  <span className="font-mono text-3xl font-black tracking-widest">
+                  <span className="font-mono text-3xl font-black tracking-widest text-[#B45309]">
                     {dialVal}
                   </span>
-                  <span className="text-[9px] font-mono text-[#878787] mt-0.5">
+                  <span className="text-[9px] font-mono text-[#878787] mt-0.5 font-bold">
                     Wheel {idx + 1}
                   </span>
                 </div>
@@ -177,7 +177,7 @@ export default function VaultScreen({
                 {!isOpen && (
                   <button
                     onClick={() => handleDialChange(idx, -1)}
-                    className="p-1.5 rounded-lg text-[#878787] hover:text-white bg-[#062925] hover:bg-[#0A3D38] border border-[#009488]/30 active:scale-90 transition-all mt-1"
+                    className="p-1.5 rounded-lg text-[#878787] hover:text-[#9E6E00] bg-[#F8FAFA] hover:bg-[#FFFDF5] border border-slate-200 hover:border-[#F9BD20] active:scale-90 transition-all mt-1"
                     aria-label={`Decrement dial ${idx + 1}`}
                   >
                     <ChevronDown className="w-4 h-4" />
@@ -190,7 +190,7 @@ export default function VaultScreen({
 
         {/* Error Feedback */}
         {errorFeedback && !isOpen && (
-          <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 text-center mb-4">
+          <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-300 text-xs text-rose-600 text-center mb-4 font-bold">
             Combination mismatch. Double-check your collected digits!
           </div>
         )}
@@ -200,60 +200,61 @@ export default function VaultScreen({
           <div className="space-y-2">
             <button
               onClick={handleAttemptUnlock}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#009488] via-[#00A89B] to-[#F9BD20] hover:from-[#00A89B] hover:to-[#F9BD20] text-slate-950 font-black text-base flex items-center justify-center space-x-2 shadow-xl shadow-[#009488]/30 active:scale-98 transition-all"
+              className="w-full py-4 px-6 rounded-2xl bg-[#009488] hover:bg-[#007E74] text-white font-black text-base flex items-center justify-center space-x-3 shadow-xl shadow-[#009488]/25 border-b-4 border-[#006E64] active:scale-[0.98] transition-all"
             >
-              <Unlock className="w-5 h-5 stroke-[2.5]" />
-              <span>Crack Physical Safe</span>
+              <span className="w-7 h-7 rounded-full bg-[#F9BD20] text-slate-950 flex items-center justify-center shadow-xs">
+                <Unlock className="w-4 h-4 stroke-[2.5]" />
+              </span>
+              <span className="tracking-wide">Crack Physical Safe</span>
             </button>
 
             <button
               onClick={handleAutoFill}
-              className="w-full py-2 text-xs text-[#878787] hover:text-[#F9BD20] underline"
+              className="w-full py-2 text-xs text-[#878787] hover:text-[#9E6E00] underline font-bold"
             >
               Auto-Align Discovered Digits
             </button>
           </div>
         ) : (
           <div className="text-center space-y-4 animate-fade-in">
-            <div className="p-4 rounded-2xl bg-[#009488]/20 border border-[#F9BD20] space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#F9BD20] block">
+            <div className="p-4 rounded-2xl bg-[#FFFDF5] border-4 border-[#F9BD20] space-y-2 shadow-md">
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#9E6E00] block">
                 Physical Lockbox Combination Code
               </span>
-              <div className="font-mono text-4xl font-black text-[#F9BD20] tracking-[0.25em] py-1">
+              <div className="font-mono text-4xl font-black text-[#B45309] tracking-[0.25em] py-1">
                 {vaultCode.split('').join(' - ')}
               </div>
-              <p className="text-xs text-slate-200">
-                Go to the locked box at the <strong>{QUEST_CONFIG.vaultLocation}</strong>, turn the padlock dials to <strong className="text-[#F9BD20] font-mono">{vaultCode}</strong>, and pull the shackle!
+              <p className="text-xs text-slate-700">
+                Go to the locked box at the <strong>{QUEST_CONFIG.vaultLocation}</strong>, turn the padlock dials to <strong className="text-[#009488] font-mono font-black">{vaultCode}</strong>, and pull the shackle!
               </p>
             </div>
-            {/* Note: "Souvenirs inside" section removed as requested! */}
           </div>
         )}
       </div>
 
       {/* Recap of Teams Visited */}
-      <div className="glass-panel p-4 rounded-2xl border border-[#009488]/30 space-y-3">
+      <div className="glass-panel p-4 rounded-2xl border border-slate-200 bg-white shadow-md space-y-3">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-[#00B3A4]" />
+          <span className="font-bold uppercase tracking-wider text-[#009488] flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-[#009488]" />
             Expedition Recap: {QUEST_CONFIG.teams.length} Houses Cleared
           </span>
-          <span className="text-[11px] font-mono text-[#00B3A4] font-bold">
+          <span className="text-[11px] font-mono text-[#009488] font-bold">
             100% Complete
           </span>
         </div>
 
         <div className="grid grid-cols-1 gap-2">
           {QUEST_CONFIG.teams.map((t) => (
-            <div key={t.id} className="p-2.5 rounded-xl bg-[#04211E]/80 border border-[#009488]/20 flex items-center justify-between text-xs">
+            <div key={t.id} className="p-2.5 rounded-xl bg-[#F8FAFA] border border-slate-200 flex items-center justify-between text-xs">
               <div className="flex items-center space-x-2.5">
                 <span className="text-base">{t.houseEmoji || t.badge}</span>
                 <div>
-                  <span className="font-semibold text-white block">{t.shortName}</span>
-                  <span className="text-[10px] text-[#F9BD20] font-medium">{t.room}</span>
+                  <span className="font-semibold text-slate-800 block">{t.shortName}</span>
+                  <span className="text-[10px] text-[#B45309] font-bold">{t.room}</span>
                 </div>
               </div>
-              <span className="text-[11px] font-mono text-[#00B3A4] bg-[#009488]/20 px-2 py-0.5 rounded border border-[#009488]/30">
+              <span className="text-[11px] font-mono text-slate-950 bg-[#F9BD20] px-2 py-0.5 rounded font-black shadow-xs">
                 Verified ✓
               </span>
             </div>
@@ -265,7 +266,7 @@ export default function VaultScreen({
       <div className="text-center pt-2">
         <button
           onClick={onResetQuest}
-          className="text-xs text-[#878787] hover:text-slate-200 inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#04211E] border border-[#009488]/30"
+          className="text-xs text-[#878787] hover:text-slate-800 inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-300 shadow-sm"
         >
           <RefreshCw className="w-3 h-3" />
           <span>Reset Expedition for Next Group</span>

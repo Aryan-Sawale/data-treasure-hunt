@@ -25,11 +25,11 @@ export default function ProgressBar({
 
   return (
     <div className="mx-4 mt-3 mb-2">
-      <div className="flex items-center justify-between text-xs text-[#878787] mb-1.5 px-1">
-        <span className="font-semibold uppercase tracking-wider text-slate-200">
+      <div className="flex items-center justify-between text-xs mb-1.5 px-1">
+        <span className="font-bold uppercase tracking-wider text-[#009488]">
           Expedition Path
         </span>
-        <span className="font-mono text-[#F9BD20] font-bold">
+        <span className="font-mono text-xs font-black bg-[#F9BD20] text-slate-950 px-2 py-0.5 rounded shadow-xs">
           Stop {Math.min(currentStage, totalTeams)} of {totalTeams}
         </span>
       </div>
@@ -37,7 +37,7 @@ export default function ProgressBar({
       {/* Steps Row */}
       <div className="flex items-center justify-between relative">
         {/* Continuous connector line behind nodes */}
-        <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-[2px] bg-[#073632] -z-0" />
+        <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-[2px] bg-slate-200 -z-0" />
 
         {teams.map((team) => {
           const stageId = team.id;
@@ -57,16 +57,16 @@ export default function ProgressBar({
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
                   isDone
-                    ? 'bg-[#009488] text-white shadow-md shadow-[#009488]/40'
+                    ? 'bg-[#009488] text-white shadow-md shadow-[#009488]/30'
                     : isCurrent
-                    ? 'bg-[#F9BD20] text-slate-950 ring-4 ring-[#F9BD20]/30 shadow-lg shadow-[#F9BD20]/50 animate-pulse font-extrabold'
-                    : 'bg-[#04211E] text-[#878787] border border-[#009488]/30'
+                    ? 'bg-[#F9BD20] text-slate-950 ring-4 ring-[#F9BD20]/40 shadow-lg shadow-[#F9BD20]/50 animate-pulse font-black'
+                    : 'bg-[#F8FAFA] text-[#878787] border border-slate-300'
                 }`}
               >
                 {isDone ? (
                   <Check className="w-4 h-4 stroke-[3]" />
                 ) : isCurrent ? (
-                  <span>{stageId}</span>
+                  <span className="text-sm font-black">{stageId}</span>
                 ) : (
                   <Lock className="w-3 h-3 text-[#878787]" />
                 )}
@@ -75,9 +75,9 @@ export default function ProgressBar({
               <span
                 className={`text-[9px] font-medium mt-1 truncate max-w-[56px] text-center ${
                   isCurrent
-                    ? 'text-[#F9BD20] font-bold'
+                    ? 'text-[#B45309] font-black'
                     : isDone
-                    ? 'text-[#00B3A4]'
+                    ? 'text-[#009488] font-bold'
                     : 'text-[#878787]'
                 }`}
               >
@@ -100,13 +100,13 @@ export default function ProgressBar({
           <div
             className={`w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all ${
               currentStage >= vaultStage || completedPresentations.length >= totalTeams
-                ? 'bg-[#F9BD20] text-slate-950 font-black ring-4 ring-[#F9BD20]/40 shadow-lg shadow-[#F9BD20]/60'
-                : 'bg-[#04211E] text-[#878787] border border-[#009488]/30'
+                ? 'bg-[#F9BD20] text-slate-950 font-black ring-4 ring-[#F9BD20]/50 shadow-lg shadow-[#F9BD20]/60'
+                : 'bg-[#F8FAFA] text-[#878787] border border-slate-300'
             }`}
           >
             🎁
           </div>
-          <span className="text-[9px] font-bold mt-1 text-[#F9BD20]">
+          <span className="text-[9px] font-black mt-1 text-[#B45309]">
             Safe
           </span>
         </button>

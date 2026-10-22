@@ -62,42 +62,42 @@ export default function Puzzle4Delivery({ onSolved }) {
   return (
     <div className="space-y-4">
       {/* Objective Card */}
-      <div className="glass-card p-3.5 rounded-xl border border-white/10">
+      <div className="glass-card p-3.5 rounded-xl border border-[#009488]/20 bg-white">
         <div className="flex items-center justify-between text-xs mb-1">
-          <span className="font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Activity className="w-3.5 h-3.5" />
+          <span className="font-bold text-[#009488] uppercase tracking-wider flex items-center gap-1.5">
+            <Activity className="w-3.5 h-3.5 text-[#009488]" />
             Marketplace Challenge: Product Handshake
           </span>
-          <span className="font-mono text-[10px] bg-slate-800 px-2 py-0.5 rounded text-cyan-300">
+          <span className="font-mono text-[10px] bg-[#009488]/10 px-2 py-0.5 rounded text-[#009488] font-bold">
             {matchCount}/3 Matched
           </span>
         </div>
-        <p className="text-xs text-slate-300">
+        <p className="text-xs text-slate-600">
           Tune the 3 Marketplace handshake parameters to subscribe to the certified banking data product and verify its lineage.
         </p>
       </div>
 
       {/* Real-time Oscilloscope Signal Monitor */}
-      <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+      <div className="bg-[#021715] p-3 rounded-xl border border-[#009488]/30 space-y-2 shadow-inner">
         <div className="flex items-center justify-between text-[11px] font-mono">
-          <span className="text-slate-400 flex items-center gap-1">
-            <Radio className="w-3 h-3 text-cyan-400 animate-pulse" />
+          <span className="text-slate-300 flex items-center gap-1">
+            <Radio className="w-3 h-3 text-[#00B3A4] animate-pulse" />
             LIVE TELEMETRY WAVEFORM
           </span>
-          <span className={`font-bold ${matchCount === 3 ? 'text-emerald-400' : 'text-amber-400'}`}>
+          <span className={`font-bold ${matchCount === 3 ? 'text-[#00B3A4]' : 'text-[#F9BD20]'}`}>
             {matchCount === 3 ? 'SYNCHRONIZED (100k msg/s)' : 'UNSYNCHRONIZED'}
           </span>
         </div>
 
         {/* Dynamic Waveform SVG */}
-        <div className="h-16 w-full bg-slate-900/90 rounded-lg overflow-hidden relative flex items-center border border-slate-800">
+        <div className="h-16 w-full bg-black/60 rounded-lg overflow-hidden relative flex items-center border border-[#009488]/30">
           <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 200 60">
             {matchCount === 3 ? (
               // Clean sine wave
               <path
                 d="M 0 30 Q 25 10 50 30 T 100 30 T 150 30 T 200 30"
                 fill="none"
-                stroke="#06B6D4"
+                stroke="#00B3A4"
                 strokeWidth="2.5"
                 className="animate-pulse"
               />
@@ -108,21 +108,21 @@ export default function Puzzle4Delivery({ onSolved }) {
                   25 + (3 - matchCount) * 10
                 } T 150 30 T 200 30`}
                 fill="none"
-                stroke={matchCount === 2 ? '#F59E0B' : '#EF4444'}
+                stroke={matchCount === 2 ? '#F9BD20' : '#EF4444'}
                 strokeWidth="2"
               />
             )}
           </svg>
           {/* Grid lines */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:20px_20px] opacity-30 pointer-events-none" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#009488_1px,transparent_1px),linear-gradient(to_bottom,#009488_1px,transparent_1px)] bg-[size:20px_20px] opacity-15 pointer-events-none" />
         </div>
       </div>
 
       {/* 3 Parameter Selection Controls */}
       <div className="space-y-3">
         {/* Parameter 1: Protocol */}
-        <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-          <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">
+        <div className="bg-[#F8FAFA] p-3 rounded-xl border border-slate-200">
+          <span className="text-xs font-bold text-[#009488] uppercase tracking-wider block mb-2">
             1. Streaming Protocol
           </span>
           <div className="grid grid-cols-1 gap-1.5">
@@ -134,24 +134,24 @@ export default function Puzzle4Delivery({ onSolved }) {
                   hapticService.light();
                   setSelectedProto(idx);
                 }}
-                className={`p-2 rounded-lg border text-xs text-left flex items-center justify-between transition-all ${
+                className={`p-2 rounded-lg border text-xs text-left flex items-center justify-between transition-all shadow-sm ${
                   selectedProto === idx
                     ? p.valid
-                      ? 'bg-cyan-950/60 border-cyan-500/80 text-cyan-300 font-semibold shadow-sm'
-                      : 'bg-rose-950/40 border-rose-500/50 text-rose-300 font-semibold'
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#F0FDF4] border-2 border-[#009488] text-[#009488] font-bold'
+                      : 'bg-rose-50 border-rose-300 text-rose-600 font-bold'
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-[#009488]/40'
                 }`}
               >
                 <span>{p.label}</span>
-                <span className="text-[10px] font-mono text-slate-400">{p.speed}</span>
+                <span className="text-[10px] font-mono text-[#878787]">{p.speed}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Parameter 2: Latency SLA */}
-        <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-          <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">
+        <div className="bg-[#F8FAFA] p-3 rounded-xl border border-slate-200">
+          <span className="text-xs font-bold text-[#009488] uppercase tracking-wider block mb-2">
             2. Latency SLA Target
           </span>
           <div className="grid grid-cols-1 gap-1.5">
@@ -163,12 +163,12 @@ export default function Puzzle4Delivery({ onSolved }) {
                   hapticService.light();
                   setSelectedLatency(idx);
                 }}
-                className={`p-2 rounded-lg border text-xs text-left flex items-center justify-between transition-all ${
+                className={`p-2 rounded-lg border text-xs text-left flex items-center justify-between transition-all shadow-sm ${
                   selectedLatency === idx
                     ? l.valid
-                      ? 'bg-cyan-950/60 border-cyan-500/80 text-cyan-300 font-semibold shadow-sm'
-                      : 'bg-rose-950/40 border-rose-500/50 text-rose-300 font-semibold'
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#F0FDF4] border-2 border-[#009488] text-[#009488] font-bold'
+                      : 'bg-rose-50 border-rose-300 text-rose-600 font-bold'
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-[#009488]/40'
                 }`}
               >
                 <span>{l.label}</span>
@@ -178,8 +178,8 @@ export default function Puzzle4Delivery({ onSolved }) {
         </div>
 
         {/* Parameter 3: Security */}
-        <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-          <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">
+        <div className="bg-[#F8FAFA] p-3 rounded-xl border border-slate-200">
+          <span className="text-xs font-bold text-[#009488] uppercase tracking-wider block mb-2">
             3. Banking Security Protocol
           </span>
           <div className="grid grid-cols-1 gap-1.5">
@@ -191,12 +191,12 @@ export default function Puzzle4Delivery({ onSolved }) {
                   hapticService.light();
                   setSelectedSecurity(idx);
                 }}
-                className={`p-2 rounded-lg border text-xs text-left flex items-center justify-between transition-all ${
+                className={`p-2 rounded-lg border text-xs text-left flex items-center justify-between transition-all shadow-sm ${
                   selectedSecurity === idx
                     ? s.valid
-                      ? 'bg-cyan-950/60 border-cyan-500/80 text-cyan-300 font-semibold shadow-sm'
-                      : 'bg-rose-950/40 border-rose-500/50 text-rose-300 font-semibold'
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#F0FDF4] border-2 border-[#009488] text-[#009488] font-bold'
+                      : 'bg-rose-50 border-rose-300 text-rose-600 font-bold'
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-[#009488]/40'
                 }`}
               >
                 <span>{s.label}</span>
@@ -211,8 +211,8 @@ export default function Puzzle4Delivery({ onSolved }) {
         onClick={handleSync}
         className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center space-x-2 transition-all ${
           matchCount === 3
-            ? 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg shadow-cyan-500/30 animate-pulse'
-            : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+            ? 'bg-gradient-to-r from-[#009488] to-[#007066] hover:from-[#00A89B] hover:to-[#007066] text-white shadow-lg shadow-[#009488]/30 animate-pulse'
+            : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300'
         }`}
       >
         <Zap className="w-4 h-4" />
@@ -223,24 +223,24 @@ export default function Puzzle4Delivery({ onSolved }) {
       <div className="flex items-center justify-between text-xs pt-1">
         <button
           onClick={() => setShowHint(!showHint)}
-          className="flex items-center space-x-1.5 text-slate-400 hover:text-cyan-400 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 active:scale-95 transition-all"
+          className="flex items-center space-x-1.5 text-[#878787] hover:text-[#009488] px-3 py-1.5 rounded-lg bg-white border border-slate-200 active:scale-95 transition-all shadow-sm"
         >
-          <Lightbulb className="w-3.5 h-3.5 text-cyan-400" />
+          <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
           <span>{showHint ? "Hide Hint" : "Need a Hint?"}</span>
         </button>
 
         <button
           onClick={handleAutoSolve}
-          className="text-slate-500 hover:text-slate-300 text-[11px] px-2 py-1 rounded"
+          className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline"
         >
           Auto Align
         </button>
       </div>
 
       {showHint && (
-        <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-300 space-y-1">
-          <p className="font-semibold">💡 Marketplace & Lineage Hint:</p>
-          <p className="text-slate-300">
+        <div className="p-3 rounded-xl bg-[#F8FAFA] border border-[#009488]/30 text-xs text-slate-700 space-y-1">
+          <p className="font-semibold text-[#009488]">💡 Marketplace & Lineage Hint:</p>
+          <p className="text-slate-600">
             For certified Data Marketplace products, select: <strong>Apache Kafka Event Mesh</strong>, <strong>&lt; 15 ms latency SLA</strong>, and <strong>mTLS + Banking OAuth 2.0</strong>!
           </p>
         </div>

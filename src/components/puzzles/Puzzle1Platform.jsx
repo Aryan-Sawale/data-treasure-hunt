@@ -166,36 +166,36 @@ export default function Puzzle1Platform({ onSolved }) {
   return (
     <div className="space-y-4">
       {/* Objective Card */}
-      <div className="glass-card p-3.5 rounded-xl border border-white/10">
+      <div className="glass-card p-3.5 rounded-xl border border-[#009488]/20 bg-white">
         <div className="flex items-center justify-between text-xs mb-1">
-          <span className="font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span className="font-bold text-[#009488] uppercase tracking-wider flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5" />
-            Platform Challenge: Cloud Ingestion Match
+            Data Lake Challenge: Cloud Ingestion Match
           </span>
-          <span className="font-mono text-[10px] bg-slate-800 px-2 py-0.5 rounded text-amber-300">
+          <span className="font-mono text-[10px] bg-[#009488]/10 px-2 py-0.5 rounded text-[#009488] font-bold">
             {matchedCount}/4 Linked
           </span>
         </div>
-        <p className="text-xs text-slate-300">
-          Match each <strong className="text-white">Banking Data Feed</strong> to its optimal <strong className="text-cyan-400">Cloud Platform Engine</strong> to achieve 100,000 events/sec capacity.
+        <p className="text-xs text-slate-600">
+          Match each <strong className="text-slate-800">Banking Data Feed</strong> to its optimal <strong className="text-[#009488]">Cloud Data Lake Engine</strong> to achieve 100,000 events/sec capacity.
         </p>
       </div>
 
       {/* Throughput & Health Meter */}
-      <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-2">
+      <div className="bg-[#F8FAFA] p-3 rounded-xl border border-slate-200 space-y-2">
         <div className="flex items-center justify-between text-xs font-mono">
-          <span className="text-slate-400">INGESTION THROUGHPUT</span>
-          <span className={`font-bold ${matchedCount === 4 ? 'text-emerald-400 font-extrabold animate-pulse' : 'text-cyan-400'}`}>
+          <span className="text-[#878787]">INGESTION THROUGHPUT</span>
+          <span className={`font-bold ${matchedCount === 4 ? 'text-[#009488] font-extrabold animate-pulse' : 'text-[#009488]'}`}>
             {throughput.toLocaleString()} tx/sec {matchedCount === 4 ? '• OPTIMAL' : ''}
           </span>
         </div>
 
-        <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800 p-0.5">
+        <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden p-0.5">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
               matchedCount === 4
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-md shadow-emerald-500/50'
-                : 'bg-gradient-to-r from-cyan-500 to-blue-500'
+                ? 'bg-gradient-to-r from-[#009488] to-[#00B3A4] shadow-md'
+                : 'bg-gradient-to-r from-[#009488] to-[#F9BD20]'
             }`}
             style={{ width: `${(matchedCount / 4) * 100}%` }}
           />
@@ -203,17 +203,17 @@ export default function Puzzle1Platform({ onSolved }) {
 
         {/* Instructions / Feedback Banner */}
         {errorMessage ? (
-          <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[11px] flex items-center space-x-1.5 animate-fade-in">
+          <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 text-[11px] flex items-center space-x-1.5 animate-fade-in font-medium">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span>{errorMessage}</span>
           </div>
         ) : selectedSource ? (
-          <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] flex items-center space-x-1.5 animate-fade-in">
+          <div className="p-2 rounded-lg bg-[#F0FDF4] border border-[#009488]/30 text-[#009488] text-[11px] flex items-center space-x-1.5 animate-fade-in font-medium">
             <ArrowRight className="w-3.5 h-3.5 shrink-0 animate-pulse" />
-            <span>Now tap the matching <strong>Cloud Ingestion Engine</strong> below!</span>
+            <span>Now tap the matching <strong>Cloud Data Lake Engine</strong> below!</span>
           </div>
         ) : (
-          <div className="text-[11px] text-slate-400 text-center">
+          <div className="text-[11px] text-[#878787] text-center">
             Tap a banking feed, then tap its cloud engine to link them.
           </div>
         )}
@@ -221,8 +221,8 @@ export default function Puzzle1Platform({ onSolved }) {
 
       {/* Section 1: Banking Data Feeds */}
       <div className="space-y-1.5">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block px-1">
-          1. Incoming Dutch Banking Feeds
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#009488] block px-1">
+          1. Incoming Banking Feeds
         </span>
         <div className="grid grid-cols-2 gap-2">
           {SOURCES.map((s) => {
@@ -234,24 +234,24 @@ export default function Puzzle1Platform({ onSolved }) {
               <button
                 key={s.id}
                 onClick={() => handleSelectSource(s.id)}
-                className={`p-2.5 rounded-xl border text-left transition-all relative overflow-hidden active:scale-95 ${
+                className={`p-2.5 rounded-xl border text-left transition-all relative overflow-hidden active:scale-95 shadow-sm ${
                   isConnected
-                    ? 'bg-emerald-950/40 border-emerald-500/60 shadow-sm'
+                    ? 'bg-[#F0FDF4] border-2 border-[#009488]'
                     : isSelected
-                    ? 'bg-amber-950/50 border-amber-400 ring-2 ring-amber-400/30'
-                    : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
+                    ? 'bg-[#F0FDF4] border-2 border-[#009488] ring-2 ring-[#009488]/20'
+                    : 'bg-white border-slate-200 hover:border-[#009488]/50'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <Icon className={`w-4 h-4 ${isConnected ? 'text-emerald-400' : s.color}`} />
+                  <Icon className={`w-4 h-4 ${isConnected ? 'text-[#009488]' : 'text-[#009488]'}`} />
                   {isConnected && (
-                    <span className="text-[9px] font-mono text-emerald-300 bg-emerald-500/20 px-1.5 py-0.2 rounded font-bold">
+                    <span className="text-[9px] font-mono text-slate-950 bg-[#F9BD20] px-2 py-0.5 rounded font-black shadow-xs">
                       ✓ LINKED
                     </span>
                   )}
                 </div>
-                <div className="font-bold text-xs text-white leading-tight">{s.name}</div>
-                <div className="text-[10px] text-slate-400 truncate mt-0.5">{s.desc}</div>
+                <div className="font-bold text-xs text-slate-800 leading-tight">{s.name}</div>
+                <div className="text-[10px] text-[#878787] truncate mt-0.5">{s.desc}</div>
                 <div className="text-[9px] font-mono text-slate-500 mt-1">{s.volume}</div>
               </button>
             );
@@ -261,8 +261,8 @@ export default function Puzzle1Platform({ onSolved }) {
 
       {/* Section 2: Cloud Ingestion Engines */}
       <div className="space-y-1.5 pt-1">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 block px-1">
-          2. Target Cloud Platform Engines
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#009488] block px-1">
+          2. Target Cloud Lakehouse Engines
         </span>
         <div className="grid grid-cols-2 gap-2">
           {TARGETS.map((t) => {
@@ -273,21 +273,21 @@ export default function Puzzle1Platform({ onSolved }) {
               <button
                 key={t.id}
                 onClick={() => handleSelectTarget(t.id)}
-                className={`p-2.5 rounded-xl border text-left transition-all relative overflow-hidden active:scale-95 ${
+                className={`p-2.5 rounded-xl border text-left transition-all relative overflow-hidden active:scale-95 shadow-sm ${
                   isConnected
-                    ? 'bg-emerald-950/40 border-emerald-500/60 shadow-sm'
-                    : 'bg-slate-900/80 border-slate-800 hover:border-cyan-500/60'
+                    ? 'bg-[#F0FDF4] border-2 border-[#009488]'
+                    : 'bg-white border-slate-200 hover:border-[#009488]/50'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <Icon className={`w-4 h-4 ${isConnected ? 'text-emerald-400' : 'text-cyan-400'}`} />
+                  <Icon className={`w-4 h-4 ${isConnected ? 'text-[#009488]' : 'text-[#009488]'}`} />
                   {isConnected && (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#009488]" />
                   )}
                 </div>
-                <div className="font-bold text-xs text-white leading-tight">{t.name}</div>
-                <div className="text-[10px] text-cyan-300/80 truncate mt-0.5">{t.tech}</div>
-                <div className="text-[9px] font-mono text-slate-400 mt-1">
+                <div className="font-bold text-xs text-slate-800 leading-tight">{t.name}</div>
+                <div className="text-[10px] text-[#009488] truncate mt-0.5 font-medium">{t.tech}</div>
+                <div className="text-[9px] font-mono text-[#878787] mt-1">
                   {isConnected ? 'Active & Receiving' : 'Awaiting Connection'}
                 </div>
               </button>
@@ -298,11 +298,11 @@ export default function Puzzle1Platform({ onSolved }) {
 
       {/* Success Banner */}
       {isSuccess && (
-        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-teal-500/25 to-emerald-500/20 border border-emerald-500/60 text-center animate-fade-in space-y-1">
-          <CheckCircle2 className="w-7 h-7 text-emerald-400 mx-auto animate-bounce" />
-          <h4 className="text-sm font-extrabold text-white">Cloud Lakehouse Fully Connected!</h4>
-          <p className="text-xs text-emerald-300 font-mono">Capacity: 100,000 events/sec • Latency: &lt; 5ms</p>
-          <p className="text-[11px] text-slate-300">Revealing Team 1 Profile & Location...</p>
+        <div className="p-3.5 rounded-2xl bg-[#F0FDF4] border-2 border-[#009488] text-center animate-fade-in space-y-1 shadow-md">
+          <CheckCircle2 className="w-7 h-7 text-[#009488] mx-auto animate-bounce" />
+          <h4 className="text-sm font-extrabold text-[#009488]">Enterprise Data Lake Fully Connected!</h4>
+          <p className="text-xs text-slate-700 font-mono">Capacity: 100,000 events/sec • Latency: &lt; 5ms</p>
+          <p className="text-[11px] text-[#878787]">Revealing Team 2 Profile & Harry Potter House...</p>
         </div>
       )}
 
@@ -310,24 +310,24 @@ export default function Puzzle1Platform({ onSolved }) {
       <div className="flex items-center justify-between text-xs pt-1">
         <button
           onClick={() => setShowHint(!showHint)}
-          className="flex items-center space-x-1.5 text-slate-400 hover:text-amber-400 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 active:scale-95 transition-all"
+          className="flex items-center space-x-1.5 text-[#878787] hover:text-[#009488] px-3 py-1.5 rounded-lg bg-white border border-slate-200 active:scale-95 transition-all shadow-sm"
         >
-          <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+          <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
           <span>{showHint ? "Hide Hint" : "Need a Hint?"}</span>
         </button>
 
         <button
           onClick={handleAutoSolve}
-          className="text-slate-500 hover:text-slate-300 text-[11px] px-2 py-1 rounded"
+          className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline"
         >
           Auto Link
         </button>
       </div>
 
       {showHint && (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 space-y-1">
-          <p className="font-semibold">💡 Platform Architecture Clue:</p>
-          <p className="text-slate-300">
+        <div className="p-3 rounded-xl bg-[#F8FAFA] border border-[#009488]/30 text-xs text-slate-700 space-y-1">
+          <p className="font-semibold text-[#009488]">💡 Platform Architecture Clue:</p>
+          <p className="text-slate-600">
             • <strong>SEPA Instant</strong> ➔ Real-Time Event Stream (Kafka)<br />
             • <strong>End-of-Day Ledgers</strong> ➔ Distributed Batch Engine (Spark)<br />
             • <strong>ATM Terminals</strong> ➔ In-Memory Cache Hub<br />

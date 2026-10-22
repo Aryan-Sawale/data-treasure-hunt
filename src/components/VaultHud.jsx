@@ -19,36 +19,36 @@ export default function VaultHud({ unlockedDigits, vaultCode, onOpenVaultPreview
   return (
     <div 
       onClick={handleClick}
-      className={`mx-4 mt-3 p-3 rounded-2xl border transition-all cursor-pointer select-none ${
+      className={`mx-4 mt-3 p-3.5 rounded-2xl border border-t-4 transition-all cursor-pointer select-none ${
         isAllUnlocked 
-          ? 'bg-gradient-to-r from-[#009488]/30 via-[#F9BD20]/25 to-[#009488]/30 border-[#F9BD20] shadow-lg shadow-[#F9BD20]/25 animate-pulse-slow'
-          : 'bg-[#04211E]/90 border-[#009488]/30 hover:border-[#009488]/60 shadow-md'
+          ? 'bg-gradient-to-r from-[#FFFBEB] via-[#FEF3C7] to-[#FFFBEB] border-[#F9BD20] border-t-[#F9BD20] shadow-lg shadow-[#F9BD20]/30 animate-pulse-slow'
+          : 'bg-white border-slate-200 border-t-[#F9BD20] hover:border-[#F9BD20]/60 shadow-md'
       }`}
     >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center space-x-2">
-          <div className={`p-1.5 rounded-lg ${isAllUnlocked ? 'bg-[#F9BD20] text-slate-950 font-bold' : 'bg-[#062D29] text-[#00B3A4]'}`}>
-            {isAllUnlocked ? <Gift className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+      <div className="flex items-center justify-between mb-2.5">
+        <div className="flex items-center space-x-2.5">
+          <div className="p-1.5 rounded-lg bg-[#F9BD20] text-slate-950 font-black shadow-sm">
+            {isAllUnlocked ? <Gift className="w-4 h-4" /> : <Lock className="w-4 h-4 stroke-[2.5]" />}
           </div>
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-100 flex items-center gap-1.5">
+            <span className="text-xs font-black uppercase tracking-wider text-[#009488] flex items-center gap-1.5">
               Physical Souvenir Safe
               {isAllUnlocked && (
-                <span className="bg-[#F9BD20] text-slate-950 text-[10px] px-1.5 py-0.5 rounded-full font-black">
-                  UNLOCKED
+                <span className="bg-[#F9BD20] text-slate-950 text-[10px] px-2 py-0.5 rounded-full font-black shadow-xs">
+                  READY
                 </span>
               )}
             </span>
             <p className="text-[11px] text-[#878787]">
               {isAllUnlocked 
-                ? "All digits cracked! Dial code on the box." 
+                ? "All 4 digits cracked! Dial code on the box." 
                 : `${unlockedCount} of 4 combination digits discovered`}
             </p>
           </div>
         </div>
 
         <div className="text-right">
-          <span className="text-xs font-mono text-[#F9BD20] font-bold bg-[#F9BD20]/15 px-2 py-0.5 rounded-md border border-[#F9BD20]/30">
+          <span className="text-xs font-mono text-slate-950 font-black bg-[#F9BD20] px-2.5 py-1 rounded-lg border border-[#F9BD20] shadow-xs">
             {unlockedCount}/4 DIGITS
           </span>
         </div>
@@ -63,21 +63,17 @@ export default function VaultHud({ unlockedDigits, vaultCode, onOpenVaultPreview
           return (
             <div
               key={idx}
-              className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-xl border transition-all ${
+              className={`relative flex flex-col items-center justify-center py-2.5 px-1 rounded-xl border transition-all ${
                 isUnlocked
-                  ? 'bg-gradient-to-b from-[#093E39] via-[#021A18] to-[#093E39] border-[#F9BD20] shadow-md shadow-[#F9BD20]/20 text-[#F9BD20]'
-                  : 'bg-[#021715] border-[#009488]/20 text-[#878787]'
+                  ? 'bg-[#FFFDF5] border-2 border-[#F9BD20] shadow-sm text-slate-950'
+                  : 'bg-[#F8FAFA] border-slate-200 text-[#878787]'
               }`}
             >
-              {/* Metallic tumbler highlight lines */}
-              <div className="absolute inset-x-1 top-1 h-[1px] bg-white/10 rounded-full" />
-              <div className="absolute inset-x-1 bottom-1 h-[1px] bg-black/40 rounded-full" />
-              
-              <span className={`font-mono text-xl font-extrabold ${isUnlocked ? 'text-[#F9BD20] tracking-wider' : 'text-[#878787]'}`}>
+              <span className={`font-mono text-2xl font-black ${isUnlocked ? 'text-[#B45309] tracking-wider' : 'text-[#878787]'}`}>
                 {digitValue}
               </span>
               
-              <span className="text-[9px] font-mono tracking-tighter text-[#878787] mt-0.5 uppercase">
+              <span className={`text-[9px] font-mono tracking-tight mt-0.5 uppercase font-bold ${isUnlocked ? 'text-[#9E6E00]' : 'text-[#878787]'}`}>
                 {isUnlocked ? `Digit ${idx + 1}` : `Locked`}
               </span>
             </div>
