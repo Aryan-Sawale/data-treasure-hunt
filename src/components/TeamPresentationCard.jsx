@@ -1,0 +1,282 @@
+import React, { useState } from 'react';
+import confetti from 'canvas-confetti';
+import { 
+  MapPin, 
+  Users, 
+  Sparkles, 
+  ArrowRight, 
+  CheckCircle2, 
+  Key, 
+  Lock, 
+  Info, 
+  Lightbulb, 
+  ExternalLink,
+  ChevronRight,
+  Award
+} from 'lucide-react';
+import { QUEST_CONFIG } from '../config/questConfig';
+import { soundService } from '../services/soundService';
+import { hapticService } from '../services/hapticService';
+
+export default function TeamPresentationCard({
+  team,
+  vaultCode,
+  isPresentationDone,
+  onVerifyPresentation,
+  onProceedToNext
+}) {
+  const [passcodeInput, setPasscodeInput] = useState('');
+  const [showHint, setShowHint] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [justUnlockedModal, setJustUnlockedModal] = useState(false);
+  const [revealedDigitData, setRevealedDigitData] = useState(null);
+
+  const triggerConfetti = () => {
+    try {
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#FF6B00', '#F59E0B', '#3B82F6', '#10B981']
+      });
+    } catch (e) {
+      // Ignore if canvas-confetti fails
+    }
+  };
+
+  const handleVerify = (forceBypass = false) => {
+    const expected = team.presentationSecretCode.trim().toUpperCase();
+    const entered = passcodeInput.trim().toUpperCase();
+
+    if (forceBypass || entered === expected) {
+      soundService.playDigitUnlock();
+      hapticService.victory();
+      triggerConfetti();
+
+      let digitChar = null;
+      if (team.digitReveal && team.digitReveal.digitIndex !== null) {
+        digitChar = vaultCode[team.digitReveal.digitIndex];
+      }
+
+      setRevealedDigitData({
+        digitChar,
+        digitIndex: team.digitReveal ? team.digitReveal.digitIndex : null,
+        title: team.digitReveal ? team.digitReveal.title : 'Milestone Achieved!',
+        flavor: team.digitReveal ? team.digitReveal.flavor : 'Presentation verified!'
+      });
+
+      setJustUnlockedModal(true);
+      onVerifyPresentation(team.id, team.digitReveal?.digitIndex, digitChar);
+      setErrorMsg(null);
+    } else {
+      soundService.playError();
+      hapticService.error();
+      setErrorMsg(`Incorrect code. Check the presentation slides or tap 'Quick Check-in'.`);
+    }
+  };
+
+  return (
+    <div className="px-4 py-2 max-w-md mx-auto space-y-4">
+      {/* Team Reveal Banner */}
+      <div className={`p-5 rounded-2xl bg-gradient-to-br ${team.color} text-white shadow-xl relative overflow-hidden`}>
+        <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 text-7xl opacity-20 pointer-events-none select-none">
+          {team.badge}
+        </div>
+
+        <div className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider mb-2">
+          <Sparkles className="w-3 h-3 text-amber-300" />
+          <span>Stop {team.id} of 5 Unlocked!</span>
+        </div>
+
+        <h2 className="text-xl font-extrabold tracking-tight mb-1">{team.name}</h2>
+        <p className="text-xs text-white/90 font-medium leading-relaxed mb-3">
+          {team.tagline}
+        </p>
+
+        {/* Room / Location Badge */}
+        <div className="flex items-center space-x-2 bg-black/25 backdrop-blur-md p-2.5 rounded-xl border border-white/10 text-xs">
+          <MapPin className="w-4 h-4 text-amber-300 shrink-0" />
+          <div>
+            <span className="text-slate-300 text-[10px] uppercase font-semibold block">Booth Location:</span>
+            <span className="font-bold text-white text-xs">{team.room}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Team Overview & Key Tech Highlights */}
+      <div className="glass-panel p-4 rounded-2xl border border-white/10 space-y-3">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5 text-blue-400" />
+            Domain Briefing
+          </span>
+          <span className="text-slate-400 font-medium flex items-center gap-1">
+            <Users className="w-3.5 h-3.5 text-slate-400" />
+            {team.presenters}
+          </span>
+        </div>
+
+        <p className="text-xs text-slate-300 leading-relaxed">
+          {team.overview}
+        </p>
+
+        <div className="space-y-1.5 pt-1">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Key Architecture & Capabilities:
+          </span>
+          <div className="grid grid-cols-1 gap-1.5">
+            {team.highlights.map((item, idx) => (
+              <div key={idx} className="flex items-start space-x-2 text-xs text-slate-300 bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                <ChevronRight className="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Presentation Check-In Section */}
+      <div className="glass-panel p-4 rounded-2xl border border-white/10 space-y-3">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+            <Key className="w-3.5 h-3.5" />
+            Presentation Verification
+          </span>
+          {isPresentationDone ? (
+            <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" />
+              VERIFIED
+            </span>
+          ) : (
+            <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[10px] font-mono px-2 py-0.5 rounded-full">
+              CODE REQUIRED
+            </span>
+          )}
+        </div>
+
+        {!isPresentationDone ? (
+          <>
+            <p className="text-xs text-slate-300">
+              Attend the presentation at <strong className="text-white">{team.room}</strong>. At the end, enter the secret keyword provided by the team to reveal your safe digit!
+            </p>
+
+            {/* Input & Submit */}
+            <div className="space-y-2">
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={passcodeInput}
+                  onChange={(e) => setPasscodeInput(e.target.value)}
+                  placeholder="Enter secret word..."
+                  className="flex-1 bg-slate-950/80 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 font-mono uppercase"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleVerify(false);
+                  }}
+                />
+                <button
+                  onClick={() => handleVerify(false)}
+                  className="px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 active:scale-95 text-slate-950 font-bold text-xs shadow-md shadow-orange-500/20 transition-all"
+                >
+                  Verify
+                </button>
+              </div>
+
+              {errorMsg && (
+                <p className="text-[11px] text-rose-400 font-medium px-1">
+                  {errorMsg}
+                </p>
+              )}
+            </div>
+
+            {/* Hint & Fast Check-In Option */}
+            <div className="flex items-center justify-between text-xs pt-1">
+              <button
+                onClick={() => setShowHint(!showHint)}
+                className="flex items-center space-x-1 text-slate-400 hover:text-amber-400"
+              >
+                <Lightbulb className="w-3 h-3 text-amber-400" />
+                <span>{showHint ? "Hide Word Clue" : "Where is the word?"}</span>
+              </button>
+
+              <button
+                onClick={() => handleVerify(true)}
+                className="text-slate-500 hover:text-slate-300 text-[11px] underline"
+              >
+                Quick Check-in
+              </button>
+            </div>
+
+            {showHint && (
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
+                <p>{team.presentationHint}</p>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Keyword for this presentation: <strong className="font-mono text-white">{team.presentationSecretCode}</strong>
+                </p>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="space-y-3">
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 flex items-center space-x-2.5">
+              <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400" />
+              <span>
+                Presentation attendance verified! Safe tumbler digit collected.
+              </span>
+            </div>
+
+            <button
+              onClick={onProceedToNext}
+              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 font-extrabold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-orange-500/30 active:scale-98 transition-all"
+            >
+              <span>{team.id === 5 ? "Proceed to Final Vault Crack" : `Unlock Stop #${team.id + 1} Puzzle`}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Digit Unlocked Celebration Modal */}
+      {justUnlockedModal && revealedDigitData && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-amber-500/60 p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl relative">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center mx-auto text-amber-400 text-2xl animate-bounce">
+              {revealedDigitData.digitChar ? '🔐' : '🏆'}
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-xl font-extrabold text-white">
+                {revealedDigitData.title}
+              </h3>
+              <p className="text-xs text-slate-300">
+                {revealedDigitData.flavor}
+              </p>
+            </div>
+
+            {/* If a digit is revealed */}
+            {revealedDigitData.digitChar && (
+              <div className="py-3 px-6 bg-slate-950 rounded-2xl border border-amber-500/60 inline-block shadow-inner">
+                <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                  COMBINATION DIGIT #{revealedDigitData.digitIndex + 1}
+                </span>
+                <span className="font-mono text-5xl font-black text-amber-400 tracking-wider">
+                  {revealedDigitData.digitChar}
+                </span>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                soundService.playClick();
+                setJustUnlockedModal(false);
+              }}
+              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm shadow-md transition-all active:scale-95"
+            >
+              Add to Vault HUD & Continue
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
