@@ -33,11 +33,11 @@ export const QUEST_CONFIG = {
         "Zero-trust network security and encrypted data lakes"
       ],
       puzzle: {
-        title: "The Pipeline Router",
+        title: "Cloud Ingestion Link",
         category: "Infrastructure & Ingestion",
-        instructions: "Tap the pipe segments to rotate them and establish an uninterrupted flow from Dutch Core Banking into the Cloud Lakehouse.",
-        hint: "Rotate the pipes so the green stream flows from the top-left source all the way to the lakehouse storage node at the bottom-right.",
-        solvedMessage: "Pipeline connected! Data is streaming at 45,000 events/sec without packet loss."
+        instructions: "Match each banking data feed to its optimal cloud platform engine to scale the Lakehouse.",
+        hint: "Match SEPA to Kafka Stream, Ledgers to Batch Spark, ATM to Memory Cache, and Mobile Events to Delta Lakehouse.",
+        solvedMessage: "All 4 data streams connected! Cloud Lakehouse operating at 100,000 events/sec."
       },
       // Presentation check-in
       presentationSecretCode: "LAKEHOUSE",
