@@ -30,8 +30,8 @@ const STAGES = [
   },
   {
     stepId: 4,
-    title: 'DNB Regulatory Report',
-    subtitle: 'Dutch Central Bank Capital Adequacy Filing',
+    title: 'ABN AMRO Statutory Report',
+    subtitle: 'ABN AMRO Capital Adequacy Regulatory Filing',
     badge: 'STAGE 4',
     icon: '🏛️',
     detail: 'Audited statutory report delivered to regulatory authority.'
@@ -107,11 +107,11 @@ export default function Puzzle3Governance({ onSolved }) {
             Governance Challenge: Lineage Trail
           </span>
           <span className="font-mono text-[10px] bg-slate-800 px-2 py-0.5 rounded text-amber-300">
-            DNB Audit Check
+            ABN AMRO Audit Check
           </span>
         </div>
         <p className="text-xs text-slate-300">
-          The Dutch Central Bank (DNB) requires verified lineage. Use the arrows to reorder the 4 stages from <strong className="text-amber-400">Raw Ingestion (Top)</strong> down to the <strong className="text-amber-400">DNB Regulatory Filing (Bottom)</strong>.
+          ABN AMRO requires verified data lineage. Use the arrows to reorder the 4 stages from <strong className="text-amber-400">Raw Ingestion (Top)</strong> down to the <strong className="text-amber-400">ABN AMRO Statutory Filing (Bottom)</strong>.
         </p>
       </div>
 
@@ -190,7 +190,7 @@ export default function Puzzle3Governance({ onSolved }) {
           <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/25 to-amber-500/20 border border-amber-500/60 text-center animate-fade-in">
             <ShieldCheck className="w-6 h-6 text-amber-400 mx-auto mb-1 animate-bounce" />
             <span className="font-extrabold text-white text-xs block">Lineage Trail Cryptographically Certified!</span>
-            <span className="text-[11px] text-amber-300">DNB & GDPR Regulatory Compliance Confirmed</span>
+            <span className="text-[11px] text-amber-300">ABN AMRO & GDPR Regulatory Compliance Confirmed</span>
           </div>
         )}
       </div>
@@ -217,7 +217,7 @@ export default function Puzzle3Governance({ onSolved }) {
         <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 space-y-1">
           <p className="font-semibold">💡 Governance Lineage Hint:</p>
           <p className="text-slate-300">
-            Think about privacy & compliance order: First data arrives (Raw Ingestion) ➔ Then sensitive data is anonymized (PII Masking) ➔ Then it's cataloged for reuse (Gold Catalog) ➔ Finally, the certified DNB report is generated!
+            Think about privacy & compliance order: First data arrives (Raw Ingestion) ➔ Then sensitive data is anonymized (PII Masking) ➔ Then it's cataloged for reuse (Gold Catalog) ➔ Finally, the certified ABN AMRO statutory report is generated!
           </p>
         </div>
       )}

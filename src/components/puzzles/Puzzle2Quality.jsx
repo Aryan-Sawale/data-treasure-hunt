@@ -148,7 +148,7 @@ export default function Puzzle2Quality({ onSolved }) {
         <div className="flex items-center justify-between text-xs font-mono">
           <span className="text-slate-400">DATA INTEGRITY SCORE</span>
           <span className={`font-bold ${integrityScore === 100 ? 'text-emerald-400 font-extrabold animate-pulse' : 'text-amber-400'}`}>
-            {integrityScore}% {integrityScore === 100 ? '• DNB CERTIFIED' : '• AUDIT WARNING'}
+            {integrityScore}% {integrityScore === 100 ? '• ABN AMRO CERTIFIED' : '• AUDIT WARNING'}
           </span>
         </div>
         

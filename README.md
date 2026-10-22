@@ -10,7 +10,7 @@ Clients play on their smartphones as they tour the department: solving puzzles t
 
 ```mermaid
 flowchart TD
-    Start["📱 Welcome Screen<br/>(Mystery Mission Briefing)"] --> P1["🧩 Puzzle 1: Governance & Compliance Trail<br/>(Sequence DNB compliance stages)"]
+    Start["📱 Welcome Screen<br/>(Mystery Mission Briefing)"] --> P1["🧩 Puzzle 1: Governance & Compliance Trail<br/>(Sequence ABN AMRO compliance stages)"]
     P1 --> T1["🏢 Team 1 Revealed:<br/>Metadata and governance solutions"]
     T1 --> Pres1["👥 Visit Room 'Vermeer'<br/>(Client attends Presentation)"]
     Pres1 --> Code1["🔑 Enter Presenter Word: 'GOVERNANCE'<br/><b>🎉 DIGIT #1 REVEALED: [ 7 ]</b>"]
@@ -40,7 +40,7 @@ flowchart TD
 
 | # | Team Name | Domain Focus | Room / Booth | Puzzle Mini-Game | Presenter Passcode | Safe Code Unlock |
 |---|-----------|--------------|--------------|------------------|-------------------|------------------|
-| **1** | **Metadata and governance solutions** | Catalogs, Regulatory Compliance & DNB Audits | Room *Vermeer* | **The Lineage & Regulatory Trail:** Sequence the 4 compliance stages in order | `GOVERNANCE` | **Digit #1: `7`** |
+| **1** | **Metadata and governance solutions** | Catalogs, Regulatory Compliance & ABN AMRO Audits | Room *Vermeer* | **The Lineage & Regulatory Trail:** Sequence the 4 compliance stages in order | `GOVERNANCE` | **Digit #1: `7`** |
 | **2** | **Enterprise Data Lake** | Storage, Lakehouse Ingestion & Compute | Room *Van Gogh* | **Cloud Data Lake Ingestion:** Connect banking streams to cloud Lakehouse engines | `LAKEHOUSE` | **Digit #2: `3`** |
 | **3** | **Data Marketplace & Data Lineage** | Data Products, Discoverability & Contracts | Room *Mondrian* | **Marketplace Handshake:** Tune Protocol (Kafka), SLA (<15ms), and Security (mTLS) | `MARKETPLACE` | **Digit #3: `9`** |
 | **4** | **Enterprise Data Assets & Data Quality** | Data Observability, Accuracy & Cleansing | Room *Rembrandt* | **Asset Anomaly Hunter:** Tap 4 corrupted transaction rows before audit timeout | `INTEGRITY` | **Digit #4: `4`** |

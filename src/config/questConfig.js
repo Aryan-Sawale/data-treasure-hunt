@@ -20,7 +20,7 @@ export const QUEST_CONFIG = {
       shortName: "Metadata & Governance",
       codeName: "THE GOVERNANCE SHIELD",
       badge: "📜",
-      tagline: "Enterprise Catalogs, Regulatory Compliance & DNB Audits",
+      tagline: "Enterprise Catalogs, Regulatory Compliance & ABN AMRO Audits",
       room: "Room 'Vermeer' (Central Hub - 3rd Floor)",
       presenters: "Metadata & Governance Team",
       color: "from-amber-600 to-orange-700",
@@ -28,9 +28,9 @@ export const QUEST_CONFIG = {
       puzzle: {
         title: "The Lineage & Regulatory Trail",
         category: "Compliance & Governance",
-        instructions: "Sequence the 4 regulatory lifecycle stages in chronological order to generate a certified DNB compliance audit trail.",
-        hint: "Start with Raw Ingestion, follow with Privacy Masking, then Cataloging, and finish with the Certified DNB Report.",
-        solvedMessage: "Governance trail certified! Regulatory compliance verified by Dutch Central Bank protocols."
+        instructions: "Sequence the 4 regulatory lifecycle stages in chronological order to generate a certified ABN AMRO compliance audit trail.",
+        hint: "Start with Raw Ingestion, follow with Privacy Masking, then Cataloging, and finish with the Certified ABN AMRO Report.",
+        solvedMessage: "Governance trail certified! Regulatory compliance verified by ABN AMRO governance protocols."
       },
       presentationSecretCode: "GOVERNANCE",
       presentationHint: "Look for the key word on the governance slide or ask the presenter!",
