@@ -8,14 +8,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        dutch: {
-          orange: '#FF6B00',
-          'orange-glow': '#FF8A3D',
-          blue: '#0A2540',
-          'blue-light': '#1E3A8A',
-          navy: '#061325',
-          gold: '#F59E0B',
-          teal: '#0D9488',
+        abn: {
+          green: '#009488',
+          'green-dark': '#007066',
+          'green-light': '#00B3A4',
+          'green-glow': '#00D1C0',
+          yellow: '#F9BD20',
+          'yellow-dark': '#D69E10',
+          'yellow-light': '#FCD34D',
+          grey: '#878787',
+          'grey-light': '#B0B0B0',
+          'grey-dark': '#4A4A4A',
+          dark: '#031917',
+          darker: '#011210',
+          card: '#082523',
+          border: '#0F3B37',
         }
       },
       fontFamily: {
@@ -28,12 +35,11 @@ export default {
       },
       keyframes: {
         glow: {
-          '0%': { boxShadow: '0 0 5px rgba(255, 107, 0, 0.4), 0 0 10px rgba(255, 107, 0, 0.2)' },
-          '100%': { boxShadow: '0 0 20px rgba(255, 107, 0, 0.8), 0 0 30px rgba(255, 107, 0, 0.4)' },
+          '0%': { boxShadow: '0 0 5px rgba(0, 148, 136, 0.4), 0 0 10px rgba(249, 189, 32, 0.2)' },
+          '100%': { boxShadow: '0 0 20px rgba(0, 148, 136, 0.8), 0 0 30px rgba(249, 189, 32, 0.4)' },
         }
       }
     },
   },
   plugins: [],
 }
-

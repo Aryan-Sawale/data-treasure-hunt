@@ -1,18 +1,17 @@
 /**
  * Master Configuration for the Data Treasure Hunt
- * 4 Teams mapped to the 4 digits of the physical combination padlock.
+ * 4 Teams mapped to Harry Potter Houses and ABN AMRO brand colors.
  */
 
 export const DEFAULT_VAULT_CODE = "7394";
 
 export const QUEST_CONFIG = {
   title: "The Data Vault",
-  subtitle: "Dutch Banking Expedition",
+  subtitle: "ABN AMRO Banking Expedition",
   organization: "Enterprise Data & Analytics",
   vaultLocation: "Main Reception / Host Welcome Table",
-  prizeDescription: "Dutch Stroopwafels, Craft Gouda & Exclusive Bank Souvenirs",
   
-  // The 4 Teams in exact presentation order
+  // The 4 Teams in exact presentation order with Harry Potter House locations
   teams: [
     {
       id: 1,
@@ -20,11 +19,12 @@ export const QUEST_CONFIG = {
       shortName: "Metadata & Governance",
       codeName: "THE GOVERNANCE SHIELD",
       badge: "📜",
+      house: "House Ravenclaw",
+      houseEmoji: "🦅",
       tagline: "Enterprise Catalogs, Regulatory Compliance & ABN AMRO Audits",
-      room: "Room 'Vermeer' (Central Hub - 3rd Floor)",
-      presenters: "Metadata & Governance Team",
-      color: "from-amber-600 to-orange-700",
-      accent: "#F59E0B",
+      room: "House Ravenclaw",
+      color: "from-[#009488] to-[#033B36]",
+      accent: "#009488",
       puzzle: {
         title: "The Lineage & Regulatory Trail",
         category: "Compliance & Governance",
@@ -33,7 +33,7 @@ export const QUEST_CONFIG = {
         solvedMessage: "Governance trail certified! Regulatory compliance verified by ABN AMRO governance protocols."
       },
       presentationSecretCode: "GOVERNANCE",
-      presentationHint: "Look for the key word on the governance slide or ask the presenter!",
+      presentationHint: "Look for the key word on the governance slide or ask the team!",
       digitReveal: {
         digitIndex: 0, // 1st digit of 4
         title: "Vault Digit #1 Unlocked!",
@@ -46,11 +46,12 @@ export const QUEST_CONFIG = {
       shortName: "Enterprise Data Lake",
       codeName: "THE CORE LAKEHOUSE",
       badge: "🏗️",
+      house: "House Hufflepuff",
+      houseEmoji: "🦡",
       tagline: "Scalable Storage, High-Throughput Ingestion & Compute Clusters",
-      room: "Room 'Van Gogh' (Wing A - 2nd Floor)",
-      presenters: "Enterprise Data Lake Squad",
-      color: "from-blue-600 to-indigo-700",
-      accent: "#3B82F6",
+      room: "House Hufflepuff",
+      color: "from-[#007F74] to-[#022D29]",
+      accent: "#00B3A4",
       puzzle: {
         title: "Cloud Data Lake Ingestion",
         category: "Storage & Lakehouse Ingestion",
@@ -72,11 +73,12 @@ export const QUEST_CONFIG = {
       shortName: "Marketplace & Lineage",
       codeName: "THE DATA NEXUS",
       badge: "⚡",
+      house: "House Gryffindor",
+      houseEmoji: "🦁",
       tagline: "Discoverable Data Products, Sharing Contracts & End-to-End Lineage",
-      room: "Room 'Mondrian' (Innovation Hub - 3rd Floor)",
-      presenters: "Data Marketplace & Lineage Team",
-      color: "from-cyan-600 to-blue-700",
-      accent: "#06B6D4",
+      room: "House Gryffindor",
+      color: "from-[#F9BD20] to-[#785303]",
+      accent: "#F9BD20",
       puzzle: {
         title: "Marketplace Product & Lineage Handshake",
         category: "Data Products & Lineage",
@@ -98,11 +100,12 @@ export const QUEST_CONFIG = {
       shortName: "Assets & Data Quality",
       codeName: "THE QUALITY GUARDIAN",
       badge: "🛡️",
+      house: "House Slytherin",
+      houseEmoji: "🐍",
       tagline: "Asset Health Monitoring, Financial Reconciliations & Anomaly Cleansing",
-      room: "Room 'Rembrandt' (Wing B - 2nd Floor)",
-      presenters: "Data Assets & Quality Squad",
-      color: "from-emerald-600 to-teal-700",
-      accent: "#10B981",
+      room: "House Slytherin",
+      color: "from-[#009488] to-[#012522]",
+      accent: "#009488",
       puzzle: {
         title: "The Asset Anomaly Hunter",
         category: "Observability & Asset Health",

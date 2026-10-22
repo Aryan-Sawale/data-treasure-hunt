@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { 
-  MapPin, 
-  Users, 
   Sparkles, 
   ArrowRight, 
   CheckCircle2, 
@@ -34,10 +32,10 @@ export default function TeamPresentationCard({
         particleCount: 80,
         spread: 60,
         origin: { y: 0.6 },
-        colors: ['#FF6B00', '#F59E0B', '#3B82F6', '#10B981']
+        colors: ['#009488', '#F9BD20', '#00B3A4', '#878787']
       });
     } catch (e) {
-      // Ignore if canvas-confetti fails
+      // Ignore
     }
   };
 
@@ -75,54 +73,54 @@ export default function TeamPresentationCard({
   return (
     <div className="px-4 py-2 max-w-md mx-auto space-y-4">
       {/* Team Reveal Banner */}
-      <div className={`p-5 rounded-2xl bg-gradient-to-br ${team.color} text-white shadow-xl relative overflow-hidden`}>
+      <div className={`p-5 rounded-2xl bg-gradient-to-br ${team.color} text-white shadow-xl relative overflow-hidden border border-[#009488]/30`}>
         <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 text-7xl opacity-20 pointer-events-none select-none">
           {team.badge}
         </div>
 
-        <div className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider mb-2">
-          <Sparkles className="w-3 h-3 text-amber-300" />
+        <div className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-black/30 backdrop-blur-md text-[#F9BD20] text-[11px] font-bold uppercase tracking-wider mb-2 border border-[#F9BD20]/30">
+          <Sparkles className="w-3 h-3 text-[#F9BD20]" />
           <span>Stop {team.id} of {totalTeams} Unlocked!</span>
         </div>
 
-        <h2 className="text-xl font-extrabold tracking-tight mb-1">{team.name}</h2>
-        <p className="text-xs text-white/90 font-medium leading-relaxed mb-3">
+        <h2 className="text-xl font-extrabold tracking-tight mb-1 text-white">{team.name}</h2>
+        <p className="text-xs text-slate-200 font-medium leading-relaxed mb-3">
           {team.tagline}
         </p>
 
-        {/* Room / Location & Presenters */}
-        <div className="space-y-2 bg-black/25 backdrop-blur-md p-3 rounded-xl border border-white/10 text-xs">
-          <div className="flex items-center space-x-2">
-            <MapPin className="w-4 h-4 text-amber-300 shrink-0" />
+        {/* Booth Location: Harry Potter House (No Presenters) */}
+        <div className="bg-black/40 backdrop-blur-md p-3 rounded-xl border border-white/10 flex items-center justify-between text-xs">
+          <div className="flex items-center space-x-2.5">
+            <span className="text-2xl">{team.houseEmoji || "🏰"}</span>
             <div>
-              <span className="text-slate-300 text-[10px] uppercase font-semibold block">Booth Location:</span>
-              <span className="font-bold text-white text-xs">{team.room}</span>
+              <span className="text-[#878787] text-[10px] uppercase font-bold tracking-wider block">
+                Booth Location:
+              </span>
+              <span className="font-extrabold text-[#F9BD20] text-sm">
+                {team.room}
+              </span>
             </div>
           </div>
-          <div className="flex items-center space-x-2 pt-1 border-t border-white/10">
-            <Users className="w-4 h-4 text-amber-300 shrink-0" />
-            <div>
-              <span className="text-slate-300 text-[10px] uppercase font-semibold block">Presenters:</span>
-              <span className="font-medium text-white text-xs">{team.presenters}</span>
-            </div>
-          </div>
+          <span className="text-[10px] font-mono bg-[#009488]/30 text-[#00B3A4] border border-[#009488]/40 px-2 py-0.5 rounded font-semibold">
+            ABN AMRO
+          </span>
         </div>
       </div>
 
       {/* Presentation Check-In Section */}
-      <div className="glass-panel p-4 rounded-2xl border border-white/10 space-y-3">
+      <div className="glass-panel p-4 rounded-2xl border border-[#009488]/30 space-y-3">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-            <Key className="w-3.5 h-3.5" />
+          <span className="font-bold uppercase tracking-wider text-[#F9BD20] flex items-center gap-1.5">
+            <Key className="w-3.5 h-3.5 text-[#F9BD20]" />
             Presentation Verification
           </span>
           {isPresentationDone ? (
-            <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+            <span className="bg-[#009488]/25 text-[#00B3A4] border border-[#009488]/40 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" />
               VERIFIED
             </span>
           ) : (
-            <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[10px] font-mono px-2 py-0.5 rounded-full">
+            <span className="bg-[#F9BD20]/15 text-[#F9BD20] border border-[#F9BD20]/30 text-[10px] font-mono px-2 py-0.5 rounded-full">
               CODE REQUIRED
             </span>
           )}
@@ -131,7 +129,7 @@ export default function TeamPresentationCard({
         {!isPresentationDone ? (
           <>
             <p className="text-xs text-slate-300">
-              Head to <strong className="text-white">{team.room}</strong> for the presentation. At the end, enter the secret keyword provided by the team to reveal your safe digit!
+              Visit <strong className="text-[#F9BD20]">{team.room}</strong> for the presentation. At the end, enter the secret keyword to reveal your safe digit!
             </p>
 
             {/* Input & Submit */}
@@ -142,14 +140,14 @@ export default function TeamPresentationCard({
                   value={passcodeInput}
                   onChange={(e) => setPasscodeInput(e.target.value)}
                   placeholder="Enter secret word..."
-                  className="flex-1 bg-slate-950/80 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 font-mono uppercase"
+                  className="flex-1 bg-[#021715] border border-[#009488]/40 rounded-xl px-3 py-2.5 text-xs text-white placeholder-[#878787] focus:outline-none focus:border-[#F9BD20] font-mono uppercase"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleVerify(false);
                   }}
                 />
                 <button
                   onClick={() => handleVerify(false)}
-                  className="px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 active:scale-95 text-slate-950 font-bold text-xs shadow-md shadow-orange-500/20 transition-all"
+                  className="px-4 py-2.5 rounded-xl bg-[#009488] hover:bg-[#00B3A4] active:scale-95 text-white font-bold text-xs shadow-md shadow-[#009488]/20 transition-all"
                 >
                   Verify
                 </button>
@@ -166,44 +164,44 @@ export default function TeamPresentationCard({
             <div className="flex items-center justify-between text-xs pt-1">
               <button
                 onClick={() => setShowHint(!showHint)}
-                className="flex items-center space-x-1 text-slate-400 hover:text-amber-400"
+                className="flex items-center space-x-1 text-[#878787] hover:text-[#F9BD20]"
               >
-                <Lightbulb className="w-3 h-3 text-amber-400" />
+                <Lightbulb className="w-3 h-3 text-[#F9BD20]" />
                 <span>{showHint ? "Hide Word Clue" : "Where is the word?"}</span>
               </button>
 
               <button
                 onClick={() => handleVerify(true)}
-                className="text-slate-500 hover:text-slate-300 text-[11px] underline"
+                className="text-[#878787] hover:text-slate-300 text-[11px] underline"
               >
                 Quick Check-in
               </button>
             </div>
 
             {showHint && (
-              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
+              <div className="p-2.5 rounded-xl bg-[#009488]/15 border border-[#009488]/30 text-xs text-slate-200">
                 <p>{team.presentationHint}</p>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Keyword for this presentation: <strong className="font-mono text-white">{team.presentationSecretCode}</strong>
+                <p className="text-[10px] text-[#878787] mt-1">
+                  Keyword for this presentation: <strong className="font-mono text-[#F9BD20]">{team.presentationSecretCode}</strong>
                 </p>
               </div>
             )}
           </>
         ) : (
           <div className="space-y-3">
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 flex items-center space-x-2.5">
-              <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400" />
+            <div className="p-3 rounded-xl bg-[#009488]/20 border border-[#009488]/40 text-xs text-[#00B3A4] flex items-center space-x-2.5">
+              <CheckCircle2 className="w-5 h-5 shrink-0 text-[#00B3A4]" />
               <span>
-                Presentation attendance verified! Safe tumbler digit collected.
+                Presentation verified at {team.room}! Safe digit collected.
               </span>
             </div>
 
             <button
               onClick={onProceedToNext}
-              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 font-extrabold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-orange-500/30 active:scale-98 transition-all"
+              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#009488] via-[#00A89B] to-[#F9BD20] hover:from-[#00A89B] hover:to-[#F9BD20] text-slate-950 font-black text-sm flex items-center justify-center space-x-2 shadow-lg shadow-[#009488]/30 active:scale-98 transition-all"
             >
               <span>{team.id === totalTeams ? "Proceed to Final Vault Crack" : `Unlock Stop #${team.id + 1} Puzzle`}</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>
         )}
@@ -212,8 +210,8 @@ export default function TeamPresentationCard({
       {/* Digit Unlocked Celebration Modal */}
       {justUnlockedModal && revealedDigitData && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-amber-500/60 p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl relative">
-            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center mx-auto text-amber-400 text-2xl animate-bounce">
+          <div className="bg-[#04211E] border border-[#F9BD20] p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl relative">
+            <div className="w-14 h-14 rounded-2xl bg-[#F9BD20]/20 border border-[#F9BD20]/50 flex items-center justify-center mx-auto text-[#F9BD20] text-2xl animate-bounce">
               {revealedDigitData.digitChar ? '🔐' : '🏆'}
             </div>
 
@@ -228,11 +226,11 @@ export default function TeamPresentationCard({
 
             {/* If a digit is revealed */}
             {revealedDigitData.digitChar && (
-              <div className="py-3 px-6 bg-slate-950 rounded-2xl border border-amber-500/60 inline-block shadow-inner">
-                <span className="text-[10px] font-mono uppercase text-slate-400 block">
+              <div className="py-3 px-6 bg-[#021715] rounded-2xl border border-[#F9BD20]/60 inline-block shadow-inner">
+                <span className="text-[10px] font-mono uppercase text-[#878787] block">
                   COMBINATION DIGIT #{revealedDigitData.digitIndex + 1}
                 </span>
-                <span className="font-mono text-5xl font-black text-amber-400 tracking-wider">
+                <span className="font-mono text-5xl font-black text-[#F9BD20] tracking-wider">
                   {revealedDigitData.digitChar}
                 </span>
               </div>
@@ -243,7 +241,7 @@ export default function TeamPresentationCard({
                 soundService.playClick();
                 setJustUnlockedModal(false);
               }}
-              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm shadow-md transition-all active:scale-95"
+              className="w-full py-3 rounded-xl bg-[#009488] hover:bg-[#00B3A4] text-white font-bold text-sm shadow-md transition-all active:scale-95"
             >
               Add to Vault HUD & Continue
             </button>

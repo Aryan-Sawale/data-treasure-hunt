@@ -14,7 +14,6 @@ export default function ProgressBar({
   const vaultStage = totalTeams + 1;
 
   const handleStageClick = (stageId) => {
-    // Only allow clicking on completed stages or the current stage
     if (stageId <= currentStage) {
       soundService.playClick();
       hapticService.light();
@@ -26,11 +25,11 @@ export default function ProgressBar({
 
   return (
     <div className="mx-4 mt-3 mb-2">
-      <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5 px-1">
-        <span className="font-semibold uppercase tracking-wider text-slate-300">
+      <div className="flex items-center justify-between text-xs text-[#878787] mb-1.5 px-1">
+        <span className="font-semibold uppercase tracking-wider text-slate-200">
           Expedition Path
         </span>
-        <span className="font-mono text-amber-400">
+        <span className="font-mono text-[#F9BD20] font-bold">
           Stop {Math.min(currentStage, totalTeams)} of {totalTeams}
         </span>
       </div>
@@ -38,7 +37,7 @@ export default function ProgressBar({
       {/* Steps Row */}
       <div className="flex items-center justify-between relative">
         {/* Continuous connector line behind nodes */}
-        <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-[2px] bg-slate-800 -z-0" />
+        <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-[2px] bg-[#073632] -z-0" />
 
         {teams.map((team) => {
           const stageId = team.id;
@@ -58,10 +57,10 @@ export default function ProgressBar({
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
                   isDone
-                    ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
+                    ? 'bg-[#009488] text-white shadow-md shadow-[#009488]/40'
                     : isCurrent
-                    ? 'bg-orange-500 text-white ring-4 ring-orange-500/25 shadow-lg shadow-orange-500/40 animate-pulse'
-                    : 'bg-slate-800 text-slate-400 border border-slate-700'
+                    ? 'bg-[#F9BD20] text-slate-950 ring-4 ring-[#F9BD20]/30 shadow-lg shadow-[#F9BD20]/50 animate-pulse font-extrabold'
+                    : 'bg-[#04211E] text-[#878787] border border-[#009488]/30'
                 }`}
               >
                 {isDone ? (
@@ -69,17 +68,17 @@ export default function ProgressBar({
                 ) : isCurrent ? (
                   <span>{stageId}</span>
                 ) : (
-                  <Lock className="w-3 h-3 text-slate-500" />
+                  <Lock className="w-3 h-3 text-[#878787]" />
                 )}
               </div>
 
               <span
                 className={`text-[9px] font-medium mt-1 truncate max-w-[56px] text-center ${
                   isCurrent
-                    ? 'text-orange-400 font-bold'
+                    ? 'text-[#F9BD20] font-bold'
                     : isDone
-                    ? 'text-slate-300'
-                    : 'text-slate-500'
+                    ? 'text-[#00B3A4]'
+                    : 'text-[#878787]'
                 }`}
               >
                 {team.shortName.split(' ')[0]}
@@ -101,13 +100,13 @@ export default function ProgressBar({
           <div
             className={`w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all ${
               currentStage >= vaultStage || completedPresentations.length >= totalTeams
-                ? 'bg-amber-400 text-slate-950 font-bold ring-4 ring-amber-400/30 shadow-lg shadow-amber-400/50'
-                : 'bg-slate-800 text-slate-500 border border-slate-700'
+                ? 'bg-[#F9BD20] text-slate-950 font-black ring-4 ring-[#F9BD20]/40 shadow-lg shadow-[#F9BD20]/60'
+                : 'bg-[#04211E] text-[#878787] border border-[#009488]/30'
             }`}
           >
             🎁
           </div>
-          <span className="text-[9px] font-bold mt-1 text-amber-400">
+          <span className="text-[9px] font-bold mt-1 text-[#F9BD20]">
             Safe
           </span>
         </button>
