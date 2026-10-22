@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Key, SkipForward, RefreshCw, Eye, Check, Shield } from 'lucide-react';
+import { X, Key, RefreshCw, Check, Shield } from 'lucide-react';
 import { QUEST_CONFIG } from '../config/questConfig';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
@@ -15,6 +15,8 @@ export default function FacilitatorModal({
 }) {
   const [codeDraft, setCodeDraft] = useState(vaultCode);
   const [showSavedToast, setShowSavedToast] = useState(false);
+
+  const vaultStage = QUEST_CONFIG.teams.length + 1;
 
   if (!isOpen) return null;
 
@@ -115,9 +117,9 @@ export default function FacilitatorModal({
               </button>
             ))}
             <button
-              onClick={() => onJumpToStage(6, 'VAULT')}
+              onClick={() => onJumpToStage(vaultStage, 'VAULT')}
               className={`p-2 rounded-xl border text-xs font-semibold text-left transition-all ${
-                currentStage === 6
+                currentStage === vaultStage
                   ? 'bg-amber-500/20 border-amber-500 text-amber-300'
                   : 'bg-slate-950 border-slate-800 text-amber-400 hover:text-amber-300'
               }`}
@@ -159,4 +161,3 @@ export default function FacilitatorModal({
     </div>
   );
 }
-

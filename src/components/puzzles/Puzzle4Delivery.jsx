@@ -66,14 +66,14 @@ export default function Puzzle4Delivery({ onSolved }) {
         <div className="flex items-center justify-between text-xs mb-1">
           <span className="font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
             <Activity className="w-3.5 h-3.5" />
-            Delivery Challenge: Real-Time Stream Handshake
+            Marketplace Challenge: Product Handshake
           </span>
           <span className="font-mono text-[10px] bg-slate-800 px-2 py-0.5 rounded text-cyan-300">
             {matchCount}/3 Matched
           </span>
         </div>
         <p className="text-xs text-slate-300">
-          Configure the API streaming gateway for the Dutch Mobile Banking App to deliver sub-second data safely with zero packet loss.
+          Tune the 3 Marketplace handshake parameters to subscribe to the certified banking data product and verify its lineage.
         </p>
       </div>
 
@@ -216,7 +216,7 @@ export default function Puzzle4Delivery({ onSolved }) {
         }`}
       >
         <Zap className="w-4 h-4" />
-        <span>{matchCount === 3 ? "Establish Live Stream Handshake" : "Validate API Configuration"}</span>
+        <span>{matchCount === 3 ? "Establish Data Product Handshake" : "Validate Contract Configuration"}</span>
       </button>
 
       {/* Controls & Hints */}
@@ -239,9 +239,9 @@ export default function Puzzle4Delivery({ onSolved }) {
 
       {showHint && (
         <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-300 space-y-1">
-          <p className="font-semibold">💡 Data Delivery Hint:</p>
+          <p className="font-semibold">💡 Marketplace & Lineage Hint:</p>
           <p className="text-slate-300">
-            For Dutch mobile banking apps, choose the modern event-driven stack: <strong>Apache Kafka</strong>, <strong>&lt; 15 ms latency SLA</strong>, and <strong>mTLS + Banking OAuth 2.0</strong>!
+            For certified Data Marketplace products, select: <strong>Apache Kafka Event Mesh</strong>, <strong>&lt; 15 ms latency SLA</strong>, and <strong>mTLS + Banking OAuth 2.0</strong>!
           </p>
         </div>
       )}

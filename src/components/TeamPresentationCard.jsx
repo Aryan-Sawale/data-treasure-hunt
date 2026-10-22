@@ -7,12 +7,7 @@ import {
   ArrowRight, 
   CheckCircle2, 
   Key, 
-  Lock, 
-  Info, 
-  Lightbulb, 
-  ExternalLink,
-  ChevronRight,
-  Award
+  Lightbulb
 } from 'lucide-react';
 import { QUEST_CONFIG } from '../config/questConfig';
 import { soundService } from '../services/soundService';
@@ -30,6 +25,8 @@ export default function TeamPresentationCard({
   const [errorMsg, setErrorMsg] = useState(null);
   const [justUnlockedModal, setJustUnlockedModal] = useState(false);
   const [revealedDigitData, setRevealedDigitData] = useState(null);
+
+  const totalTeams = QUEST_CONFIG.teams.length;
 
   const triggerConfetti = () => {
     try {
@@ -85,7 +82,7 @@ export default function TeamPresentationCard({
 
         <div className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider mb-2">
           <Sparkles className="w-3 h-3 text-amber-300" />
-          <span>Stop {team.id} of 5 Unlocked!</span>
+          <span>Stop {team.id} of {totalTeams} Unlocked!</span>
         </div>
 
         <h2 className="text-xl font-extrabold tracking-tight mb-1">{team.name}</h2>
@@ -93,44 +90,21 @@ export default function TeamPresentationCard({
           {team.tagline}
         </p>
 
-        {/* Room / Location Badge */}
-        <div className="flex items-center space-x-2 bg-black/25 backdrop-blur-md p-2.5 rounded-xl border border-white/10 text-xs">
-          <MapPin className="w-4 h-4 text-amber-300 shrink-0" />
-          <div>
-            <span className="text-slate-300 text-[10px] uppercase font-semibold block">Booth Location:</span>
-            <span className="font-bold text-white text-xs">{team.room}</span>
+        {/* Room / Location & Presenters */}
+        <div className="space-y-2 bg-black/25 backdrop-blur-md p-3 rounded-xl border border-white/10 text-xs">
+          <div className="flex items-center space-x-2">
+            <MapPin className="w-4 h-4 text-amber-300 shrink-0" />
+            <div>
+              <span className="text-slate-300 text-[10px] uppercase font-semibold block">Booth Location:</span>
+              <span className="font-bold text-white text-xs">{team.room}</span>
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Team Overview & Key Tech Highlights */}
-      <div className="glass-panel p-4 rounded-2xl border border-white/10 space-y-3">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-            <Info className="w-3.5 h-3.5 text-blue-400" />
-            Domain Briefing
-          </span>
-          <span className="text-slate-400 font-medium flex items-center gap-1">
-            <Users className="w-3.5 h-3.5 text-slate-400" />
-            {team.presenters}
-          </span>
-        </div>
-
-        <p className="text-xs text-slate-300 leading-relaxed">
-          {team.overview}
-        </p>
-
-        <div className="space-y-1.5 pt-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Key Architecture & Capabilities:
-          </span>
-          <div className="grid grid-cols-1 gap-1.5">
-            {team.highlights.map((item, idx) => (
-              <div key={idx} className="flex items-start space-x-2 text-xs text-slate-300 bg-slate-900/60 p-2 rounded-lg border border-slate-800">
-                <ChevronRight className="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" />
-                <span>{item}</span>
-              </div>
-            ))}
+          <div className="flex items-center space-x-2 pt-1 border-t border-white/10">
+            <Users className="w-4 h-4 text-amber-300 shrink-0" />
+            <div>
+              <span className="text-slate-300 text-[10px] uppercase font-semibold block">Presenters:</span>
+              <span className="font-medium text-white text-xs">{team.presenters}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -157,7 +131,7 @@ export default function TeamPresentationCard({
         {!isPresentationDone ? (
           <>
             <p className="text-xs text-slate-300">
-              Attend the presentation at <strong className="text-white">{team.room}</strong>. At the end, enter the secret keyword provided by the team to reveal your safe digit!
+              Head to <strong className="text-white">{team.room}</strong> for the presentation. At the end, enter the secret keyword provided by the team to reveal your safe digit!
             </p>
 
             {/* Input & Submit */}
@@ -228,7 +202,7 @@ export default function TeamPresentationCard({
               onClick={onProceedToNext}
               className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 font-extrabold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-orange-500/30 active:scale-98 transition-all"
             >
-              <span>{team.id === 5 ? "Proceed to Final Vault Crack" : `Unlock Stop #${team.id + 1} Puzzle`}</span>
+              <span>{team.id === totalTeams ? "Proceed to Final Vault Crack" : `Unlock Stop #${team.id + 1} Puzzle`}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -279,4 +253,3 @@ export default function TeamPresentationCard({
     </div>
   );
 }
-

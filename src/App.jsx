@@ -15,7 +15,9 @@ export default function App() {
   const [state, setState] = useState(() => storageService.loadState());
   const [isMuted, setIsMuted] = useState(() => soundService.isMuted());
   const [isFacilitatorOpen, setIsFacilitatorOpen] = useState(false);
-  const [vaultPreviewOpen, setVaultPreviewOpen] = useState(false);
+
+  const totalTeams = QUEST_CONFIG.teams.length;
+  const vaultStage = totalTeams + 1; // Stage 5 is Vault
 
   // Sync state to localStorage whenever it changes
   useEffect(() => {
@@ -62,17 +64,17 @@ export default function App() {
 
   // Move from presentation to next team's puzzle or vault
   const handleProceedToNext = () => {
-    if (state.stage < 5) {
+    if (state.stage < totalTeams) {
       setState(prev => ({
         ...prev,
         stage: prev.stage + 1,
         step: 'PUZZLE'
       }));
     } else {
-      // All 5 teams completed! Proceed to Vault
+      // All 4 teams completed! Proceed to Vault
       setState(prev => ({
         ...prev,
-        stage: 6,
+        stage: vaultStage,
         step: 'VAULT'
       }));
     }
@@ -80,8 +82,8 @@ export default function App() {
 
   // User clicked on a progress bar stage
   const handleSelectStage = (targetStage) => {
-    if (targetStage === 6) {
-      setState(prev => ({ ...prev, stage: 6, step: 'VAULT' }));
+    if (targetStage === vaultStage) {
+      setState(prev => ({ ...prev, stage: vaultStage, step: 'VAULT' }));
       return;
     }
 
@@ -158,7 +160,7 @@ export default function App() {
             <VaultHud
               unlockedDigits={state.unlockedDigits}
               vaultCode={state.vaultCode}
-              onOpenVaultPreview={() => handleSelectStage(6)}
+              onOpenVaultPreview={() => handleSelectStage(vaultStage)}
             />
 
             {/* Gamified Stage Path Progress Bar */}
@@ -169,7 +171,7 @@ export default function App() {
             />
 
             {/* Screen Content based on Stage & Step */}
-            {state.stage >= 1 && state.stage <= 5 && (
+            {state.stage >= 1 && state.stage <= totalTeams && (
               <>
                 {state.step === 'PUZZLE' ? (
                   <PuzzleContainer
@@ -189,7 +191,7 @@ export default function App() {
             )}
 
             {/* Final Vault Screen */}
-            {state.stage === 6 && (
+            {state.stage === vaultStage && (
               <VaultScreen
                 vaultCode={state.vaultCode}
                 unlockedDigits={state.unlockedDigits}
@@ -220,4 +222,3 @@ export default function App() {
     </div>
   );
 }
-

@@ -1,6 +1,5 @@
 import React from 'react';
-import { ArrowRight, Sparkles, Shield, Gift, Compass, Terminal, Lock } from 'lucide-react';
-import { QUEST_CONFIG } from '../config/questConfig';
+import { ArrowRight, Sparkles, Gift, Compass } from 'lucide-react';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
 
@@ -55,7 +54,7 @@ export default function WelcomeScreen({ onStart }) {
               <span className="w-5 h-5 rounded-full bg-orange-500/20 text-orange-300 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
                 1
               </span>
-              <span><strong>Solve the Data Puzzle:</strong> Decrypt clues to discover the secret team name and room location.</span>
+              <span><strong>Solve the Data Puzzle:</strong> Decrypt clues to discover each secret team and their presentation room.</span>
             </div>
 
             <div className="flex items-start gap-2.5">
@@ -76,32 +75,9 @@ export default function WelcomeScreen({ onStart }) {
               <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
                 4
               </span>
-              <span><strong>Crack the Safe:</strong> Dial the complete 4-digit code on the physical box to claim your Dutch souvenirs!</span>
+              <span><strong>Crack the Safe:</strong> Unlock all 4 digits, dial the combination on the physical box, and claim your souvenirs!</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* 5 Domains Preview Pill Grid */}
-      <div className="space-y-2">
-        <div className="text-xs font-semibold text-slate-400 px-1 uppercase tracking-wider">
-          5 Core Data Domains to Explore
-        </div>
-        <div className="grid grid-cols-1 gap-2">
-          {QUEST_CONFIG.teams.map((t, i) => (
-            <div key={t.id} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
-              <div className="flex items-center space-x-2.5">
-                <span className="text-base">{t.badge}</span>
-                <div>
-                  <span className="font-semibold text-slate-200">{t.name}</span>
-                  <p className="text-[10px] text-slate-400">{t.tagline}</p>
-                </div>
-              </div>
-              <span className="text-[10px] font-mono text-orange-400/80 bg-orange-500/10 px-2 py-0.5 rounded">
-                Stop {i + 1}
-              </span>
-            </div>
-          ))}
         </div>
       </div>
 
@@ -121,4 +97,3 @@ export default function WelcomeScreen({ onStart }) {
     </div>
   );
 }
-

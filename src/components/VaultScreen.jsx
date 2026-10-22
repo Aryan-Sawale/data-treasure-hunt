@@ -248,12 +248,12 @@ export default function VaultScreen({
         )}
       </div>
 
-      {/* Recap of 5 Teams Visited */}
+      {/* Recap of Teams Visited */}
       <div className="glass-panel p-4 rounded-2xl border border-white/10 space-y-3">
         <div className="flex items-center justify-between text-xs">
           <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            Expedition Recap: 5 Teams Visited
+            Expedition Recap: {QUEST_CONFIG.teams.length} Teams Visited
           </span>
           <span className="text-[11px] font-mono text-emerald-400 font-bold">
             100% Complete
