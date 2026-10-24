@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowDown, ArrowUp, Lightbulb, CheckCircle2, ShieldCheck, ArrowUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, Lightbulb, CheckCircle2, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
 import { soundService } from '../../services/soundService';
 import { hapticService } from '../../services/hapticService';
 
@@ -41,25 +41,13 @@ export default function Puzzle3Governance({ onSolved }) {
   const [selectedIdx, setSelectedIdx] = useState(null);
   const [showHint, setShowHint] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-
-  // Check if current order matches [1, 2, 3, 4]
-  const checkOrder = (currentItems) => {
-    const isCorrect = currentItems.every((item, idx) => item.stepId === idx + 1);
-    if (isCorrect) {
-      setIsSuccess(true);
-      setSelectedIdx(null);
-      soundService.playSuccess();
-      hapticService.success();
-      setTimeout(() => {
-        onSolved();
-      }, 1200);
-    }
-  };
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const handleCardClick = (idx) => {
     if (isSuccess) return;
     soundService.playDialTick();
     hapticService.light();
+    setErrorMessage(null);
 
     if (selectedIdx === null) {
       setSelectedIdx(idx);
@@ -73,7 +61,6 @@ export default function Puzzle3Governance({ onSolved }) {
       updated[idx] = temp;
       setItems(updated);
       setSelectedIdx(null);
-      checkOrder(updated);
     }
   };
 
@@ -82,13 +69,13 @@ export default function Puzzle3Governance({ onSolved }) {
     if (index === 0 || isSuccess) return;
     soundService.playDialTick();
     hapticService.light();
+    setErrorMessage(null);
     const updated = [...items];
     const temp = updated[index - 1];
     updated[index - 1] = updated[index];
     updated[index] = temp;
     setItems(updated);
     setSelectedIdx(null);
-    checkOrder(updated);
   };
 
   const moveDown = (e, index) => {
@@ -96,13 +83,36 @@ export default function Puzzle3Governance({ onSolved }) {
     if (index === items.length - 1 || isSuccess) return;
     soundService.playDialTick();
     hapticService.light();
+    setErrorMessage(null);
     const updated = [...items];
     const temp = updated[index + 1];
     updated[index + 1] = updated[index];
     updated[index] = temp;
     setItems(updated);
     setSelectedIdx(null);
-    checkOrder(updated);
+  };
+
+  // Submit button verification handler
+  const handleSubmit = () => {
+    if (isSuccess) return;
+
+    const isCorrect = items.every((item, idx) => item.stepId === idx + 1);
+
+    if (isCorrect) {
+      setIsSuccess(true);
+      setErrorMessage(null);
+      setSelectedIdx(null);
+      soundService.playSuccess();
+      hapticService.success();
+      setTimeout(() => {
+        onSolved();
+      }, 1200);
+    } else {
+      soundService.playError();
+      hapticService.error();
+      setErrorMessage("Sequence is not quite right yet. Reorder steps from 1 to 4 and try again!");
+      setTimeout(() => setErrorMessage(null), 3000);
+    }
   };
 
   const handleAutoSolve = () => {
@@ -110,17 +120,14 @@ export default function Puzzle3Governance({ onSolved }) {
     hapticService.medium();
     const correctOrder = [STAGES[0], STAGES[1], STAGES[2], STAGES[3]];
     setItems(correctOrder);
-    setIsSuccess(true);
+    setErrorMessage(null);
     setSelectedIdx(null);
-    setTimeout(() => {
-      onSolved();
-    }, 1000);
   };
 
   const correctCount = items.filter((item, idx) => item.stepId === idx + 1).length;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3.5">
       {/* Objective Header */}
       <div className="flex items-center justify-between px-1">
         <div>
@@ -129,7 +136,7 @@ export default function Puzzle3Governance({ onSolved }) {
             {selectedIdx !== null ? (
               <span className="text-[#9E6E00] font-bold">Now tap another step to swap!</span>
             ) : (
-              <span>Order steps from first (1) to final (4).</span>
+              <span>Order steps from first (1) to final (4), then submit.</span>
             )}
           </p>
         </div>
@@ -151,19 +158,21 @@ export default function Puzzle3Governance({ onSolved }) {
               className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs active:scale-[0.99] select-none ${
                 isSelected
                   ? 'bg-[#FFFDF5] border-[#F9BD20] ring-2 ring-[#F9BD20]/30 shadow-md'
-                  : isSuccess || isAtCorrectPosition
-                  ? 'bg-[#F0FDF4] border-[#009488]/50'
+                  : isSuccess
+                  ? 'bg-[#F0FDF4] border-[#009488] scale-[1.01]'
+                  : isAtCorrectPosition
+                  ? 'bg-[#F0FDF4] border-[#009488]/40'
                   : 'bg-white border-slate-200 hover:border-slate-300'
               }`}
             >
               {/* Step Slot & Icon */}
               <div className="flex items-center space-x-3">
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-xs ${
-                  isAtCorrectPosition
+                  isSuccess || isAtCorrectPosition
                     ? 'bg-[#009488] text-white'
                     : 'bg-slate-100 text-slate-700'
                 }`}>
-                  {isAtCorrectPosition ? <CheckCircle2 className="w-4 h-4" /> : `${idx + 1}`}
+                  {isSuccess ? <CheckCircle2 className="w-4 h-4" /> : `${idx + 1}`}
                 </div>
                 <div className="text-2xl shrink-0">{item.icon}</div>
                 <div>
@@ -206,19 +215,44 @@ export default function Puzzle3Governance({ onSolved }) {
             </div>
           );
         })}
+      </div>
 
-        {/* Success Overlay Banner */}
-        {isSuccess && (
-          <div className="p-3.5 rounded-2xl bg-[#F0FDF4] border-2 border-[#009488] text-center animate-fade-in shadow-md">
-            <ShieldCheck className="w-6 h-6 text-[#009488] mx-auto mb-1 animate-bounce" />
-            <span className="font-black text-[#009488] text-xs block">Lineage Trail Verified!</span>
-            <span className="text-[11px] text-slate-600">Regulatory Audit Passed</span>
-          </div>
-        )}
+      {/* Error message if sequence is incorrect */}
+      {errorMessage && (
+        <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-700 text-xs flex items-center space-x-2 animate-shake">
+          <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {/* Submit Button */}
+      <div className="pt-1">
+        <button
+          onClick={handleSubmit}
+          disabled={isSuccess}
+          className={`w-full py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center space-x-2.5 transition-all shadow-md active:scale-[0.98] ${
+            isSuccess
+              ? 'bg-[#009488] text-white border-b-4 border-[#006E64]'
+              : 'bg-[#009488] hover:bg-[#007E74] text-white shadow-[#009488]/25 border-b-4 border-[#006E64]'
+          }`}
+        >
+          {isSuccess ? (
+            <>
+              <CheckCircle2 className="w-5 h-5 text-white animate-bounce" />
+              <span>Sequence Verified! Proceeding...</span>
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="w-4 h-4 text-[#F9BD20]" />
+              <span>Submit Sequence</span>
+              <ArrowRight className="w-4 h-4" />
+            </>
+          )}
+        </button>
       </div>
 
       {/* Controls & Hints */}
-      <div className="flex items-center justify-between text-xs pt-1">
+      <div className="flex items-center justify-between text-xs pt-0.5">
         <button
           onClick={() => setShowHint(!showHint)}
           className="flex items-center space-x-1.5 text-[#878787] hover:text-[#009488] px-3 py-1.5 rounded-xl bg-white border border-slate-200 active:scale-95 transition-all shadow-xs"

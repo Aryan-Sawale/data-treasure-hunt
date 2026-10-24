@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Lightbulb, RotateCcw, CheckCircle2, Database, CreditCard, Home, Smartphone, Briefcase } from 'lucide-react';
 import { soundService } from '../../services/soundService';
 import { hapticService } from '../../services/hapticService';
 
 // 4 Pairs = 8 Cards total
 const CARD_PAIRS = [
-  { pairId: 1, name: 'Card Payments', icon: CreditCard, color: 'text-amber-600', bg: 'bg-amber-50' },
-  { pairId: 2, name: 'Mortgage Loans', icon: Home, color: 'text-blue-600', bg: 'bg-blue-50' },
-  { pairId: 3, name: 'Mobile Banking', icon: Smartphone, color: 'text-purple-600', bg: 'bg-purple-50' },
-  { pairId: 4, name: 'Savings Ledgers', icon: Briefcase, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  { pairId: 1, name: 'Card Payments', subtitle: 'Euro transactions', icon: CreditCard, color: 'text-amber-600', bg: 'bg-amber-50' },
+  { pairId: 2, name: 'Mortgage Loans', subtitle: 'Home lending', icon: Home, color: 'text-blue-600', bg: 'bg-blue-50' },
+  { pairId: 3, name: 'Mobile Banking', subtitle: 'In-app activity', icon: Smartphone, color: 'text-purple-600', bg: 'bg-purple-50' },
+  { pairId: 4, name: 'Savings Ledgers', subtitle: 'Account balances', icon: Briefcase, color: 'text-emerald-600', bg: 'bg-emerald-50' },
 ];
 
 export default function Puzzle1Platform({ onSolved }) {
@@ -144,8 +144,8 @@ export default function Puzzle1Platform({ onSolved }) {
         </div>
       </div>
 
-      {/* 4x2 Cards Grid */}
-      <div className="grid grid-cols-4 gap-2">
+      {/* 2-Column Wide Cards Grid (Full Text Legibility on Mobile) */}
+      <div className="grid grid-cols-2 gap-2.5">
         {cards.map((card) => {
           const isFlipped = flippedIds.includes(card.id) || showHint;
           const isMatched = matchedPairIds.includes(card.pairId);
@@ -156,32 +156,45 @@ export default function Puzzle1Platform({ onSolved }) {
               key={card.id}
               onClick={() => handleCardClick(card)}
               disabled={isMatched || isSuccess || isProcessing}
-              className={`h-24 rounded-2xl border-2 transition-all flex flex-col items-center justify-center p-1.5 select-none active:scale-95 shadow-xs ${
+              className={`p-2.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-2.5 select-none active:scale-[0.98] shadow-xs text-left ${
                 isMatched
-                  ? 'bg-[#F0FDF4] border-[#009488] scale-[0.98] opacity-90'
+                  ? 'bg-[#F0FDF4] border-[#009488] opacity-90'
                   : isFlipped
-                  ? `${card.bg} border-[#009488] scale-102 shadow-md ring-2 ring-[#009488]/20`
+                  ? `${card.bg} border-[#009488] ring-2 ring-[#009488]/20 shadow-md`
                   : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-[#F9BD20] shadow-xs'
               }`}
             >
               {isFlipped || isMatched ? (
-                <div className="flex flex-col items-center text-center animate-fade-in">
-                  <div className={`w-8 h-8 rounded-xl ${card.bg} flex items-center justify-center mb-1`}>
-                    <Icon className={`w-4 h-4 ${card.color}`} />
+                <div className="flex items-center space-x-2.5 animate-fade-in w-full">
+                  <div className={`w-9 h-9 rounded-xl ${card.bg} flex items-center justify-center shrink-0 border border-slate-200/50 shadow-2xs`}>
+                    <Icon className={`w-5 h-5 ${card.color}`} />
                   </div>
-                  <span className="text-[10px] font-black text-slate-800 leading-tight truncate max-w-[64px]">
-                    {card.name}
-                  </span>
-                  {isMatched && (
-                    <span className="text-[8px] font-black uppercase text-[#009488] mt-0.5">
-                      ✓ Linked
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-extrabold text-slate-900 block leading-tight">
+                      {card.name}
                     </span>
-                  )}
+                    <span className="text-[10px] text-[#878787] block leading-tight mt-0.5">
+                      {isMatched ? (
+                        <span className="text-[#009488] font-bold">✓ Linked</span>
+                      ) : (
+                        card.subtitle
+                      )}
+                    </span>
+                  </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center text-slate-400 space-y-1">
-                  <span className="text-xl">🌊</span>
-                  <span className="text-[9px] font-mono font-bold text-slate-400">POOL</span>
+                <div className="flex items-center space-x-2.5 w-full py-1">
+                  <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-base">
+                    🌊
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-700 block leading-tight">
+                      Data Feed
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
+                      Tap to Flip
+                    </span>
+                  </div>
                 </div>
               )}
             </button>
@@ -206,7 +219,7 @@ export default function Puzzle1Platform({ onSolved }) {
             onClick={handleHint}
             disabled={isSuccess || showHint}
             className="flex items-center space-x-1 text-[#9E6E00] hover:text-[#B45309] px-2.5 py-1.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/60 active:scale-95 transition-all shadow-xs"
-            title="Peak cards for a second"
+            title="Peek cards for a second"
           >
             <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
             <span className="text-[11px] font-bold">Peek</span>
