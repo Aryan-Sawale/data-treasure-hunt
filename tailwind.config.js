@@ -32,11 +32,17 @@ export default {
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'glow': 'glow 2s ease-in-out infinite alternate',
+        'shake': 'shake 0.4s ease-in-out',
       },
       keyframes: {
         glow: {
           '0%': { boxShadow: '0 0 5px rgba(0, 148, 136, 0.4), 0 0 10px rgba(249, 189, 32, 0.2)' },
           '100%': { boxShadow: '0 0 20px rgba(0, 148, 136, 0.8), 0 0 30px rgba(249, 189, 32, 0.4)' },
+        },
+        shake: {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '20%, 60%': { transform: 'translateX(-4px)' },
+          '40%, 80%': { transform: 'translateX(4px)' },
         }
       }
     },

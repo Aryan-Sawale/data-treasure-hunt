@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileCheck, ArrowDown, ArrowUp, Lightbulb, CheckCircle2, ShieldCheck, ArrowUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, Lightbulb, CheckCircle2, ShieldCheck, ArrowUpDown } from 'lucide-react';
 import { soundService } from '../../services/soundService';
 import { hapticService } from '../../services/hapticService';
 
@@ -7,34 +7,26 @@ const STAGES = [
   {
     stepId: 1,
     title: 'Raw Ingestion',
-    subtitle: 'Core Banking Mainframe & Payment Streams',
-    badge: 'STAGE 1',
-    icon: '📥',
-    detail: 'Unfiltered transaction logs from Dutch payment rails.'
+    subtitle: 'Payment Streams & Transcripts',
+    icon: '📥'
   },
   {
     stepId: 2,
     title: 'PII Masking & Privacy',
-    subtitle: 'GDPR / BSN Tokenization Engine',
-    badge: 'STAGE 2',
-    icon: '🔒',
-    detail: 'Customer citizen numbers (BSN) masked with SHA-256 tokens.'
+    subtitle: 'GDPR & Tokenization Engine',
+    icon: '🔒'
   },
   {
     stepId: 3,
-    title: 'Gold Catalog & Metadata',
-    subtitle: 'Searchable Dictionary & Data Lineage',
-    badge: 'STAGE 3',
-    icon: '🏷️',
-    detail: 'Curated financial definitions tagged with data stewards.'
+    title: 'Gold Catalog & Lineage',
+    subtitle: 'Business Dictionary & Metadata',
+    icon: '🏷️'
   },
   {
     stepId: 4,
-    title: 'ABN AMRO Statutory Report',
-    subtitle: 'ABN AMRO Capital Adequacy Regulatory Filing',
-    badge: 'STAGE 4',
-    icon: '🏛️',
-    detail: 'Audited statutory report delivered to regulatory authority.'
+    title: 'Statutory Audit Report',
+    subtitle: 'Regulatory Compliance Filing',
+    icon: '🏛️'
   }
 ];
 
@@ -46,6 +38,7 @@ export default function Puzzle3Governance({ onSolved }) {
     STAGES[3],
     STAGES[1]
   ]);
+  const [selectedIdx, setSelectedIdx] = useState(null);
   const [showHint, setShowHint] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -54,6 +47,7 @@ export default function Puzzle3Governance({ onSolved }) {
     const isCorrect = currentItems.every((item, idx) => item.stepId === idx + 1);
     if (isCorrect) {
       setIsSuccess(true);
+      setSelectedIdx(null);
       soundService.playSuccess();
       hapticService.success();
       setTimeout(() => {
@@ -62,7 +56,29 @@ export default function Puzzle3Governance({ onSolved }) {
     }
   };
 
-  const moveUp = (index) => {
+  const handleCardClick = (idx) => {
+    if (isSuccess) return;
+    soundService.playDialTick();
+    hapticService.light();
+
+    if (selectedIdx === null) {
+      setSelectedIdx(idx);
+    } else if (selectedIdx === idx) {
+      setSelectedIdx(null); // Deselect if tapped again
+    } else {
+      // Swap items
+      const updated = [...items];
+      const temp = updated[selectedIdx];
+      updated[selectedIdx] = updated[idx];
+      updated[idx] = temp;
+      setItems(updated);
+      setSelectedIdx(null);
+      checkOrder(updated);
+    }
+  };
+
+  const moveUp = (e, index) => {
+    e.stopPropagation();
     if (index === 0 || isSuccess) return;
     soundService.playDialTick();
     hapticService.light();
@@ -71,10 +87,12 @@ export default function Puzzle3Governance({ onSolved }) {
     updated[index - 1] = updated[index];
     updated[index] = temp;
     setItems(updated);
+    setSelectedIdx(null);
     checkOrder(updated);
   };
 
-  const moveDown = (index) => {
+  const moveDown = (e, index) => {
+    e.stopPropagation();
     if (index === items.length - 1 || isSuccess) return;
     soundService.playDialTick();
     hapticService.light();
@@ -83,6 +101,7 @@ export default function Puzzle3Governance({ onSolved }) {
     updated[index + 1] = updated[index];
     updated[index] = temp;
     setItems(updated);
+    setSelectedIdx(null);
     checkOrder(updated);
   };
 
@@ -92,105 +111,108 @@ export default function Puzzle3Governance({ onSolved }) {
     const correctOrder = [STAGES[0], STAGES[1], STAGES[2], STAGES[3]];
     setItems(correctOrder);
     setIsSuccess(true);
+    setSelectedIdx(null);
     setTimeout(() => {
       onSolved();
     }, 1000);
   };
 
+  const correctCount = items.filter((item, idx) => item.stepId === idx + 1).length;
+
   return (
-    <div className="space-y-4">
-      {/* Objective Card */}
-      <div className="glass-card p-3.5 rounded-xl border border-[#009488]/20 bg-white">
-        <div className="flex items-center justify-between text-xs mb-1">
-          <span className="font-bold text-[#009488] uppercase tracking-wider flex items-center gap-1.5">
-            <FileCheck className="w-3.5 h-3.5" />
-            Governance Challenge: Lineage Trail
-          </span>
-          <span className="font-mono text-[10px] bg-[#009488]/10 px-2 py-0.5 rounded text-[#009488] font-bold">
-            ABN AMRO Audit Check
-          </span>
+    <div className="space-y-3">
+      {/* Objective Header */}
+      <div className="flex items-center justify-between px-1">
+        <div>
+          <h3 className="text-sm font-black text-[#009488]">Data Lineage Trail</h3>
+          <p className="text-xs text-[#878787]">
+            {selectedIdx !== null ? (
+              <span className="text-[#9E6E00] font-bold">Now tap another step to swap!</span>
+            ) : (
+              <span>Order steps from first (1) to final (4).</span>
+            )}
+          </p>
         </div>
-        <p className="text-xs text-slate-600">
-          ABN AMRO requires verified data lineage. Use the arrows to reorder the 4 stages from <strong className="text-[#009488]">Raw Ingestion (Top)</strong> down to the <strong className="text-[#009488]">ABN AMRO Statutory Filing (Bottom)</strong>.
-        </p>
+        <span className="text-xs font-mono font-black px-2 py-0.5 rounded-lg bg-[#F0FDF4] text-[#009488] border border-[#009488]/30">
+          {correctCount}/4 in place
+        </span>
       </div>
 
       {/* Sequential Lineage Chain */}
-      <div className="space-y-2 relative">
+      <div className="space-y-2">
         {items.map((item, idx) => {
           const isAtCorrectPosition = item.stepId === idx + 1;
+          const isSelected = selectedIdx === idx;
 
           return (
-            <div key={item.stepId} className="relative">
-              <div
-                className={`p-3 rounded-xl border transition-all flex items-center justify-between gap-2 shadow-sm ${
-                  isSuccess
-                    ? 'bg-[#F0FDF4] border-2 border-[#009488]'
-                    : isAtCorrectPosition
-                    ? 'bg-[#F0FDF4] border-2 border-[#009488]'
-                    : 'bg-white border-slate-200'
-                }`}
-              >
-                {/* Left badge & info */}
-                <div className="flex items-center space-x-3">
-                  <div className="text-2xl">{item.icon}</div>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <span className="font-bold text-slate-800 text-xs">{item.title}</span>
-                      <span className="text-[10px] font-mono text-[#878787] bg-slate-100 px-1.5 py-0.2 rounded font-semibold">
-                        Pos {idx + 1}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 mt-0.5">{item.subtitle}</p>
-                    <p className="text-[10px] text-[#878787] mt-0.5">{item.detail}</p>
-                  </div>
+            <div
+              key={item.stepId}
+              onClick={() => handleCardClick(idx)}
+              className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs active:scale-[0.99] select-none ${
+                isSelected
+                  ? 'bg-[#FFFDF5] border-[#F9BD20] ring-2 ring-[#F9BD20]/30 shadow-md'
+                  : isSuccess || isAtCorrectPosition
+                  ? 'bg-[#F0FDF4] border-[#009488]/50'
+                  : 'bg-white border-slate-200 hover:border-slate-300'
+              }`}
+            >
+              {/* Step Slot & Icon */}
+              <div className="flex items-center space-x-3">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-xs ${
+                  isAtCorrectPosition
+                    ? 'bg-[#009488] text-white'
+                    : 'bg-slate-100 text-slate-700'
+                }`}>
+                  {isAtCorrectPosition ? <CheckCircle2 className="w-4 h-4" /> : `${idx + 1}`}
                 </div>
-
-                {/* Move Controls */}
-                <div className="flex flex-col space-y-1">
-                  <button
-                    onClick={() => moveUp(idx)}
-                    disabled={idx === 0 || isSuccess}
-                    className={`p-1.5 rounded-lg border text-xs transition-all ${
-                      idx === 0 || isSuccess
-                        ? 'opacity-30 border-slate-200 text-slate-300 cursor-not-allowed'
-                        : 'bg-slate-50 hover:bg-[#F0FDF4] border-slate-200 text-[#009488] active:scale-95 shadow-sm'
-                    }`}
-                    aria-label="Move stage up"
-                  >
-                    <ArrowUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => moveDown(idx)}
-                    disabled={idx === items.length - 1 || isSuccess}
-                    className={`p-1.5 rounded-lg border text-xs transition-all ${
-                      idx === items.length - 1 || isSuccess
-                        ? 'opacity-30 border-slate-200 text-slate-300 cursor-not-allowed'
-                        : 'bg-slate-50 hover:bg-[#F0FDF4] border-slate-200 text-[#009488] active:scale-95 shadow-sm'
-                    }`}
-                    aria-label="Move stage down"
-                  >
-                    <ArrowDown className="w-3.5 h-3.5" />
-                  </button>
+                <div className="text-2xl shrink-0">{item.icon}</div>
+                <div>
+                  <h4 className="font-extrabold text-xs text-slate-900 leading-tight">
+                    {item.title}
+                  </h4>
+                  <p className="text-[11px] text-[#878787] mt-0.5 leading-tight">
+                    {item.subtitle}
+                  </p>
                 </div>
               </div>
 
-              {/* Connecting Line between cards */}
-              {idx < items.length - 1 && (
-                <div className="flex justify-center -my-1 relative z-10">
-                  <div className={`w-0.5 h-3 ${isSuccess ? 'bg-[#009488]' : 'bg-slate-300'}`} />
-                </div>
-              )}
+              {/* Move Buttons */}
+              <div className="flex items-center space-x-1 shrink-0">
+                <button
+                  onClick={(e) => moveUp(e, idx)}
+                  disabled={idx === 0 || isSuccess}
+                  className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all ${
+                    idx === 0 || isSuccess
+                      ? 'opacity-20 border-slate-200 text-slate-300 cursor-not-allowed'
+                      : 'bg-[#F8FAFA] hover:bg-slate-100 border-slate-200 text-[#009488] active:scale-90'
+                  }`}
+                  aria-label="Move up"
+                >
+                  <ArrowUp className="w-4 h-4 stroke-[2.5]" />
+                </button>
+                <button
+                  onClick={(e) => moveDown(e, idx)}
+                  disabled={idx === items.length - 1 || isSuccess}
+                  className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all ${
+                    idx === items.length - 1 || isSuccess
+                      ? 'opacity-20 border-slate-200 text-slate-300 cursor-not-allowed'
+                      : 'bg-[#F8FAFA] hover:bg-slate-100 border-slate-200 text-[#009488] active:scale-90'
+                  }`}
+                  aria-label="Move down"
+                >
+                  <ArrowDown className="w-4 h-4 stroke-[2.5]" />
+                </button>
+              </div>
             </div>
           );
         })}
 
         {/* Success Overlay Banner */}
         {isSuccess && (
-          <div className="p-3 rounded-xl bg-[#F0FDF4] border-2 border-[#009488] text-center animate-fade-in shadow-md">
+          <div className="p-3.5 rounded-2xl bg-[#F0FDF4] border-2 border-[#009488] text-center animate-fade-in shadow-md">
             <ShieldCheck className="w-6 h-6 text-[#009488] mx-auto mb-1 animate-bounce" />
-            <span className="font-extrabold text-[#009488] text-xs block">Lineage Trail Cryptographically Certified!</span>
-            <span className="text-[11px] text-slate-600">ABN AMRO & GDPR Regulatory Compliance Confirmed</span>
+            <span className="font-black text-[#009488] text-xs block">Lineage Trail Verified!</span>
+            <span className="text-[11px] text-slate-600">Regulatory Audit Passed</span>
           </div>
         )}
       </div>
@@ -199,29 +221,28 @@ export default function Puzzle3Governance({ onSolved }) {
       <div className="flex items-center justify-between text-xs pt-1">
         <button
           onClick={() => setShowHint(!showHint)}
-          className="flex items-center space-x-1.5 text-[#878787] hover:text-[#009488] px-3 py-1.5 rounded-lg bg-white border border-slate-200 active:scale-95 transition-all shadow-sm"
+          className="flex items-center space-x-1.5 text-[#878787] hover:text-[#009488] px-3 py-1.5 rounded-xl bg-white border border-slate-200 active:scale-95 transition-all shadow-xs"
         >
           <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
-          <span>{showHint ? "Hide Hint" : "Need a Hint?"}</span>
+          <span>{showHint ? "Hide Hint" : "Hint"}</span>
         </button>
 
         <button
           onClick={handleAutoSolve}
-          className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline"
+          className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline font-medium"
         >
           Auto Sequence
         </button>
       </div>
 
       {showHint && (
-        <div className="p-3 rounded-xl bg-[#F8FAFA] border border-[#009488]/30 text-xs text-slate-700 space-y-1">
-          <p className="font-semibold text-[#009488]">💡 Governance Lineage Hint:</p>
+        <div className="p-3 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700 animate-fade-in">
+          <p className="font-bold text-[#9E6E00] mb-0.5">💡 Lineage Order:</p>
           <p className="text-slate-600">
-            Think about privacy & compliance order: First data arrives (Raw Ingestion) ➔ Then sensitive data is anonymized (PII Masking) ➔ Then it's cataloged for reuse (Gold Catalog) ➔ Finally, the certified ABN AMRO statutory report is generated!
+            1. Raw Ingestion ➔ 2. PII Masking ➔ 3. Gold Catalog ➔ 4. Audit Report
           </p>
         </div>
       )}
     </div>
   );
 }
-

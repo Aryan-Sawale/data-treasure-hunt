@@ -1,100 +1,82 @@
 import React, { useState } from 'react';
-import { ShieldAlert, CheckCircle2, AlertTriangle, Lightbulb, Search, RefreshCw } from 'lucide-react';
+import { ShieldAlert, CheckCircle2, AlertTriangle, Lightbulb, ShoppingBag, Briefcase, Smartphone, Landmark, RefreshCw } from 'lucide-react';
 import { soundService } from '../../services/soundService';
 import { hapticService } from '../../services/hapticService';
 
 const SAMPLE_RECORDS = [
   {
-    id: 'TX-801',
-    isAnomaly: false,
+    id: 'TX-1',
     label: 'Albert Heijn PIN',
-    iban: 'NL91 ABNA 0417 2348 12',
+    detail: 'NL91 ABNA 0417 2348',
     amount: '€45.20',
-    time: '14:22:10 CET',
-    status: 'CLEAN'
+    isAnomaly: false
   },
   {
-    id: 'TX-802',
-    isAnomaly: true,
-    defect: 'Invalid Country Prefix (Not SEPA/NL)',
+    id: 'TX-2',
     label: 'SEPA Transfer',
-    iban: 'XX99 FAIL 4040 4012 99',
+    detail: 'XX99 FAIL 4040 4012',
     amount: '€1,200.00',
-    time: '14:22:15 CET',
-    status: 'CORRUPTED'
+    isAnomaly: true,
+    reason: 'Invalid IBAN prefix (XX99)'
   },
   {
-    id: 'TX-803',
-    isAnomaly: false,
-    label: 'Monthly Salary Credit',
-    iban: 'NL22 RABO 0123 9847 21',
+    id: 'TX-3',
+    label: 'Monthly Salary',
+    detail: 'NL22 RABO 0123 9847',
     amount: '€3,450.00',
-    time: '14:22:20 CET',
-    status: 'CLEAN'
+    isAnomaly: false
   },
   {
-    id: 'TX-804',
-    isAnomaly: true,
-    defect: 'Buffer Underflow: Negative Balance Overflow',
+    id: 'TX-4',
     label: 'Savings Withdrawal',
-    iban: 'NL44 INGB 0671 9283 74',
-    amount: '-€99,999,999.00',
-    time: '14:22:24 CET',
-    status: 'CORRUPTED'
+    detail: 'NL44 INGB 0671 9283',
+    amount: '-€99,999,999',
+    isAnomaly: true,
+    reason: 'Impossible negative balance'
   },
   {
-    id: 'TX-805',
-    isAnomaly: false,
-    label: 'Tikkie Reimbursement',
-    iban: 'NL18 SNSB 0892 1122 33',
+    id: 'TX-5',
+    label: 'Tikkie Split',
+    detail: 'NL18 SNSB 0892 1122',
     amount: '€15.00',
-    time: '14:22:28 CET',
-    status: 'CLEAN'
+    isAnomaly: false
   },
   {
-    id: 'TX-806',
-    isAnomaly: true,
-    defect: 'Time Drift: Future Timestamp (Year 2099)',
-    label: 'Mortgage Amortization',
-    iban: 'NL07 TRIO 0391 8273 64',
+    id: 'TX-6',
+    label: 'Mortgage Debit',
+    detail: 'Date: 2099-12-31',
     amount: '€850.00',
-    time: '2099-12-31 23:59',
-    status: 'CORRUPTED'
+    isAnomaly: true,
+    reason: 'Future timestamp (Year 2099)'
   },
   {
-    id: 'TX-807',
-    isAnomaly: true,
-    defect: 'Corrupt Float: NaN (Not-a-Number) Null Value',
+    id: 'TX-7',
     label: 'Foreign FX Swap',
-    iban: 'NL55 KNAB 0102 9384 75',
+    detail: 'NL55 KNAB 0102 9384',
     amount: 'NaN EUR',
-    time: '14:22:35 CET',
-    status: 'CORRUPTED'
+    isAnomaly: true,
+    reason: 'Corrupt Null/NaN value'
   }
 ];
 
 export default function Puzzle2Quality({ onSolved }) {
   const [quarantined, setQuarantined] = useState(new Set());
   const [showHint, setShowHint] = useState(false);
-  const [feedbackMsg, setFeedbackMsg] = useState(null);
+  const [errorFlash, setErrorFlash] = useState(null);
 
-  const totalAnomalies = SAMPLE_RECORDS.filter(r => r.isAnomaly).length; // 4
-  const currentCaught = quarantined.size;
-  const integrityScore = Math.min(100, Math.round(60 + (currentCaught / totalAnomalies) * 40));
+  const totalAnomalies = 4;
+  const caughtCount = quarantined.size;
 
-  const handleRowClick = (record) => {
-    if (quarantined.has(record.id)) return;
+  const handleRowClick = (rec) => {
+    if (quarantined.has(rec.id)) return;
 
-    if (record.isAnomaly) {
+    if (rec.isAnomaly) {
       soundService.playSuccess();
       hapticService.success();
       const updated = new Set(quarantined);
-      updated.add(record.id);
+      updated.add(rec.id);
       setQuarantined(updated);
-      setFeedbackMsg({
-        type: 'success',
-        text: `Defect Caught! ${record.defect}`
-      });
+      setErrorFlash(null);
 
       if (updated.size === totalAnomalies) {
         setTimeout(() => {
@@ -104,10 +86,8 @@ export default function Puzzle2Quality({ onSolved }) {
     } else {
       soundService.playError();
       hapticService.error();
-      setFeedbackMsg({
-        type: 'warning',
-        text: `Valid Record! ${record.iban} has normal syntax. Look for errors.`
-      });
+      setErrorFlash(rec.id);
+      setTimeout(() => setErrorFlash(null), 800);
     }
   };
 
@@ -116,136 +96,129 @@ export default function Puzzle2Quality({ onSolved }) {
     hapticService.medium();
     const all = new Set(SAMPLE_RECORDS.filter(r => r.isAnomaly).map(r => r.id));
     setQuarantined(all);
-    setFeedbackMsg({
-      type: 'success',
-      text: 'All anomalies quarantined automatically!'
-    });
     setTimeout(() => {
       onSolved();
     }, 1000);
   };
 
   return (
-    <div className="space-y-4">
-      {/* Objective Card */}
-      <div className="glass-card p-3.5 rounded-xl border border-[#009488]/20 bg-white">
-        <div className="flex items-center justify-between text-xs mb-1">
-          <span className="font-bold text-[#009488] uppercase tracking-wider flex items-center gap-1.5">
-            <ShieldAlert className="w-3.5 h-3.5 text-[#009488]" />
-            Quality Challenge: The Anomaly Hunter
-          </span>
-          <span className="font-mono text-[10px] bg-[#009488]/10 px-2 py-0.5 rounded text-[#009488] font-bold">
-            {currentCaught}/{totalAnomalies} Quarantined
-          </span>
+    <div className="space-y-3">
+      {/* Objective Header */}
+      <div className="flex items-center justify-between px-1">
+        <div>
+          <h3 className="text-sm font-black text-[#009488]">Data Quality Cleanse</h3>
+          <p className="text-xs text-[#878787]">
+            Find and tap the 4 corrupted transaction records.
+          </p>
         </div>
-        <p className="text-xs text-slate-600">
-          Tap the <strong className="text-rose-600">4 defective banking asset records</strong> below to purge corrupt data and restore 100% regulatory data health.
-        </p>
-      </div>
-
-      {/* Real-time Data Integrity Meter */}
-      <div className="bg-[#F8FAFA] p-3 rounded-xl border border-slate-200 space-y-2">
-        <div className="flex items-center justify-between text-xs font-mono">
-          <span className="text-[#878787]">DATA INTEGRITY SCORE</span>
-          <span className={`font-bold ${integrityScore === 100 ? 'text-[#009488] font-extrabold animate-pulse' : 'text-[#F9BD20]'}`}>
-            {integrityScore}% {integrityScore === 100 ? '• ABN AMRO CERTIFIED' : '• AUDIT WARNING'}
+        {/* Visual 4-Pip Counter */}
+        <div className="flex items-center gap-1 bg-[#F8FAFA] px-2 py-1 rounded-lg border border-slate-200">
+          {[0, 1, 2, 3].map((idx) => (
+            <div
+              key={idx}
+              className={`w-2.5 h-2.5 rounded-full transition-all ${
+                idx < caughtCount ? 'bg-[#009488] scale-110' : 'bg-slate-300'
+              }`}
+            />
+          ))}
+          <span className="text-[10px] font-mono font-black text-slate-700 ml-1">
+            {caughtCount}/4
           </span>
         </div>
-        
-        <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden p-0.5">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              integrityScore === 100
-                ? 'bg-gradient-to-r from-[#009488] to-[#00B3A4] shadow-md'
-                : 'bg-gradient-to-r from-[#F9BD20] to-[#E5AC15]'
-            }`}
-            style={{ width: `${integrityScore}%` }}
-          />
-        </div>
-
-        {/* Live Feedback Toast */}
-        {feedbackMsg && (
-          <div className={`text-[11px] font-medium px-2 py-1 rounded-md flex items-center gap-1.5 animate-fade-in ${
-            feedbackMsg.type === 'success' 
-              ? 'bg-[#F0FDF4] text-[#009488] border border-[#009488]/30' 
-              : 'bg-[#FFFBEB] text-[#D97706] border border-[#F59E0B]/30'
-          }`}>
-            {feedbackMsg.type === 'success' ? <CheckCircle2 className="w-3 h-3 shrink-0" /> : <AlertTriangle className="w-3 h-3 shrink-0" />}
-            <span className="truncate">{feedbackMsg.text}</span>
-          </div>
-        )}
       </div>
 
       {/* Transaction Records List */}
-      <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+      <div className="space-y-2">
         {SAMPLE_RECORDS.map((rec) => {
           const isCaught = quarantined.has(rec.id);
+          const isWrong = errorFlash === rec.id;
 
           return (
             <div
               key={rec.id}
               onClick={() => handleRowClick(rec)}
-              className={`p-3 rounded-xl border transition-all cursor-pointer select-none active:scale-98 shadow-sm ${
+              className={`p-2.5 px-3 rounded-2xl border-2 transition-all cursor-pointer select-none active:scale-[0.99] flex items-center justify-between shadow-xs ${
                 isCaught
-                  ? 'bg-[#F0FDF4] border-2 border-[#009488]'
-                  : 'bg-white border-slate-200 hover:border-[#009488]/50'
+                  ? 'bg-[#F0FDF4] border-[#009488]/50'
+                  : isWrong
+                  ? 'bg-amber-50 border-amber-400 animate-shake'
+                  : 'bg-white border-slate-200 hover:border-slate-300'
               }`}
             >
-              <div className="flex items-center justify-between text-xs mb-1">
-                <span className="font-mono text-[#878787] font-semibold">{rec.id}</span>
-                <span className="text-slate-800 font-semibold">{rec.label}</span>
-                {isCaught ? (
-                  <span className="text-[10px] font-mono bg-[#009488] text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                    <CheckCircle2 className="w-3 h-3" />
-                    QUARANTINED
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-extrabold text-xs text-slate-900">
+                    {rec.label}
                   </span>
-                ) : (
-                  <span className="text-[10px] font-mono text-[#878787] bg-slate-100 px-1.5 py-0.5 rounded">
-                    {rec.time}
-                  </span>
-                )}
+                  {isCaught && (
+                    <span className="text-[9px] font-black uppercase text-[#009488] bg-[#009488]/10 px-1.5 py-0.2 rounded">
+                      Purged
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] font-mono text-[#878787] mt-0.5">
+                  {isCaught ? (
+                    <span className="text-[#009488] font-sans font-semibold">{rec.reason}</span>
+                  ) : (
+                    rec.detail
+                  )}
+                </p>
               </div>
 
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className={`text-[11px] ${rec.isAnomaly && !isCaught ? 'text-rose-600 font-semibold' : 'text-slate-600'}`}>
-                  {rec.iban}
-                </span>
-                <span className={`font-bold ${rec.isAnomaly && !isCaught ? 'text-rose-600' : 'text-[#009488]'}`}>
+              <div className="text-right shrink-0">
+                <span className={`font-mono text-xs font-black ${
+                  isCaught
+                    ? 'text-[#009488] line-through opacity-70'
+                    : rec.isAnomaly
+                    ? 'text-slate-900'
+                    : 'text-slate-900'
+                }`}>
                   {rec.amount}
                 </span>
+                {isCaught && (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#009488] ml-auto mt-0.5" />
+                )}
               </div>
             </div>
           );
         })}
       </div>
 
+      {/* Success Notification */}
+      {caughtCount === totalAnomalies && (
+        <div className="p-3 rounded-2xl bg-[#F0FDF4] border-2 border-[#009488] text-center animate-fade-in shadow-md">
+          <CheckCircle2 className="w-6 h-6 text-[#009488] mx-auto mb-1 animate-bounce" />
+          <h4 className="text-xs font-black text-[#009488]">Data Asset Pipeline Cleaned!</h4>
+          <p className="text-[11px] text-slate-600">All corrupted records quarantined & purged</p>
+        </div>
+      )}
+
       {/* Controls & Hints */}
       <div className="flex items-center justify-between text-xs pt-1">
         <button
           onClick={() => setShowHint(!showHint)}
-          className="flex items-center space-x-1.5 text-[#878787] hover:text-[#009488] px-3 py-1.5 rounded-lg bg-white border border-slate-200 active:scale-95 transition-all shadow-sm"
+          className="flex items-center space-x-1.5 text-[#878787] hover:text-[#009488] px-3 py-1.5 rounded-xl bg-white border border-slate-200 active:scale-95 transition-all shadow-xs"
         >
           <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
-          <span>{showHint ? "Hide Hint" : "Need a Hint?"}</span>
+          <span>{showHint ? "Hide Hint" : "Hint"}</span>
         </button>
 
         <button
           onClick={handleAutoSolve}
-          className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline"
+          className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline font-medium"
         >
           Auto Cleanse
         </button>
       </div>
 
       {showHint && (
-        <div className="p-3 rounded-xl bg-[#F8FAFA] border border-[#009488]/30 text-xs text-slate-700 space-y-1">
-          <p className="font-semibold text-[#009488]">💡 Data Quality Hint:</p>
-          <p className="text-slate-600">
-            Check for invalid IBAN codes that don't start with 'NL', impossible negative balances (-€99,999,999), futuristic timestamps from year 2099, and amount 'NaN EUR'!
+        <div className="p-3 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700 animate-fade-in space-y-1">
+          <p className="font-bold text-[#9E6E00]">💡 Data Quality Clues:</p>
+          <p className="text-slate-600 text-[11px]">
+            Look for: 1. Non-Dutch IBAN (XX99) • 2. Negative amount (-€99M) • 3. Year 2099 date • 4. NaN EUR
           </p>
         </div>
       )}
     </div>
   );
 }
-
