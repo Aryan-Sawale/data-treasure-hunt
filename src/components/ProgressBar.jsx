@@ -6,7 +6,8 @@ import { hapticService } from '../services/hapticService';
 
 export default function ProgressBar({
   currentStage,
-  completedPresentations,
+  completedPresentations = [],
+  solvedPuzzles = [],
   onSelectStage
 }) {
   const teams = QUEST_CONFIG.teams;
@@ -21,6 +22,13 @@ export default function ProgressBar({
         onSelectStage(stageId);
       }
     }
+  };
+
+  const teamDisplayNames = {
+    1: 'Metadata',
+    2: 'Data Lake',
+    3: 'Marketplace',
+    4: 'Quality'
   };
 
   return (
@@ -42,8 +50,12 @@ export default function ProgressBar({
         {teams.map((team) => {
           const stageId = team.id;
           const isDone = completedPresentations.includes(stageId);
+          const isSolved = solvedPuzzles.includes(stageId);
           const isCurrent = currentStage === stageId;
           const isLocked = stageId > currentStage;
+          const isRevealed = isSolved || isDone;
+
+          const label = isRevealed ? (teamDisplayNames[stageId] || team.shortName) : `Stop ${stageId}`;
 
           return (
             <button
@@ -60,6 +72,8 @@ export default function ProgressBar({
                     ? 'bg-[#009488] text-white shadow-md shadow-[#009488]/30'
                     : isCurrent
                     ? 'bg-[#F9BD20] text-slate-950 ring-4 ring-[#F9BD20]/40 shadow-lg shadow-[#F9BD20]/50 animate-pulse font-black'
+                    : isRevealed
+                    ? 'bg-[#F0FDF4] text-[#009488] border-2 border-[#009488]'
                     : 'bg-[#F8FAFA] text-[#878787] border border-slate-300'
                 }`}
               >
@@ -67,21 +81,23 @@ export default function ProgressBar({
                   <Check className="w-4 h-4 stroke-[3]" />
                 ) : isCurrent ? (
                   <span className="text-sm font-black">{stageId}</span>
+                ) : isRevealed ? (
+                  <span className="text-xs">{team.badge}</span>
                 ) : (
                   <Lock className="w-3 h-3 text-[#878787]" />
                 )}
               </div>
 
               <span
-                className={`text-[9px] font-medium mt-1 truncate max-w-[56px] text-center ${
+                className={`text-[9px] font-medium mt-1 truncate max-w-[58px] text-center transition-all ${
                   isCurrent
                     ? 'text-[#B45309] font-black'
-                    : isDone
+                    : isRevealed
                     ? 'text-[#009488] font-bold'
                     : 'text-[#878787]'
                 }`}
               >
-                {team.shortName.split(' ')[0]}
+                {label}
               </span>
             </button>
           );

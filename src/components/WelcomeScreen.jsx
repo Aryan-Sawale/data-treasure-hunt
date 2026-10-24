@@ -1,13 +1,21 @@
-import React from 'react';
-import { ArrowRight, Sparkles, Gift, Compass } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowRight, Sparkles, Gift, Compass, ChevronDown, ChevronUp } from 'lucide-react';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
 
 export default function WelcomeScreen({ onStart }) {
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+
   const handleStart = () => {
     soundService.playSuccess();
     hapticService.success();
     onStart();
+  };
+
+  const toggleHowItWorks = () => {
+    soundService.playClick();
+    hapticService.light();
+    setShowHowItWorks(!showHowItWorks);
   };
 
   return (
@@ -41,41 +49,58 @@ export default function WelcomeScreen({ onStart }) {
           </div>
         </div>
 
-        <div className="bg-[#FFFDF5] rounded-xl p-3.5 border border-[#F9BD20]/40 space-y-2.5">
-          <div className="text-xs font-black uppercase tracking-wider text-[#9E6E00] flex items-center gap-1.5">
-            <Compass className="w-3.5 h-3.5 text-[#009488]" />
-            How The Expedition Works
-          </div>
-
-          <div className="space-y-2 text-xs text-slate-700">
-            <div className="flex items-start gap-2.5">
-              <span className="w-5 h-5 rounded-full bg-[#F9BD20] text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-xs">
-                1
-              </span>
-              <span><strong>Solve the Data Puzzle:</strong> Decrypt clues to discover each secret team and their Harry Potter house booth.</span>
+        {/* Collapsible How It Works Box */}
+        <div className="bg-[#FFFDF5] rounded-xl border border-[#F9BD20]/40 overflow-hidden transition-all">
+          <button
+            onClick={toggleHowItWorks}
+            className="w-full p-3.5 flex items-center justify-between text-left hover:bg-[#FEF9C3]/40 transition-colors select-none"
+            aria-expanded={showHowItWorks}
+          >
+            <div className="text-xs font-black uppercase tracking-wider text-[#9E6E00] flex items-center gap-1.5">
+              <Compass className="w-4 h-4 text-[#009488]" />
+              <span>How The Expedition Works</span>
             </div>
-
-            <div className="flex items-start gap-2.5">
-              <span className="w-5 h-5 rounded-full bg-[#F9BD20] text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-xs">
-                2
-              </span>
-              <span><strong>Attend Their Presentation:</strong> Walk over to the team's booth and experience their live showcase.</span>
+            <div className="flex items-center gap-1 text-[11px] font-bold text-[#009488]">
+              <span>{showHowItWorks ? 'Hide' : 'View Steps'}</span>
+              {showHowItWorks ? (
+                <ChevronUp className="w-4 h-4 stroke-[2.5]" />
+              ) : (
+                <ChevronDown className="w-4 h-4 stroke-[2.5]" />
+              )}
             </div>
+          </button>
 
-            <div className="flex items-start gap-2.5">
-              <span className="w-5 h-5 rounded-full bg-[#F9BD20] text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-xs">
-                3
-              </span>
-              <span><strong>Collect Safe Digits:</strong> Enter the presenter's secret word to reveal a digit for the physical lock!</span>
-            </div>
+          {showHowItWorks && (
+            <div className="px-3.5 pb-3.5 pt-1 space-y-2 text-xs text-slate-700 border-t border-[#F9BD20]/20 animate-fade-in">
+              <div className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-[#F9BD20] text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-xs">
+                  1
+                </span>
+                <span><strong>Solve the Data Puzzle:</strong> Decrypt clues to discover each secret team and their Harry Potter house booth.</span>
+              </div>
 
-            <div className="flex items-start gap-2.5">
-              <span className="w-5 h-5 rounded-full bg-[#009488] text-white font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-xs">
-                4
-              </span>
-              <span><strong>Crack the Safe:</strong> Unlock all 4 digits, dial the combination on the physical box, and open the lock!</span>
+              <div className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-[#F9BD20] text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-xs">
+                  2
+                </span>
+                <span><strong>Attend Their Presentation:</strong> Walk over to the team's booth and experience their live showcase.</span>
+              </div>
+
+              <div className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-[#F9BD20] text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-xs">
+                  3
+                </span>
+                <span><strong>Collect Safe Digits:</strong> Enter the presenter's secret word to reveal a digit for the physical lock!</span>
+              </div>
+
+              <div className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-[#009488] text-white font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-xs">
+                  4
+                </span>
+                <span><strong>Crack the Safe:</strong> Unlock all 4 digits, dial the combination on the physical box, and open the lock!</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

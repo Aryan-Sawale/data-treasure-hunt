@@ -167,6 +167,7 @@ export default function App() {
             <ProgressBar
               currentStage={state.stage}
               completedPresentations={state.verifiedPresentations}
+              solvedPuzzles={state.solvedPuzzles}
               onSelectStage={handleSelectStage}
             />
 
