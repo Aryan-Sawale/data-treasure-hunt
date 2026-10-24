@@ -7,14 +7,21 @@ import PuzzleContainer from './components/PuzzleContainer';
 import TeamPresentationCard from './components/TeamPresentationCard';
 import VaultScreen from './components/VaultScreen';
 import FacilitatorModal from './components/FacilitatorModal';
+import LeaderboardModal from './components/LeaderboardModal';
 import { QUEST_CONFIG } from './config/questConfig';
 import { storageService } from './services/storageService';
 import { soundService } from './services/soundService';
+import { apiService, getPlayerName } from './services/apiService';
+import { Trophy, Sparkles } from 'lucide-react';
 
 export default function App() {
   const [state, setState] = useState(() => storageService.loadState());
   const [isMuted, setIsMuted] = useState(() => soundService.isMuted());
   const [isFacilitatorOpen, setIsFacilitatorOpen] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [playerScore, setPlayerScore] = useState(0);
+  const [playerRank, setPlayerRank] = useState(null);
+  const [scoreToast, setScoreToast] = useState(null);
 
   const totalTeams = QUEST_CONFIG.teams.length;
   const vaultStage = totalTeams + 1; // Stage 5 is Vault
@@ -24,12 +31,32 @@ export default function App() {
     storageService.saveState(state);
   }, [state]);
 
+  // Initial sync with backend if player already joined
+  useEffect(() => {
+    const existingName = getPlayerName();
+    if (existingName) {
+      apiService.joinGame(existingName).then((res) => {
+        if (res.player) {
+          setPlayerScore(res.player.total_score || 0);
+          setPlayerRank(res.player.rank || 1);
+        }
+      });
+    }
+  }, []);
+
   const handleToggleSound = () => {
     const muted = soundService.toggleMute();
     setIsMuted(muted);
   };
 
-  const handleStartQuest = () => {
+  const handleStartQuest = async (name) => {
+    // Register/sync with backend
+    const res = await apiService.joinGame(name);
+    if (res.player) {
+      setPlayerScore(res.player.total_score || 0);
+      setPlayerRank(res.player.rank || 1);
+    }
+
     setState(prev => ({
       ...prev,
       stage: 1,
@@ -38,8 +65,23 @@ export default function App() {
   };
 
   // Called when a team's puzzle is solved
-  const handlePuzzleSolved = () => {
+  const handlePuzzleSolved = async () => {
     const currentTeamId = state.stage;
+
+    // Award competitive rank-based points
+    const milestoneKey = `PUZZLE_${currentTeamId}`;
+    const res = await apiService.completeMilestone(milestoneKey, currentTeamId);
+
+    if (res.pointsAwarded > 0) {
+      setPlayerScore(res.totalScore);
+      setScoreToast({
+        points: res.pointsAwarded,
+        rank: res.rankOrder,
+        title: `Stop #${currentTeamId} Puzzle Solved!`
+      });
+      setTimeout(() => setScoreToast(null), 3500);
+    }
+
     setState(prev => ({
       ...prev,
       step: 'TEAM_REVEALED',
@@ -48,7 +90,21 @@ export default function App() {
   };
 
   // Called when a presentation is verified
-  const handleVerifyPresentation = (teamId, digitIndex, digitChar) => {
+  const handleVerifyPresentation = async (teamId, digitIndex, digitChar) => {
+    // Award competitive rank-based points
+    const milestoneKey = `CODE_${teamId}`;
+    const res = await apiService.completeMilestone(milestoneKey, teamId);
+
+    if (res.pointsAwarded > 0) {
+      setPlayerScore(res.totalScore);
+      setScoreToast({
+        points: res.pointsAwarded,
+        rank: res.rankOrder,
+        title: `Stop #${teamId} Presenter Code Verified!`
+      });
+      setTimeout(() => setScoreToast(null), 3500);
+    }
+
     setState(prev => {
       const nextUnlocked = { ...prev.unlockedDigits };
       if (digitIndex !== null && digitIndex !== undefined && digitChar) {
@@ -75,7 +131,8 @@ export default function App() {
       setState(prev => ({
         ...prev,
         stage: vaultStage,
-        step: 'VAULT'
+        step: 'VAULT',
+        isVaultCracked: true
       }));
     }
   };
@@ -83,7 +140,7 @@ export default function App() {
   // User clicked on a progress bar stage
   const handleSelectStage = (targetStage) => {
     if (targetStage === vaultStage) {
-      setState(prev => ({ ...prev, stage: vaultStage, step: 'VAULT' }));
+      setState(prev => ({ ...prev, stage: vaultStage, step: 'VAULT', isVaultCracked: true }));
       return;
     }
 
@@ -97,24 +154,17 @@ export default function App() {
     }));
   };
 
-  // Vault cracked handler
-  const handleVaultCracked = () => {
-    setState(prev => ({
-      ...prev,
-      isVaultCracked: true
-    }));
-  };
-
   // Reset entire quest
   const handleResetQuest = () => {
     const reset = storageService.clearState();
     setState(reset);
+    setPlayerScore(0);
+    setPlayerRank(1);
   };
 
   // Facilitator overrides
   const handleUpdateVaultCode = (newCode) => {
     setState(prev => {
-      // Re-map unlocked digits according to new code
       const updatedDigits = {};
       Object.keys(prev.unlockedDigits).forEach(idx => {
         updatedDigits[idx] = newCode[parseInt(idx)];
@@ -132,7 +182,8 @@ export default function App() {
     setState(prev => ({
       ...prev,
       stage: targetStage,
-      step: stepType === 'WELCOME' ? 'PUZZLE' : stepType
+      step: stepType === 'WELCOME' ? 'PUZZLE' : stepType,
+      isVaultCracked: targetStage === vaultStage ? true : prev.isVaultCracked
     }));
     setIsFacilitatorOpen(false);
   };
@@ -140,13 +191,38 @@ export default function App() {
   const currentTeam = QUEST_CONFIG.teams.find(t => t.id === state.stage);
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-slate-800 flex flex-col justify-between selection:bg-[#009488] selection:text-white">
+    <div className="min-h-screen bg-[#FFFFFF] text-slate-800 flex flex-col justify-between selection:bg-[#009488] selection:text-white relative">
+      {/* Real-time Floating Score Toast */}
+      {scoreToast && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#009488] text-white px-4 py-2 rounded-2xl shadow-2xl flex items-center space-x-2.5 border-2 border-[#F9BD20] animate-bounce max-w-[90vw]">
+          <div className="w-7 h-7 rounded-lg bg-[#F9BD20] text-slate-950 flex items-center justify-center font-black shrink-0">
+            <Trophy className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="flex items-center space-x-1.5">
+              <span className="font-mono font-black text-sm text-[#F9BD20]">
+                +{scoreToast.points} PTS!
+              </span>
+              <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded font-black">
+                {scoreToast.rank === 1 ? '🥇 1st Solver!' : scoreToast.rank === 2 ? '🥈 2nd Solver!' : scoreToast.rank === 3 ? '🥉 3rd Solver!' : 'Solved!'}
+              </span>
+            </div>
+            <p className="text-[10px] text-white/90 font-medium truncate">
+              {scoreToast.title}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* App Header */}
       <Header
         stage={state.stage}
         isMuted={isMuted}
         onToggleSound={handleToggleSound}
         onOpenFacilitator={() => setIsFacilitatorOpen(true)}
+        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+        playerScore={playerScore}
+        playerRank={playerRank}
         vaultUnlocked={state.isVaultCracked}
       />
 
@@ -191,13 +267,13 @@ export default function App() {
               </>
             )}
 
-            {/* Final Vault Screen */}
+            {/* Final Vault Screen (Congratulations & Master Padlock Code) */}
             {state.stage === vaultStage && (
               <VaultScreen
                 vaultCode={state.vaultCode}
-                unlockedDigits={state.unlockedDigits}
-                isVaultCracked={state.isVaultCracked}
-                onVaultCracked={handleVaultCracked}
+                playerScore={playerScore}
+                playerRank={playerRank}
+                onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
                 onResetQuest={handleResetQuest}
               />
             )}
@@ -219,6 +295,12 @@ export default function App() {
         onUpdateVaultCode={handleUpdateVaultCode}
         onJumpToStage={handleJumpToStage}
         onReset={handleResetQuest}
+      />
+
+      {/* Live Leaderboard Modal */}
+      <LeaderboardModal
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
       />
     </div>
   );

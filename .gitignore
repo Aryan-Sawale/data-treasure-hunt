@@ -42,6 +42,18 @@ Thumbs.db
 .env.*
 !.env.example
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+server/.venv/
+env/
+venv/
+*.db
+*.sqlite
+*.sqlite3
+
 # Temporary files
 .temp
 .cache

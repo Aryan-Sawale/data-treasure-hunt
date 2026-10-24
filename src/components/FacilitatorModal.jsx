@@ -3,6 +3,7 @@ import { X, Key, RefreshCw, Check, Shield } from 'lucide-react';
 import { QUEST_CONFIG } from '../config/questConfig';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
+import { apiService } from '../services/apiService';
 
 export default function FacilitatorModal({
   isOpen,
@@ -146,8 +147,9 @@ export default function FacilitatorModal({
 
         {/* 4. Reset Button */}
         <button
-          onClick={() => {
-            if (confirm("Reset game progress back to the beginning?")) {
+          onClick={async () => {
+            if (confirm("Reset game progress AND leaderboard scores for a new session?")) {
+              await apiService.resetLeaderboard();
               onReset();
               onClose();
             }
@@ -155,7 +157,7 @@ export default function FacilitatorModal({
           className="w-full py-2.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-semibold text-xs flex items-center justify-center space-x-1.5 transition-all"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          <span>Reset All Progress (New Visit)</span>
+          <span>Reset All Progress & Scores (New Visit)</span>
         </button>
       </div>
     </div>
