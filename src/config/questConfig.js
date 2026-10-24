@@ -53,18 +53,18 @@ export const QUEST_CONFIG = {
       color: "from-[#007F74] to-[#022D29]",
       accent: "#00B3A4",
       puzzle: {
-        title: "Cloud Data Lake Ingestion",
-        category: "Storage & Lakehouse Ingestion",
-        instructions: "Match each banking data feed to its optimal cloud engine to scale the Enterprise Data Lake.",
-        hint: "Match SEPA to Kafka Stream, Ledgers to Batch Spark, ATM to Memory Cache, and Mobile Events to Delta Lakehouse.",
-        solvedMessage: "All 4 data feeds connected! Enterprise Data Lake operating at 100,000 events/sec."
+        title: "Data Lake Memory Match",
+        category: "Central Data Pooling",
+        instructions: "Flip and match all 4 banking data feeds pooling into the Enterprise Data Lake.",
+        hint: "Match all 4 pairs: Card Payments, Mortgage Loans, Mobile Banking, and Savings Ledgers.",
+        solvedMessage: "All 4 data feeds connected! Enterprise Data Lake operational."
       },
       presentationSecretCode: "LAKEHOUSE",
       presentationHint: "Check the Data Lake Architecture slide for the secret word.",
       digitReveal: {
         digitIndex: 1, // 2nd digit of 4
         title: "Vault Digit #2 Unlocked!",
-        flavor: "The Data Lake streams pure truth. The 2nd lock tumbler clicks into alignment."
+        flavor: "The Data Lake pools banking truth. The 2nd lock tumbler clicks into alignment."
       }
     },
     {
@@ -80,18 +80,18 @@ export const QUEST_CONFIG = {
       color: "from-[#F9BD20] to-[#785303]",
       accent: "#F9BD20",
       puzzle: {
-        title: "Marketplace Product & Lineage Handshake",
+        title: "The Data Trail Scramble",
         category: "Data Products & Lineage",
-        instructions: "Tune the 3 Marketplace handshake parameters (Delivery Protocol, SLA Latency, and Zero-Trust Security) to subscribe to the certified banking product.",
-        hint: "Choose Apache Kafka Event Mesh, < 15ms Sub-Second SLA, and mTLS + Banking OAuth 2.0.",
-        solvedMessage: "Data Product Contract Activated! Live Lineage verified from source to consumer."
+        instructions: "Unscramble the 7 letters to reveal the audit trail that tracks data origins.",
+        hint: "The journey showing where data originated and who transformed it: L - I - N - E - A - G - E.",
+        solvedMessage: "Lineage revealed! Verified end-to-end data journey across the bank."
       },
       presentationSecretCode: "MARKETPLACE",
       presentationHint: "Look for the data product sharing slide!",
       digitReveal: {
         digitIndex: 2, // 3rd digit of 4
         title: "Vault Digit #3 Unlocked!",
-        flavor: "Data contract validated. The 3rd tumbler rolls into position."
+        flavor: "Data lineage validated. The 3rd tumbler rolls into position."
       }
     },
     {
@@ -107,11 +107,11 @@ export const QUEST_CONFIG = {
       color: "from-[#009488] to-[#012522]",
       accent: "#009488",
       puzzle: {
-        title: "The Asset Anomaly Hunter",
-        category: "Observability & Asset Health",
-        instructions: "Identify and quarantine 4 defective banking asset records before the audit timer expires to achieve 100% Data Asset Health.",
-        hint: "Look for invalid IBAN formats, negative savings balances, future timestamps, or corrupt NaN currency floats.",
-        solvedMessage: "All 4 corrupted records quarantined! Enterprise Data Asset Health restored to 100%."
+        title: "The Data Quality Audit",
+        category: "Asset Health & Cleansing",
+        instructions: "Spot and tap the 3 corrupted records with obvious business errors to cleanse the database.",
+        hint: "Look for impossible dates (Feb 31), negative payments (-€85k), or email typos (@@@).",
+        solvedMessage: "All corrupted records cleansed! 100% Data Asset Health certified."
       },
       presentationSecretCode: "INTEGRITY",
       presentationHint: "Ask the team about their automated data observability rules!",

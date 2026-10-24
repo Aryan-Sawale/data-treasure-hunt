@@ -1,84 +1,91 @@
 import React, { useState } from 'react';
-import { ShieldAlert, CheckCircle2, AlertTriangle, Lightbulb, ShoppingBag, Briefcase, Smartphone, Landmark, RefreshCw } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, AlertTriangle, Lightbulb, Coffee, Calendar, DollarSign, Hotel, Mail, Users, Sparkles } from 'lucide-react';
 import { soundService } from '../../services/soundService';
 import { hapticService } from '../../services/hapticService';
 
-const SAMPLE_RECORDS = [
+const BUSINESS_RECORDS = [
   {
-    id: 'TX-1',
-    label: 'Albert Heijn PIN',
-    detail: 'NL91 ABNA 0417 2348',
-    amount: '€45.20',
-    isAnomaly: false
+    id: 'rec-1',
+    label: 'Client Coffee Meeting',
+    account: 'NL91 ABNA 0417',
+    detail: 'Receipt: 14:15 CET',
+    amount: '€12.50',
+    icon: Coffee,
+    isCorrupted: false
   },
   {
-    id: 'TX-2',
-    label: 'SEPA Transfer',
-    detail: 'XX99 FAIL 4040 4012',
-    amount: '€1,200.00',
-    isAnomaly: true,
-    reason: 'Invalid IBAN prefix (XX99)'
+    id: 'rec-2',
+    label: 'Office Lease Invoice',
+    account: 'NL22 INGB 0123',
+    detail: 'Due Date: 31-Feb-2026',
+    amount: '€4,200.00',
+    icon: Calendar,
+    isCorrupted: true,
+    errorReason: 'Calendar Error: February 31st does not exist!'
   },
   {
-    id: 'TX-3',
-    label: 'Monthly Salary',
-    detail: 'NL22 RABO 0123 9847',
+    id: 'rec-3',
+    label: 'Corporate Wire Transfer',
+    account: 'NL55 RABO 0984',
+    detail: 'SEPA Outgoing Payment',
+    amount: '-€85,000.00',
+    icon: DollarSign,
+    isCorrupted: true,
+    errorReason: 'Balance Error: Outgoing payment cannot be negative!'
+  },
+  {
+    id: 'rec-4',
+    label: 'Business Travel Hotel',
+    account: 'NL88 ABNA 0551',
+    detail: 'Amsterdam Schiphol Stay',
+    amount: '€185.00',
+    icon: Hotel,
+    isCorrupted: false
+  },
+  {
+    id: 'rec-5',
+    label: 'Client Advisory Notice',
+    account: 'NL12 SNSB 0772',
+    detail: 'Email: sarah@@@abnamro...',
+    amount: '€0.00',
+    icon: Mail,
+    isCorrupted: true,
+    errorReason: 'Syntax Error: Invalid email with triple @@@!'
+  },
+  {
+    id: 'rec-6',
+    label: 'Monthly Staff Payroll',
+    account: 'NL33 TRIO 0883',
+    detail: 'Direct Deposit Transfer',
     amount: '€3,450.00',
-    isAnomaly: false
-  },
-  {
-    id: 'TX-4',
-    label: 'Savings Withdrawal',
-    detail: 'NL44 INGB 0671 9283',
-    amount: '-€99,999,999',
-    isAnomaly: true,
-    reason: 'Impossible negative balance'
-  },
-  {
-    id: 'TX-5',
-    label: 'Tikkie Split',
-    detail: 'NL18 SNSB 0892 1122',
-    amount: '€15.00',
-    isAnomaly: false
-  },
-  {
-    id: 'TX-6',
-    label: 'Mortgage Debit',
-    detail: 'Date: 2099-12-31',
-    amount: '€850.00',
-    isAnomaly: true,
-    reason: 'Future timestamp (Year 2099)'
-  },
-  {
-    id: 'TX-7',
-    label: 'Foreign FX Swap',
-    detail: 'NL55 KNAB 0102 9384',
-    amount: 'NaN EUR',
-    isAnomaly: true,
-    reason: 'Corrupt Null/NaN value'
+    icon: Users,
+    isCorrupted: false
   }
 ];
 
 export default function Puzzle2Quality({ onSolved }) {
-  const [quarantined, setQuarantined] = useState(new Set());
+  const [cleansedIds, setCleansedIds] = useState([]);
+  const [wrongId, setWrongId] = useState(null);
   const [showHint, setShowHint] = useState(false);
-  const [errorFlash, setErrorFlash] = useState(null);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const totalAnomalies = 4;
-  const caughtCount = quarantined.size;
+  const totalCorrupted = BUSINESS_RECORDS.filter(r => r.isCorrupted).length; // 3
+  const cleansedCount = cleansedIds.length;
+  const integrityScore = Math.min(100, Math.round(40 + (cleansedCount / totalCorrupted) * 60));
 
-  const handleRowClick = (rec) => {
-    if (quarantined.has(rec.id)) return;
+  const handleRecordClick = (record) => {
+    if (cleansedIds.includes(record.id) || isSuccess) return;
 
-    if (rec.isAnomaly) {
+    if (record.isCorrupted) {
       soundService.playSuccess();
       hapticService.success();
-      const updated = new Set(quarantined);
-      updated.add(rec.id);
-      setQuarantined(updated);
-      setErrorFlash(null);
+      setWrongId(null);
 
-      if (updated.size === totalAnomalies) {
+      const next = [...cleansedIds, record.id];
+      setCleansedIds(next);
+
+      if (next.length === totalCorrupted) {
+        setIsSuccess(true);
         setTimeout(() => {
           onSolved();
         }, 1200);
@@ -86,97 +93,125 @@ export default function Puzzle2Quality({ onSolved }) {
     } else {
       soundService.playError();
       hapticService.error();
-      setErrorFlash(rec.id);
-      setTimeout(() => setErrorFlash(null), 800);
+      setWrongId(record.id);
+      setTimeout(() => setWrongId(null), 800);
     }
+  };
+
+  const handleHint = () => {
+    soundService.playSuccess();
+    hapticService.medium();
+    setShowHint(true);
   };
 
   const handleAutoSolve = () => {
     soundService.playSuccess();
     hapticService.medium();
-    const all = new Set(SAMPLE_RECORDS.filter(r => r.isAnomaly).map(r => r.id));
-    setQuarantined(all);
+    const all = BUSINESS_RECORDS.filter(r => r.isCorrupted).map(r => r.id);
+    setCleansedIds(all);
+    setIsSuccess(true);
     setTimeout(() => {
       onSolved();
     }, 1000);
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3.5">
       {/* Objective Header */}
       <div className="flex items-center justify-between px-1">
         <div>
-          <h3 className="text-sm font-black text-[#009488]">Data Quality Cleanse</h3>
+          <h3 className="text-sm font-black text-[#009488] flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4" />
+            Data Quality Audit
+          </h3>
           <p className="text-xs text-[#878787]">
-            Find and tap the 4 corrupted transaction records.
+            Tap the 3 records with obvious business errors to cleanse the feed.
           </p>
         </div>
-        {/* Visual 4-Pip Counter */}
-        <div className="flex items-center gap-1 bg-[#F8FAFA] px-2 py-1 rounded-lg border border-slate-200">
-          {[0, 1, 2, 3].map((idx) => (
-            <div
-              key={idx}
-              className={`w-2.5 h-2.5 rounded-full transition-all ${
-                idx < caughtCount ? 'bg-[#009488] scale-110' : 'bg-slate-300'
-              }`}
-            />
-          ))}
-          <span className="text-[10px] font-mono font-black text-slate-700 ml-1">
-            {caughtCount}/4
+        <span className="text-xs font-mono font-black px-2 py-0.5 rounded-lg bg-[#F0FDF4] text-[#009488] border border-[#009488]/30">
+          {cleansedCount}/{totalCorrupted} Cleansed
+        </span>
+      </div>
+
+      {/* Real-time Data Integrity Meter */}
+      <div className="bg-[#F8FAFA] p-2.5 rounded-2xl border border-slate-200 space-y-1.5">
+        <div className="flex items-center justify-between text-[11px] font-mono font-bold">
+          <span className="text-slate-600">DATASET HEALTH SCORE</span>
+          <span className={integrityScore === 100 ? 'text-[#009488] font-black animate-pulse' : 'text-[#9E6E00]'}>
+            {integrityScore}% {integrityScore === 100 ? '• 100% CERTIFIED' : '• DEFECTS DETECTED'}
           </span>
+        </div>
+        <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden p-0.5">
+          <div
+            className="h-full rounded-full bg-[#009488] transition-all duration-500"
+            style={{ width: `${integrityScore}%` }}
+          />
         </div>
       </div>
 
-      {/* Transaction Records List */}
+      {/* 6 Business Records List */}
       <div className="space-y-2">
-        {SAMPLE_RECORDS.map((rec) => {
-          const isCaught = quarantined.has(rec.id);
-          const isWrong = errorFlash === rec.id;
+        {BUSINESS_RECORDS.map((rec) => {
+          const isCleansed = cleansedIds.includes(rec.id);
+          const isWrong = wrongId === rec.id;
+          const isHighlightedHint = showHint && rec.isCorrupted && !isCleansed;
+          const Icon = rec.icon;
 
           return (
             <div
               key={rec.id}
-              onClick={() => handleRowClick(rec)}
+              onClick={() => handleRecordClick(rec)}
               className={`p-2.5 px-3 rounded-2xl border-2 transition-all cursor-pointer select-none active:scale-[0.99] flex items-center justify-between shadow-xs ${
-                isCaught
-                  ? 'bg-[#F0FDF4] border-[#009488]/50'
+                isCleansed
+                  ? 'bg-[#F0FDF4] border-[#009488]/50 shadow-xs'
                   : isWrong
-                  ? 'bg-amber-50 border-amber-400 animate-shake'
-                  : 'bg-white border-slate-200 hover:border-slate-300'
+                  ? 'bg-rose-50 border-rose-300 animate-shake'
+                  : isHighlightedHint
+                  ? 'bg-[#FFFDF5] border-[#F9BD20] ring-2 ring-[#F9BD20]/40'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300'
               }`}
             >
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-extrabold text-xs text-slate-900">
-                    {rec.label}
-                  </span>
-                  {isCaught && (
-                    <span className="text-[9px] font-black uppercase text-[#009488] bg-[#009488]/10 px-1.5 py-0.2 rounded">
-                      Purged
-                    </span>
-                  )}
+              {/* Record Left Info */}
+              <div className="flex items-center space-x-2.5">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                  isCleansed ? 'bg-[#009488]/15 text-[#009488]' : 'bg-slate-100 text-slate-700'
+                }`}>
+                  <Icon className="w-4 h-4" />
                 </div>
-                <p className="text-[11px] font-mono text-[#878787] mt-0.5">
-                  {isCaught ? (
-                    <span className="text-[#009488] font-sans font-semibold">{rec.reason}</span>
-                  ) : (
-                    rec.detail
-                  )}
-                </p>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-extrabold text-xs text-slate-900 leading-tight">
+                      {rec.label}
+                    </span>
+                    {isCleansed && (
+                      <span className="text-[9px] font-black uppercase text-[#009488] bg-[#009488]/10 px-1.5 py-0.2 rounded">
+                        Cleaned
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-600 mt-0.5 leading-tight">
+                    {isCleansed ? (
+                      <span className="text-[#009488] font-bold">{rec.errorReason}</span>
+                    ) : (
+                      <span>{rec.detail} • <span className="font-mono text-slate-500 text-[10px]">{rec.account}</span></span>
+                    )}
+                  </p>
+                </div>
               </div>
 
-              <div className="text-right shrink-0">
+              {/* Record Right Amount / Status */}
+              <div className="text-right shrink-0 ml-2">
                 <span className={`font-mono text-xs font-black ${
-                  isCaught
+                  isCleansed
                     ? 'text-[#009488] line-through opacity-70'
-                    : rec.isAnomaly
+                    : rec.isCorrupted
                     ? 'text-slate-900'
                     : 'text-slate-900'
                 }`}>
                   {rec.amount}
                 </span>
-                {isCaught && (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#009488] ml-auto mt-0.5" />
+                {isCleansed && (
+                  <CheckCircle2 className="w-4 h-4 text-[#009488] ml-auto mt-0.5" />
                 )}
               </div>
             </div>
@@ -184,23 +219,15 @@ export default function Puzzle2Quality({ onSolved }) {
         })}
       </div>
 
-      {/* Success Notification */}
-      {caughtCount === totalAnomalies && (
-        <div className="p-3 rounded-2xl bg-[#F0FDF4] border-2 border-[#009488] text-center animate-fade-in shadow-md">
-          <CheckCircle2 className="w-6 h-6 text-[#009488] mx-auto mb-1 animate-bounce" />
-          <h4 className="text-xs font-black text-[#009488]">Data Asset Pipeline Cleaned!</h4>
-          <p className="text-[11px] text-slate-600">All corrupted records quarantined & purged</p>
-        </div>
-      )}
-
-      {/* Controls & Hints */}
+      {/* Controls & Actions */}
       <div className="flex items-center justify-between text-xs pt-1">
         <button
-          onClick={() => setShowHint(!showHint)}
-          className="flex items-center space-x-1.5 text-[#878787] hover:text-[#009488] px-3 py-1.5 rounded-xl bg-white border border-slate-200 active:scale-95 transition-all shadow-xs"
+          onClick={handleHint}
+          disabled={isSuccess || showHint}
+          className="flex items-center space-x-1.5 text-[#9E6E00] hover:text-[#B45309] px-3 py-1.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/60 active:scale-95 transition-all shadow-xs"
         >
           <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
-          <span>{showHint ? "Hide Hint" : "Hint"}</span>
+          <span>{showHint ? "Hint: Highlighted" : "Hint"}</span>
         </button>
 
         <button
@@ -213,10 +240,19 @@ export default function Puzzle2Quality({ onSolved }) {
 
       {showHint && (
         <div className="p-3 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700 animate-fade-in space-y-1">
-          <p className="font-bold text-[#9E6E00]">💡 Data Quality Clues:</p>
+          <p className="font-bold text-[#9E6E00]">💡 Obvious Error Clues:</p>
           <p className="text-slate-600 text-[11px]">
-            Look for: 1. Non-Dutch IBAN (XX99) • 2. Negative amount (-€99M) • 3. Year 2099 date • 4. NaN EUR
+            1. February 31st date • 2. Negative transfer (-€85k) • 3. Invalid email with triple @@@!
           </p>
+        </div>
+      )}
+
+      {/* Success Notification */}
+      {isSuccess && (
+        <div className="p-3.5 rounded-2xl bg-[#F0FDF4] border-2 border-[#009488] text-center animate-fade-in shadow-md">
+          <CheckCircle2 className="w-6 h-6 text-[#009488] mx-auto mb-1 animate-bounce" />
+          <h4 className="text-xs font-black text-[#009488]">100% Data Asset Health Restored!</h4>
+          <p className="text-[11px] text-slate-600">Enterprise Data Assets & Quality (House Slytherin) Unlocked</p>
         </div>
       )}
     </div>

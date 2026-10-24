@@ -1,220 +1,291 @@
-import React, { useState } from 'react';
-import { Activity, Zap, CheckCircle2, Lightbulb, Radio, Shield } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Lightbulb, Shuffle, RotateCcw, CheckCircle2, Compass, Sparkles } from 'lucide-react';
 import { soundService } from '../../services/soundService';
 import { hapticService } from '../../services/hapticService';
 
-const PARAMETERS = [
-  {
-    name: '1. Protocol',
-    options: [
-      { id: 'sftp', label: 'SFTP (Daily)', valid: false },
-      { id: 'rest', label: 'REST API', valid: false },
-      { id: 'kafka', label: 'Kafka Stream', valid: true }
-    ]
-  },
-  {
-    name: '2. Max Latency SLA',
-    options: [
-      { id: 'slow', label: '1,500 ms', valid: false },
-      { id: 'med', label: '250 ms', valid: false },
-      { id: 'fast', label: '< 15 ms', valid: true }
-    ]
-  },
-  {
-    name: '3. Security Standard',
-    options: [
-      { id: 'open', label: 'Plain HTTP', valid: false },
-      { id: 'token', label: 'Basic Token', valid: false },
-      { id: 'mtls', label: 'mTLS + OAuth', valid: true }
-    ]
-  }
-];
+const TARGET_WORD = 'LINEAGE';
+const INITIAL_SCRAMBLE = ['G', 'E', 'A', 'L', 'I', 'E', 'N'];
 
 export default function Puzzle4Delivery({ onSolved }) {
-  // Store selected option index for each parameter (defaults to 0)
-  const [selections, setSelections] = useState([0, 0, 0]);
-  const [isSynced, setIsSynced] = useState(false);
-  const [showHint, setShowHint] = useState(false);
+  // Available tiles in bank: array of { id, char, isUsed }
+  const [tiles, setTiles] = useState(() =>
+    INITIAL_SCRAMBLE.map((char, index) => ({
+      id: `tile-${index}`,
+      char,
+      isUsed: false
+    }))
+  );
 
-  // Check valid count
-  const isProtoValid = PARAMETERS[0].options[selections[0]].valid;
-  const isLatencyValid = PARAMETERS[1].options[selections[1]].valid;
-  const isSecValid = PARAMETERS[2].options[selections[2]].valid;
-  const matchCount = (isProtoValid ? 1 : 0) + (isLatencyValid ? 1 : 0) + (isSecValid ? 1 : 0);
+  // Placed tiles in answer slots (array of tile objects or null)
+  const [slots, setSlots] = useState(Array(TARGET_WORD.length).fill(null));
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isError, setIsError] = useState(false);
 
-  const handleSelect = (paramIdx, optIdx) => {
-    if (isSynced) return;
+  const placedWord = slots.map(s => (s ? s.char : '')).join('');
+
+  // Check word when all slots are filled
+  useEffect(() => {
+    if (placedWord.length === TARGET_WORD.length && !isSuccess) {
+      if (placedWord === TARGET_WORD) {
+        setIsSuccess(true);
+        setIsError(false);
+        soundService.playSuccess();
+        hapticService.success();
+        setTimeout(() => {
+          onSolved();
+        }, 1200);
+      } else {
+        setIsError(true);
+        soundService.playError();
+        hapticService.error();
+        setTimeout(() => setIsError(false), 900);
+      }
+    }
+  }, [placedWord, isSuccess, onSolved]);
+
+  // Tap an available tile to place in next empty slot
+  const handleTileClick = (tile) => {
+    if (tile.isUsed || isSuccess) return;
+
+    const firstEmptyIdx = slots.findIndex(s => s === null);
+    if (firstEmptyIdx === -1) return;
+
     soundService.playDialTick();
     hapticService.light();
 
-    const next = [...selections];
-    next[paramIdx] = optIdx;
-    setSelections(next);
+    // Mark tile as used
+    setTiles(prev =>
+      prev.map(t => (t.id === tile.id ? { ...t, isUsed: true } : t))
+    );
 
-    const protoOk = PARAMETERS[0].options[next[0]].valid;
-    const latencyOk = PARAMETERS[1].options[next[1]].valid;
-    const secOk = PARAMETERS[2].options[next[2]].valid;
+    // Place into slots
+    const newSlots = [...slots];
+    newSlots[firstEmptyIdx] = tile;
+    setSlots(newSlots);
+  };
 
-    if (protoOk && latencyOk && secOk) {
-      setIsSynced(true);
-      soundService.playSuccess();
-      hapticService.success();
-      setTimeout(() => {
-        onSolved();
-      }, 1200);
+  // Tap a placed slot to remove it and return to bank
+  const handleSlotClick = (index) => {
+    if (isSuccess || !slots[index]) return;
+
+    soundService.playDialTick();
+    hapticService.light();
+
+    const removedTile = slots[index];
+
+    // Return to bank
+    setTiles(prev =>
+      prev.map(t => (t.id === removedTile.id ? { ...t, isUsed: false } : t))
+    );
+
+    // Empty slot
+    const newSlots = [...slots];
+    newSlots[index] = null;
+    setSlots(newSlots);
+    setIsError(false);
+  };
+
+  // Shuffle available bank tiles
+  const handleShuffle = () => {
+    soundService.playClick();
+    hapticService.light();
+    setTiles(prev => {
+      const unused = prev.filter(t => !t.isUsed);
+      const shuffledUnused = [...unused].sort(() => Math.random() - 0.5);
+      let unusedIdx = 0;
+      return prev.map(t => (t.isUsed ? t : shuffledUnused[unusedIdx++]));
+    });
+  };
+
+  // Clear all slots
+  const handleClear = () => {
+    soundService.playClick();
+    hapticService.light();
+    setTiles(prev => prev.map(t => ({ ...t, isUsed: false })));
+    setSlots(Array(TARGET_WORD.length).fill(null));
+    setIsError(false);
+  };
+
+  // Hint: place next correct letter
+  const handleHint = () => {
+    soundService.playSuccess();
+    hapticService.medium();
+
+    const targetChars = TARGET_WORD.split('');
+    const firstWrongOrEmptyIdx = slots.findIndex((s, idx) => !s || s.char !== targetChars[idx]);
+
+    if (firstWrongOrEmptyIdx === -1) return;
+
+    const neededChar = targetChars[firstWrongOrEmptyIdx];
+
+    // If a tile is currently in that slot, remove it first
+    if (slots[firstWrongOrEmptyIdx]) {
+      const curTile = slots[firstWrongOrEmptyIdx];
+      const matchInBank = tiles.find(t => t.id === curTile.id);
+      if (matchInBank) matchInBank.isUsed = false;
+    }
+
+    // Find an unused tile with the needed char
+    const candidateTile = tiles.find(t => t.char === neededChar && !t.isUsed);
+    if (candidateTile) {
+      candidateTile.isUsed = true;
+      const newSlots = [...slots];
+      newSlots[firstWrongOrEmptyIdx] = candidateTile;
+      setSlots(newSlots);
+      setTiles([...tiles]);
     }
   };
 
+  // Auto solve
   const handleAutoSolve = () => {
     soundService.playSuccess();
     hapticService.medium();
-    setSelections([2, 2, 2]); // All valid
-    setIsSynced(true);
+    const targetChars = TARGET_WORD.split('');
+    const newTiles = [...tiles];
+    const newSlots = targetChars.map((char) => {
+      const tile = newTiles.find(t => t.char === char && !t.isUsed);
+      if (tile) tile.isUsed = true;
+      return tile;
+    });
+    setTiles(newTiles);
+    setSlots(newSlots);
+    setIsSuccess(true);
     setTimeout(() => {
       onSolved();
     }, 1000);
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Objective Header */}
       <div className="flex items-center justify-between px-1">
         <div>
-          <h3 className="text-sm font-black text-[#009488]">Marketplace Handshake</h3>
+          <h3 className="text-sm font-black text-[#009488] flex items-center gap-1.5">
+            <Compass className="w-4 h-4" />
+            Data Trail Word Scramble
+          </h3>
           <p className="text-xs text-[#878787]">
-            Tune 3 parameters to match the banking SLA.
+            Unscramble the letters to reveal the team's secret keyword.
           </p>
         </div>
-        <span className={`text-xs font-mono font-black px-2 py-0.5 rounded-lg border ${
-          matchCount === 3 
-            ? 'bg-[#F0FDF4] text-[#009488] border-[#009488]/30' 
-            : 'bg-[#FFFDF5] text-[#9E6E00] border-[#F9BD20]/40'
-        }`}>
-          {matchCount}/3 Synced
+        <span className="text-xs font-mono font-black px-2 py-0.5 rounded-lg bg-[#F0FDF4] text-[#009488] border border-[#009488]/30">
+          7 Letters
         </span>
       </div>
 
-      {/* Compact Waveform Visualizer */}
-      <div className="bg-[#021715] p-2.5 rounded-2xl border border-[#009488]/30 space-y-1.5 shadow-inner">
-        <div className="flex items-center justify-between text-[10px] font-mono px-1">
-          <span className="text-slate-300 flex items-center gap-1.5">
-            <Radio className="w-3 h-3 text-[#00B3A4] animate-pulse" />
-            TELEMETRY SIGNAL
-          </span>
-          <span className={`font-black ${matchCount === 3 ? 'text-[#00B3A4]' : 'text-[#F9BD20]'}`}>
-            {matchCount === 3 ? 'SIGNAL LOCKED • 100% SLA' : `CALIBRATING (${matchCount * 33}%)`}
-          </span>
-        </div>
+      {/* Business Clue Card */}
+      <div className="bg-[#FFFDF5] p-3.5 rounded-2xl border border-[#F9BD20]/50 shadow-xs space-y-1">
+        <span className="text-[10px] font-black uppercase tracking-wider text-[#9E6E00] flex items-center gap-1">
+          <Sparkles className="w-3.5 h-3.5 text-[#F9BD20]" />
+          Business Clue
+        </span>
+        <p className="text-xs text-slate-800 font-medium leading-relaxed">
+          "What verifiable audit trail traces the complete origin journey of data from its first source all the way to customer reports?"
+        </p>
+      </div>
 
-        {/* Dynamic Waveform SVG */}
-        <div className="h-12 w-full bg-black/60 rounded-xl overflow-hidden relative flex items-center border border-[#009488]/20">
-          <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 200 48">
-            {matchCount === 3 ? (
-              // Clean sine wave
-              <path
-                d="M 0 24 Q 25 6 50 24 T 100 24 T 150 24 T 200 24"
-                fill="none"
-                stroke="#00B3A4"
-                strokeWidth="2.5"
-                className="animate-pulse"
-              />
-            ) : (
-              // Distorted wave
-              <path
-                d={`M 0 24 Q ${20 + matchCount * 15} ${6 + (3 - matchCount) * 12} 50 24 T 100 ${
-                  20 + (3 - matchCount) * 8
-                } T 150 24 T 200 24`}
-                fill="none"
-                stroke={matchCount === 2 ? '#F9BD20' : '#EF4444'}
-                strokeWidth="2"
-              />
-            )}
-          </svg>
+      {/* Answer Slots Row */}
+      <div className="py-2">
+        <div className="flex justify-center items-center gap-1.5 sm:gap-2">
+          {slots.map((tile, idx) => (
+            <button
+              key={idx}
+              onClick={() => handleSlotClick(idx)}
+              disabled={isSuccess || !tile}
+              className={`w-10 h-12 rounded-xl flex items-center justify-center font-black text-lg transition-all select-none shadow-xs ${
+                isSuccess
+                  ? 'bg-[#009488] text-white border-2 border-[#007066] scale-105'
+                  : isError
+                  ? 'bg-rose-50 border-2 border-rose-400 text-rose-700 animate-shake'
+                  : tile
+                  ? 'bg-white border-2 border-[#009488] text-[#009488] active:scale-95 shadow-sm'
+                  : 'bg-slate-50 border-2 border-dashed border-slate-300 text-slate-300'
+              }`}
+            >
+              {tile ? tile.char : ''}
+            </button>
+          ))}
+        </div>
+        <p className="text-center text-[10px] text-[#878787] mt-1.5 font-medium">
+          {isSuccess ? (
+            <span className="text-[#009488] font-bold">Word Unscrambled!</span>
+          ) : (
+            <span>Tap an empty letter slot to remove it</span>
+          )}
+        </p>
+      </div>
+
+      {/* Scrambled Letter Bank */}
+      <div className="bg-[#F8FAFA] p-3 rounded-2xl border border-slate-200">
+        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2 text-center">
+          Tap Letters to Spell the Word
+        </span>
+        <div className="flex justify-center items-center gap-1.5 sm:gap-2 flex-wrap">
+          {tiles.map((tile) => (
+            <button
+              key={tile.id}
+              onClick={() => handleTileClick(tile)}
+              disabled={tile.isUsed || isSuccess}
+              className={`w-10 h-11 rounded-xl font-black text-base flex items-center justify-center transition-all select-none shadow-xs ${
+                tile.isUsed
+                  ? 'opacity-20 bg-slate-200 text-slate-400 cursor-not-allowed scale-90'
+                  : 'bg-white hover:bg-[#FFFDF5] text-slate-900 border-2 border-slate-200 hover:border-[#F9BD20] active:scale-95 shadow-sm'
+              }`}
+            >
+              {tile.char}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Horizontal Segmented Parameter Selectors */}
-      <div className="space-y-2">
-        {PARAMETERS.map((param, pIdx) => {
-          const currentOptIdx = selections[pIdx];
-          const isCurrentValid = param.options[currentOptIdx].valid;
-
-          return (
-            <div key={param.name} className="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs space-y-1.5">
-              <div className="flex items-center justify-between px-1">
-                <span className="text-[11px] font-extrabold text-slate-800">
-                  {param.name}
-                </span>
-                {isCurrentValid && (
-                  <span className="text-[10px] text-[#009488] font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> OK
-                  </span>
-                )}
-              </div>
-
-              {/* 3-Pill Horizontal Row */}
-              <div className="grid grid-cols-3 gap-1.5">
-                {param.options.map((opt, oIdx) => {
-                  const isSelected = currentOptIdx === oIdx;
-
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => handleSelect(pIdx, oIdx)}
-                      disabled={isSynced}
-                      className={`py-2 px-1 rounded-xl text-xs font-bold text-center transition-all select-none active:scale-95 ${
-                        isSelected
-                          ? opt.valid
-                            ? 'bg-[#009488] text-white shadow-sm'
-                            : 'bg-rose-50 text-rose-700 border border-rose-300'
-                          : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
-                      }`}
-                    >
-                      <span className="truncate block">{opt.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Success Notification */}
-      {isSynced && (
-        <div className="p-3 rounded-2xl bg-[#F0FDF4] border-2 border-[#009488] text-center animate-fade-in shadow-md">
-          <CheckCircle2 className="w-6 h-6 text-[#009488] mx-auto mb-1 animate-bounce" />
-          <h4 className="text-xs font-black text-[#009488]">Data Marketplace Handshake Established!</h4>
-          <p className="text-[11px] text-slate-600">Secure real-time telemetry stream connected</p>
-        </div>
-      )}
-
-      {/* Controls & Hints */}
+      {/* Controls & Actions */}
       <div className="flex items-center justify-between text-xs pt-1">
-        <button
-          onClick={() => setShowHint(!showHint)}
-          className="flex items-center space-x-1.5 text-[#878787] hover:text-[#009488] px-3 py-1.5 rounded-xl bg-white border border-slate-200 active:scale-95 transition-all shadow-xs"
-        >
-          <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
-          <span>{showHint ? "Hide Hint" : "Hint"}</span>
-        </button>
+        <div className="flex items-center space-x-1.5">
+          <button
+            onClick={handleShuffle}
+            disabled={isSuccess}
+            className="flex items-center space-x-1 text-slate-700 hover:text-[#009488] px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 active:scale-95 transition-all shadow-xs"
+            title="Shuffle letter bank"
+          >
+            <Shuffle className="w-3.5 h-3.5" />
+            <span className="text-[11px] font-bold">Shuffle</span>
+          </button>
+
+          <button
+            onClick={handleClear}
+            disabled={isSuccess || slots.every(s => s === null)}
+            className="flex items-center space-x-1 text-slate-700 hover:text-rose-600 px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 active:scale-95 transition-all shadow-xs disabled:opacity-40"
+            title="Clear all letters"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span className="text-[11px] font-bold">Clear</span>
+          </button>
+
+          <button
+            onClick={handleHint}
+            disabled={isSuccess}
+            className="flex items-center space-x-1 text-[#9E6E00] hover:text-[#B45309] px-2.5 py-1.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/60 active:scale-95 transition-all shadow-xs"
+            title="Reveal next letter"
+          >
+            <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
+            <span className="text-[11px] font-bold">Hint</span>
+          </button>
+        </div>
 
         <button
           onClick={handleAutoSolve}
           className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline font-medium"
         >
-          Auto Align
+          Auto Solve
         </button>
       </div>
 
-      {showHint && (
-        <div className="p-3 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700 animate-fade-in space-y-1">
-          <p className="font-bold text-[#9E6E00]">💡 Target Handshake:</p>
-          <p className="text-slate-600 text-[11px]">
-            • Protocol: <strong>Kafka Stream</strong><br />
-            • SLA: <strong>&lt; 15 ms</strong><br />
-            • Security: <strong>mTLS + OAuth</strong>
-          </p>
+      {/* Success Notification */}
+      {isSuccess && (
+        <div className="p-3.5 rounded-2xl bg-[#F0FDF4] border-2 border-[#009488] text-center animate-fade-in shadow-md">
+          <CheckCircle2 className="w-6 h-6 text-[#009488] mx-auto mb-1 animate-bounce" />
+          <h4 className="text-xs font-black text-[#009488]">Correct: LINEAGE!</h4>
+          <p className="text-[11px] text-slate-600">Data Marketplace & Lineage (House Gryffindor) Unlocked</p>
         </div>
       )}
     </div>
