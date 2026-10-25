@@ -5,7 +5,7 @@ import { hapticService } from '../services/hapticService';
 
 export default function VaultHud({ unlockedDigits, vaultCode, onOpenVaultPreview }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const digits = vaultCode ? vaultCode.split('') : ['7', '3', '9', '4'];
+  const digits = vaultCode ? vaultCode.split('') : ['2', '3', '7', '4'];
   const unlockedCount = Object.keys(unlockedDigits).length;
   const isAllUnlocked = unlockedCount >= 4;
 

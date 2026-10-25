@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, X, RefreshCw, Medal, Crown, Sparkles, User } from 'lucide-react';
+import { Trophy, X, RefreshCw, Medal, Crown, Sparkles, User, ExternalLink } from 'lucide-react';
 import { apiService, getPlayerId, getPlayerName } from '../services/apiService';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
 
-export default function LeaderboardModal({ isOpen, onClose }) {
+export default function LeaderboardModal({ isOpen, onClose, onOpenFullscreen }) {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const currentPlayerId = getPlayerId();
@@ -207,17 +207,30 @@ export default function LeaderboardModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Footer Score Rules */}
-        <div className="p-3 bg-[#F8FAFA] border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-600">
-          <div className="flex items-center space-x-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-[#F9BD20]" />
-            <span>1st: 100 • 2nd: 80 • 3rd: 65 • 4th+: 50 pts</span>
+        {/* Footer Score Rules & Link to Fullscreen */}
+        <div className="p-3 bg-[#F8FAFA] border-t border-slate-200 flex flex-col gap-2.5">
+          <div className="flex items-center justify-between text-[11px] text-slate-600">
+            <div className="flex items-center space-x-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#F9BD20]" />
+              <span>1st: 100 • 2nd: 80 • 3rd: 65 • 4th+: 50 pts</span>
+            </div>
+            {data?.current_player_rank && (
+              <span className="font-bold text-[#009488]">
+                Your Rank: #{data.current_player_rank}
+              </span>
+            )}
           </div>
-          {data?.current_player_rank && (
-            <span className="font-bold text-[#009488]">
-              Your Rank: #{data.current_player_rank}
-            </span>
-          )}
+          <button
+            onClick={() => {
+              onClose();
+              if (onOpenFullscreen) onOpenFullscreen();
+              else window.location.assign('#leaderboard');
+            }}
+            className="w-full py-2.5 px-3 rounded-xl bg-[#FFFDF5] hover:bg-[#FEF9C3] border border-[#F9BD20] text-slate-900 text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-[0.99]"
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-[#9E6E00]" />
+            <span>Open Standalone /leaderboard Page</span>
+          </button>
         </div>
       </div>
     </div>

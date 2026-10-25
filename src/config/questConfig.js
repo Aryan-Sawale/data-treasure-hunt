@@ -3,7 +3,7 @@
  * 4 Teams mapped to Harry Potter Houses and ABN AMRO brand colors.
  */
 
-export const DEFAULT_VAULT_CODE = "7394";
+export const DEFAULT_VAULT_CODE = "2374";
 
 export const QUEST_CONFIG = {
   title: "The Data Vault",

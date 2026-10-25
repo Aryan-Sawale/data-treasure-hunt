@@ -13,7 +13,7 @@ export default function VaultScreen({
   onOpenLeaderboard,
   onResetQuest
 }) {
-  const codeDigits = (vaultCode || '7394').split('');
+  const codeDigits = (vaultCode || '2374').split('');
   const playerName = getPlayerName() || 'Data Explorer';
 
   useEffect(() => {

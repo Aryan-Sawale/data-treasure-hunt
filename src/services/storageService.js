@@ -8,7 +8,7 @@ export const getInitialState = () => {
     step: 'PUZZLE', // 'PUZZLE' | 'TEAM_REVEALED' | 'MILESTONE'
     solvedPuzzles: [], // [1, 2, ...]
     verifiedPresentations: [], // [1, 2, ...]
-    unlockedDigits: {}, // { 0: '7', 1: '3', ... }
+    unlockedDigits: {}, // { 0: '2', 1: '3', ... }
     vaultCode: DEFAULT_VAULT_CODE,
     startTime: Date.now(),
     isVaultCracked: false
@@ -21,7 +21,17 @@ export const storageService = {
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) {
         const parsed = JSON.parse(data);
-        return { ...getInitialState(), ...parsed };
+        const state = { ...getInitialState(), ...parsed };
+        // Migrate old default code to new 2374 code if not custom edited
+        if (state.vaultCode === '7394' || state.vaultCode === '2347') {
+          state.vaultCode = DEFAULT_VAULT_CODE;
+          const updated = {};
+          Object.keys(state.unlockedDigits || {}).forEach(idx => {
+            updated[idx] = DEFAULT_VAULT_CODE[parseInt(idx, 10)];
+          });
+          state.unlockedDigits = updated;
+        }
+        return state;
       }
     } catch (e) {
       console.warn('Failed to load state from localStorage:', e);

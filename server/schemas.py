@@ -48,3 +48,36 @@ class LeaderboardResponse(BaseModel):
 class ResetResponse(BaseModel):
     status: str
     message: str
+
+class AdminLoginRequest(BaseModel):
+    password: str
+
+class AdminLoginResponse(BaseModel):
+    success: bool
+    token: str
+    message: str
+
+class AdminCompletionDetail(BaseModel):
+    milestone_key: str
+    rank_order: int
+    points_awarded: int
+    created_at: datetime
+
+class AdminPlayerDetail(BaseModel):
+    id: str
+    name: str
+    total_score: int
+    rank: int
+    current_stage: int
+    is_vault_cracked: bool
+    last_active: datetime
+    created_at: Optional[datetime] = None
+    completions: List[AdminCompletionDetail] = []
+
+class AdminDashboardResponse(BaseModel):
+    total_players: int
+    total_completions: int
+    top_score: int
+    average_score: float
+    milestone_counts: dict
+    players: List[AdminPlayerDetail]

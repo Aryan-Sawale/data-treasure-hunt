@@ -1,7 +1,8 @@
 import os
+import hashlib
 from datetime import datetime
-from typing import Optional
-from fastapi import FastAPI, Depends, HTTPException, Query
+from typing import Optional, List
+from fastapi import FastAPI, Depends, HTTPException, Query, Header
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -16,7 +17,12 @@ try:
         MilestoneCompleteResponse,
         LeaderboardItem,
         LeaderboardResponse,
-        ResetResponse
+        ResetResponse,
+        AdminLoginRequest,
+        AdminLoginResponse,
+        AdminDashboardResponse,
+        AdminPlayerDetail,
+        AdminCompletionDetail
     )
     from .scoring import calculate_points_for_rank
 except ImportError:
@@ -29,7 +35,12 @@ except ImportError:
         MilestoneCompleteResponse,
         LeaderboardItem,
         LeaderboardResponse,
-        ResetResponse
+        ResetResponse,
+        AdminLoginRequest,
+        AdminLoginResponse,
+        AdminDashboardResponse,
+        AdminPlayerDetail,
+        AdminCompletionDetail
     )
     from scoring import calculate_points_for_rank
 
@@ -213,17 +224,129 @@ def get_leaderboard(
         current_player_score=current_player_score
     )
 
-@app.post("/api/admin/reset", response_model=ResetResponse)
-def reset_leaderboard(admin_key: Optional[str] = Query(None), db: Session = Depends(get_db)):
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "abnamro2026")
+ADMIN_TOKEN = f"adm_{hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()[:24]}"
+
+def verify_admin_auth(
+    authorization: Optional[str] = Header(None),
+    x_admin_token: Optional[str] = Header(None),
+    admin_key: Optional[str] = Query(None)
+):
+    token = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split("Bearer ")[1].strip()
+    elif x_admin_token:
+        token = x_admin_token.strip()
+    elif admin_key:
+        token = admin_key.strip()
+    
+    if token and (token == ADMIN_TOKEN or token == ADMIN_PASSWORD):
+        return True
+    raise HTTPException(status_code=401, detail="Invalid admin credentials or session expired")
+
+@app.post("/api/admin/login", response_model=AdminLoginResponse)
+def admin_login(req: AdminLoginRequest):
     """
-    Facilitator tool: wipes all milestone completions and resets player scores to 0.
+    Validates facilitator password and issues an administrative session token.
+    """
+    if req.password.strip() == ADMIN_PASSWORD:
+        return AdminLoginResponse(
+            success=True,
+            token=ADMIN_TOKEN,
+            message="Facilitator authentication successful"
+        )
+    raise HTTPException(status_code=401, detail="Invalid administrator password")
+
+@app.get("/api/admin/dashboard", response_model=AdminDashboardResponse)
+def get_admin_dashboard(
+    db: Session = Depends(get_db),
+    _: bool = Depends(verify_admin_auth)
+):
+    """
+    Returns complete real-time session telemetry, player progress, and completion funnels.
+    """
+    players = db.query(Player).order_by(desc(Player.total_score), Player.last_active.asc()).all()
+    total_players = len(players)
+    completions = db.query(Completion).all()
+    total_completions = len(completions)
+
+    top_score = max([p.total_score for p in players], default=0)
+    avg_score = round(sum([p.total_score for p in players]) / total_players, 1) if total_players > 0 else 0.0
+
+    milestone_counts = {}
+    for c in completions:
+        milestone_counts[c.milestone_key] = milestone_counts.get(c.milestone_key, 0) + 1
+
+    player_details = []
+    for idx, p in enumerate(players):
+        comp_list = [
+            AdminCompletionDetail(
+                milestone_key=c.milestone_key,
+                rank_order=c.rank_order,
+                points_awarded=c.points_awarded,
+                created_at=c.created_at
+            )
+            for c in sorted(p.completions, key=lambda x: x.created_at)
+        ]
+        player_details.append(AdminPlayerDetail(
+            id=p.id,
+            name=p.name,
+            total_score=p.total_score,
+            rank=idx + 1,
+            current_stage=p.current_stage,
+            is_vault_cracked=p.is_vault_cracked,
+            last_active=p.last_active,
+            created_at=p.created_at,
+            completions=comp_list
+        ))
+
+    return AdminDashboardResponse(
+        total_players=total_players,
+        total_completions=total_completions,
+        top_score=top_score,
+        average_score=avg_score,
+        milestone_counts=milestone_counts,
+        players=player_details
+    )
+
+@app.delete("/api/admin/players/{player_id}")
+def delete_player(
+    player_id: str,
+    db: Session = Depends(get_db),
+    _: bool = Depends(verify_admin_auth)
+):
+    """
+    Removes a player and all their completions from the leaderboard.
+    """
+    player = db.query(Player).filter(Player.id == player_id).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+    
+    player_name = player.name
+    db.delete(player)
+    db.commit()
+    return {"status": "success", "message": f"Player '{player_name}' ({player_id}) deleted successfully"}
+
+@app.post("/api/admin/reset", response_model=ResetResponse)
+def reset_leaderboard(
+    delete_players: bool = Query(False, description="Whether to also delete player records entirely"),
+    db: Session = Depends(get_db),
+    _: bool = Depends(verify_admin_auth)
+):
+    """
+    Facilitator tool: wipes all milestone completions and resets player scores to 0 (or wipes all players).
     """
     db.query(Completion).delete()
-    for player in db.query(Player).all():
-        player.total_score = 0
-        player.current_stage = 1
-        player.is_vault_cracked = False
-        player.last_active = datetime.utcnow()
-    
+    if delete_players:
+        db.query(Player).delete()
+        msg = "All milestone completions and player records have been permanently cleared."
+    else:
+        for player in db.query(Player).all():
+            player.total_score = 0
+            player.current_stage = 1
+            player.is_vault_cracked = False
+            player.last_active = datetime.utcnow()
+        msg = "All completions cleared and scores reset to 0."
+
     db.commit()
-    return ResetResponse(status="success", message="All completions cleared and scores reset to 0.")
+    return ResetResponse(status="success", message=msg)

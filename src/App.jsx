@@ -8,13 +8,30 @@ import TeamPresentationCard from './components/TeamPresentationCard';
 import VaultScreen from './components/VaultScreen';
 import FacilitatorModal from './components/FacilitatorModal';
 import LeaderboardModal from './components/LeaderboardModal';
+import PublicLeaderboard from './components/PublicLeaderboard';
+import AdminDashboard from './components/AdminDashboard';
 import { QUEST_CONFIG } from './config/questConfig';
 import { storageService } from './services/storageService';
 import { soundService } from './services/soundService';
 import { apiService, getPlayerName } from './services/apiService';
 import { Trophy, Sparkles } from 'lucide-react';
 
+const getInitialRoute = () => {
+  if (typeof window === 'undefined') return 'quest';
+  const path = (window.location.pathname || '').toLowerCase();
+  const hash = (window.location.hash || '').toLowerCase();
+
+  if (path.includes('/leaderboard') || hash.includes('leaderboard')) {
+    return 'leaderboard';
+  }
+  if (path.includes('/admin') || hash.includes('admin')) {
+    return 'admin';
+  }
+  return 'quest';
+};
+
 export default function App() {
+  const [currentRoute, setCurrentRoute] = useState(getInitialRoute);
   const [state, setState] = useState(() => storageService.loadState());
   const [isMuted, setIsMuted] = useState(() => soundService.isMuted());
   const [isFacilitatorOpen, setIsFacilitatorOpen] = useState(false);
@@ -22,17 +39,53 @@ export default function App() {
   const [playerScore, setPlayerScore] = useState(0);
   const [playerRank, setPlayerRank] = useState(null);
   const [scoreToast, setScoreToast] = useState(null);
+  const [isBackendOnline, setIsBackendOnline] = useState(true);
 
   const totalTeams = QUEST_CONFIG.teams.length;
   const vaultStage = totalTeams + 1; // Stage 5 is Vault
+
+  // Listen for browser navigation (popstate and hashchange)
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setCurrentRoute(getInitialRoute());
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
+  }, []);
+
+  const navigateTo = (route) => {
+    if (route === 'leaderboard') {
+      window.location.hash = 'leaderboard';
+      setCurrentRoute('leaderboard');
+    } else if (route === 'admin') {
+      window.location.hash = 'admin';
+      setCurrentRoute('admin');
+    } else {
+      if (window.location.hash) {
+        window.history.pushState(null, '', window.location.pathname);
+      }
+      setCurrentRoute('quest');
+    }
+  };
 
   // Sync state to localStorage whenever it changes
   useEffect(() => {
     storageService.saveState(state);
   }, [state]);
 
-  // Initial sync with backend if player already joined
+  // Initial sync & proactive health check with backend
   useEffect(() => {
+    // 1. Health check to test connectivity
+    apiService.checkHealth().then(status => {
+      setIsBackendOnline(status.online);
+    });
+
+    // 2. Initial player sync
     const existingName = getPlayerName();
     if (existingName) {
       apiService.joinGame(existingName).then((res) => {
@@ -42,6 +95,21 @@ export default function App() {
         }
       });
     }
+
+    // 3. Periodic rank and score polling every 8 seconds
+    const interval = setInterval(() => {
+      const name = getPlayerName();
+      if (name) {
+        apiService.getPlayer().then(player => {
+          if (player) {
+            setPlayerScore(player.total_score);
+            setPlayerRank(player.rank);
+          }
+        });
+      }
+    }, 8000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleToggleSound = () => {
@@ -128,6 +196,7 @@ export default function App() {
       }));
     } else {
       // All 4 teams completed! Proceed to Vault
+      apiService.completeMilestone('VAULT_UNLOCKED', vaultStage, true);
       setState(prev => ({
         ...prev,
         stage: vaultStage,
@@ -187,6 +256,25 @@ export default function App() {
     }));
     setIsFacilitatorOpen(false);
   };
+
+  // Route: Public Standalone Leaderboard
+  if (currentRoute === 'leaderboard') {
+    return (
+      <PublicLeaderboard
+        onNavigateHome={() => navigateTo('quest')}
+      />
+    );
+  }
+
+  // Route: Facilitator Admin Dashboard
+  if (currentRoute === 'admin') {
+    return (
+      <AdminDashboard
+        onNavigateHome={() => navigateTo('quest')}
+        onNavigateLeaderboard={() => navigateTo('leaderboard')}
+      />
+    );
+  }
 
   const currentTeam = QUEST_CONFIG.teams.find(t => t.id === state.stage);
 
@@ -281,9 +369,26 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer Branding */}
+      {/* Footer Branding with Quick Links */}
       <footer className="py-3 px-4 border-t border-[#009488]/15 bg-[#F8FAFA] text-center text-[11px] text-[#878787]">
-        <p>ABN AMRO Data & Analytics Client Quest • Confidential</p>
+        <div className="max-w-md mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5">
+          <p>ABN AMRO Data & Analytics • Client Quest</p>
+          <div className="flex items-center space-x-3 text-[10px]">
+            <button
+              onClick={() => navigateTo('leaderboard')}
+              className="hover:text-[#009488] font-bold underline"
+            >
+              Leaderboard
+            </button>
+            <span>•</span>
+            <button
+              onClick={() => navigateTo('admin')}
+              className="hover:text-[#009488] font-bold"
+            >
+              Facilitator
+            </button>
+          </div>
+        </div>
       </footer>
 
       {/* Facilitator / Host Settings Modal */}
@@ -295,12 +400,14 @@ export default function App() {
         onUpdateVaultCode={handleUpdateVaultCode}
         onJumpToStage={handleJumpToStage}
         onReset={handleResetQuest}
+        onOpenAdmin={() => navigateTo('admin')}
       />
 
       {/* Live Leaderboard Modal */}
       <LeaderboardModal
         isOpen={isLeaderboardOpen}
         onClose={() => setIsLeaderboardOpen(false)}
+        onOpenFullscreen={() => navigateTo('leaderboard')}
       />
     </div>
   );

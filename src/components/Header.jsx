@@ -63,13 +63,14 @@ export default function Header({
           {/* Leaderboard Score Badge */}
           <button
             onClick={handleLeaderboardClick}
-            className="flex items-center space-x-1 px-2 py-1.5 rounded-lg bg-[#FFFDF5] hover:bg-[#FEF9C3] border border-[#F9BD20] text-slate-950 font-mono font-black text-xs active:scale-95 transition-all shadow-xs"
+            className="flex items-center space-x-1.5 px-2 py-1.5 rounded-lg bg-[#FFFDF5] hover:bg-[#FEF9C3] border border-[#F9BD20] text-slate-950 font-mono font-black text-xs active:scale-95 transition-all shadow-xs"
             aria-label="Leaderboard"
             title="View Live Leaderboard"
           >
             <Trophy className="w-3.5 h-3.5 text-[#B45309]" />
             <span>{playerScore}</span>
             <span className="text-[9px] text-[#9E6E00] font-sans font-bold">PTS</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" title="Live Sync Active" />
           </button>
 
           {/* Sound Toggle */}

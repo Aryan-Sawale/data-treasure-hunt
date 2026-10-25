@@ -12,7 +12,8 @@ export default function FacilitatorModal({
   vaultCode,
   onUpdateVaultCode,
   onJumpToStage,
-  onReset
+  onReset,
+  onOpenAdmin
 }) {
   const [codeDraft, setCodeDraft] = useState(vaultCode);
   const [showSavedToast, setShowSavedToast] = useState(false);
@@ -31,7 +32,7 @@ export default function FacilitatorModal({
     } else {
       soundService.playError();
       hapticService.error();
-      alert("Combination must be exactly 4 numeric digits (e.g. 7394)");
+      alert("Combination must be exactly 4 numeric digits (e.g. 2374)");
     }
   };
 
@@ -145,7 +146,20 @@ export default function FacilitatorModal({
           </div>
         </div>
 
-        {/* 4. Reset Button */}
+        {/* 4. Link to Full Admin Console */}
+        <button
+          onClick={() => {
+            onClose();
+            if (onOpenAdmin) onOpenAdmin();
+            else window.location.assign('#admin');
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-teal-50 hover:bg-teal-100 border border-[#009488]/30 text-[#009488] font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-2xs"
+        >
+          <Shield className="w-3.5 h-3.5" />
+          <span>Open Full Admin Dashboard (/admin)</span>
+        </button>
+
+        {/* 5. Reset Button */}
         <button
           onClick={async () => {
             if (confirm("Reset game progress AND leaderboard scores for a new session?")) {
