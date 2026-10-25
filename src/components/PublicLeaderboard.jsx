@@ -65,13 +65,20 @@ export default function PublicLeaderboard({ onNavigateHome }) {
 
   const formatTimeAgo = (isoString) => {
     if (!isoString) return 'Just now';
-    const diffMs = Date.now() - new Date(isoString).getTime();
+    // Ensure string without timezone offset is treated as UTC
+    const normalized = (typeof isoString === 'string' && !isoString.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(isoString))
+      ? (isoString + 'Z')
+      : isoString;
+    const date = new Date(normalized);
+    if (isNaN(date.getTime())) return 'Just now';
+
+    const diffMs = Math.max(0, Date.now() - date.getTime());
     const diffSec = Math.floor(diffMs / 1000);
     if (diffSec < 20) return 'Just now';
-    if (diffSec < 60) return `${diffSec}s ago`;
+    if (diffSec < 60) return (diffSec + 's ago');
     const diffMin = Math.floor(diffSec / 60);
-    if (diffMin < 60) return `${diffMin}m ago`;
-    return `${Math.floor(diffMin / 60)}h ago`;
+    if (diffMin < 60) return (diffMin + 'm ago');
+    return (Math.floor(diffMin / 60) + 'h ago');
   };
 
   return (

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
@@ -15,8 +15,8 @@ class Player(Base):
     total_score = Column(Integer, default=0, index=True)
     current_stage = Column(Integer, default=1)
     is_vault_cracked = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    last_active = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    last_active = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     completions = relationship("Completion", back_populates="player", cascade="all, delete-orphan")
 
@@ -28,7 +28,7 @@ class Completion(Base):
     milestone_key = Column(String(50), nullable=False, index=True)
     rank_order = Column(Integer, nullable=False)
     points_awarded = Column(Integer, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     player = relationship("Player", back_populates="completions")
 

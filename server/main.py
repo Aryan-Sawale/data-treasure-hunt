@@ -1,6 +1,6 @@
 import os
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from fastapi import FastAPI, Depends, HTTPException, Query, Header
 from fastapi.middleware.cors import CORSMiddleware
@@ -64,7 +64,7 @@ app.add_middleware(
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "app": "The Data Vault API", "timestamp": datetime.utcnow().isoformat()}
+    return {"status": "ok", "app": "The Data Vault API", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 @app.post("/api/players/join", response_model=PlayerResponse)
 def join_game(req: PlayerJoinRequest, db: Session = Depends(get_db)):
@@ -76,7 +76,7 @@ def join_game(req: PlayerJoinRequest, db: Session = Depends(get_db)):
     if player:
         # Update name and activity timestamp
         player.name = req.name.strip()
-        player.last_active = datetime.utcnow()
+        player.last_active = datetime.now(timezone.utc)
     else:
         player = Player(
             id=req.id,
@@ -162,13 +162,13 @@ def complete_milestone(req: MilestoneCompleteRequest, db: Session = Depends(get_
         milestone_key=req.milestone_key,
         rank_order=rank_order,
         points_awarded=points,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(completion)
 
     # Update player stats
     player.total_score += points
-    player.last_active = datetime.utcnow()
+    player.last_active = datetime.now(timezone.utc)
     if req.current_stage is not None:
         player.current_stage = max(player.current_stage, req.current_stage)
     if req.is_vault_cracked is not None:
@@ -345,7 +345,7 @@ def reset_leaderboard(
             player.total_score = 0
             player.current_stage = 1
             player.is_vault_cracked = False
-            player.last_active = datetime.utcnow()
+            player.last_active = datetime.now(timezone.utc)
         msg = "All completions cleared and scores reset to 0."
 
     db.commit()

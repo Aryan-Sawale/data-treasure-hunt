@@ -1,3 +1,11 @@
+
+const parseUtcDate = (isoString) => {
+  if (!isoString) return new Date();
+  const normalized = (typeof isoString === 'string' && !isoString.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(isoString))
+    ? (isoString + 'Z')
+    : isoString;
+  return new Date(normalized);
+};
 import React, { useState, useEffect } from 'react';
 import { 
   Shield, 
@@ -492,7 +500,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                         </div>
                       </td>
                       <td className="py-3 px-4 text-center text-slate-500 font-mono text-[11px]">
-                        {new Date(player.last_active).toLocaleTimeString()}
+                        {parseUtcDate(player.last_active).toLocaleTimeString()}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <span className="font-mono font-black text-base text-[#009488]">
