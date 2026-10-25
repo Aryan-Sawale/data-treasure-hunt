@@ -145,7 +145,7 @@ export default function App() {
       setScoreToast({
         points: res.pointsAwarded,
         rank: res.rankOrder,
-        title: `Stop #${currentTeamId} Puzzle Solved!`
+        title: `Stop #${currentTeamId} Puzzle Solved`
       });
       setTimeout(() => setScoreToast(null), 3500);
     }
@@ -168,7 +168,7 @@ export default function App() {
       setScoreToast({
         points: res.pointsAwarded,
         rank: res.rankOrder,
-        title: `Stop #${teamId} Presenter Code Verified!`
+        title: `Stop #${teamId} Code Verified`
       });
       setTimeout(() => setScoreToast(null), 3500);
     }
@@ -280,24 +280,26 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-slate-800 flex flex-col justify-between selection:bg-[#009488] selection:text-white relative">
-      {/* Real-time Floating Score Toast */}
+      {/* Real-time Floating Score Toast (Bottom-centered, flexbox aligned, zero clipping) */}
       {scoreToast && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#009488] text-white px-4 py-2 rounded-2xl shadow-2xl flex items-center space-x-2.5 border-2 border-[#F9BD20] animate-bounce max-w-[90vw]">
-          <div className="w-7 h-7 rounded-lg bg-[#F9BD20] text-slate-950 flex items-center justify-center font-black shrink-0">
-            <Trophy className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-1.5">
-              <span className="font-mono font-black text-sm text-[#F9BD20]">
-                +{scoreToast.points} PTS!
-              </span>
-              <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded font-black">
-                {scoreToast.rank === 1 ? '🥇 1st Solver!' : scoreToast.rank === 2 ? '🥈 2nd Solver!' : scoreToast.rank === 3 ? '🥉 3rd Solver!' : 'Solved!'}
-              </span>
+        <div className="fixed bottom-6 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
+          <div className="pointer-events-auto bg-[#009488] text-white px-3.5 py-2 rounded-2xl shadow-2xl flex items-center space-x-2.5 border-2 border-[#F9BD20] animate-bounce max-w-[92vw] sm:max-w-md">
+            <div className="w-7 h-7 rounded-lg bg-[#F9BD20] text-slate-950 flex items-center justify-center font-black shrink-0 shadow-xs">
+              <Trophy className="w-4 h-4" />
             </div>
-            <p className="text-[10px] text-white/90 font-medium truncate">
-              {scoreToast.title}
-            </p>
+            <div className="min-w-0">
+              <div className="flex items-center space-x-1.5 flex-wrap">
+                <span className="font-mono font-black text-sm text-[#F9BD20]">
+                  +{scoreToast.points} PTS!
+                </span>
+                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-black whitespace-nowrap">
+                  {scoreToast.rank === 1 ? '🥇 1st Solver!' : scoreToast.rank === 2 ? '🥈 2nd Solver!' : scoreToast.rank === 3 ? '🥉 3rd Solver!' : 'Solved!'}
+                </span>
+              </div>
+              <p className="text-[10px] text-white/90 font-medium truncate max-w-[210px] sm:max-w-xs">
+                {scoreToast.title}
+              </p>
+            </div>
           </div>
         </div>
       )}

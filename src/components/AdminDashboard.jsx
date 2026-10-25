@@ -192,9 +192,6 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                     {loginError}
                   </p>
                 )}
-                <p className="text-[10px] text-slate-400">
-                  Default facilitator passcode is <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700 font-mono">abnamro2026</code>
-                </p>
               </div>
 
               <button
