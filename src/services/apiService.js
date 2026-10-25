@@ -4,19 +4,31 @@
  */
 
 export const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/$/, '');
+  // 1. Runtime override (saved in Facilitator settings or localStorage)
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const custom = localStorage.getItem('vault_api_url');
+    if (custom) return custom.trim().replace(/\/$/, '');
   }
+
+  // 2. Build-time environment variable (Render / Vercel / GitHub Pages)
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.trim().replace(/\/$/, '');
+  }
+
+  // 3. Local dev server: Vite proxy handles relative calls if on port 3000
   if (typeof window !== 'undefined' && window.location) {
-    // If running in dev on port 3000, Vite proxy forwards /api and /health
     if (window.location.port === '3000') {
       return '';
     }
-    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
     const host = window.location.hostname || 'localhost';
-    return `${protocol}//${host}:8000`;
+    // Only assume port 8000 if on localhost or private LAN IP
+    if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.')) {
+      const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+      return `${protocol}//${host}:8000`;
+    }
   }
-  return 'http://localhost:8000';
+
+  return '';
 };
 
 const STORAGE_KEYS = {
@@ -25,7 +37,21 @@ const STORAGE_KEYS = {
   LOCAL_SCORE: 'vault_local_score',
   LOCAL_RANK: 'vault_local_rank',
   COMPLETED_MILESTONES: 'vault_completed_milestones',
-  ADMIN_TOKEN: 'vault_admin_token'
+  ADMIN_TOKEN: 'vault_admin_token',
+  API_URL: 'vault_api_url'
+};
+
+export const getStoredApiUrl = () => {
+  return (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEYS.API_URL)) || import.meta.env.VITE_API_URL || '';
+};
+
+export const setStoredApiUrl = (url) => {
+  if (typeof localStorage === 'undefined') return;
+  if (url && url.trim()) {
+    localStorage.setItem(STORAGE_KEYS.API_URL, url.trim().replace(/\/$/, ''));
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.API_URL);
+  }
 };
 
 // Generates or retrieves a persistent player UUID

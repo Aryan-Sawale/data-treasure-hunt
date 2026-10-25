@@ -3,7 +3,7 @@ import { X, Key, RefreshCw, Check, Shield } from 'lucide-react';
 import { QUEST_CONFIG } from '../config/questConfig';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
-import { apiService } from '../services/apiService';
+import { apiService, getStoredApiUrl, setStoredApiUrl } from '../services/apiService';
 
 export default function FacilitatorModal({
   isOpen,
@@ -17,6 +17,8 @@ export default function FacilitatorModal({
 }) {
   const [codeDraft, setCodeDraft] = useState(vaultCode);
   const [showSavedToast, setShowSavedToast] = useState(false);
+  const [apiUrlDraft, setApiUrlDraft] = useState(() => getStoredApiUrl());
+  const [showApiSavedToast, setShowApiSavedToast] = useState(false);
 
   const vaultStage = QUEST_CONFIG.teams.length + 1;
 
@@ -34,6 +36,14 @@ export default function FacilitatorModal({
       hapticService.error();
       alert("Combination must be exactly 4 numeric digits (e.g. 2374)");
     }
+  };
+
+  const handleSaveApiUrl = () => {
+    soundService.playSuccess();
+    hapticService.success();
+    setStoredApiUrl(apiUrlDraft);
+    setShowApiSavedToast(true);
+    setTimeout(() => setShowApiSavedToast(false), 2000);
   };
 
   return (
@@ -146,7 +156,35 @@ export default function FacilitatorModal({
           </div>
         </div>
 
-        {/* 4. Link to Full Admin Console */}
+        {/* 4. Backend Cloud API URL */}
+        <div className="bg-[#F8FAFA] p-3 rounded-2xl border border-slate-200 space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-slate-800">Cloud Backend API URL</span>
+            <span className="text-[10px] text-slate-400">Render / Neon</span>
+          </div>
+          <div className="flex space-x-1.5">
+            <input
+              type="text"
+              value={apiUrlDraft}
+              onChange={(e) => setApiUrlDraft(e.target.value)}
+              placeholder="e.g. https://data-vault-api.onrender.com"
+              className="flex-1 bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-mono text-slate-900 focus:outline-none focus:border-[#009488]"
+            />
+            <button
+              onClick={handleSaveApiUrl}
+              className="px-3 py-1.5 rounded-xl bg-[#009488] hover:bg-[#007E74] text-white font-bold text-xs shadow-2xs"
+            >
+              Save
+            </button>
+          </div>
+          {showApiSavedToast && (
+            <p className="text-[11px] text-[#009488] font-bold flex items-center gap-1">
+              <Check className="w-3 h-3" /> Backend URL updated!
+            </p>
+          )}
+        </div>
+
+        {/* 5. Link to Full Admin Console */}
         <button
           onClick={() => {
             onClose();
@@ -159,7 +197,7 @@ export default function FacilitatorModal({
           <span>Open Full Admin Dashboard (/admin)</span>
         </button>
 
-        {/* 5. Reset Button */}
+        {/* 6. Reset Button */}
         <button
           onClick={async () => {
             if (confirm("Reset game progress AND leaderboard scores for a new session?")) {
