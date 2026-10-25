@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldCheck, CheckCircle2, AlertTriangle, Lightbulb, Coffee, Calendar, DollarSign, Hotel, Mail, Users, Sparkles } from 'lucide-react';
 import { soundService } from '../../services/soundService';
+import { isDevHelperEnabled } from '../../config/questConfig';
 import { hapticService } from '../../services/hapticService';
 
 const BUSINESS_RECORDS = [
@@ -220,6 +221,7 @@ export default function Puzzle2Quality({ onSolved }) {
       </div>
 
       {/* Controls & Actions */}
+      {isDevHelperEnabled() && (
       <div className="flex items-center justify-between text-xs pt-1">
         <button
           onClick={handleHint}
@@ -237,8 +239,9 @@ export default function Puzzle2Quality({ onSolved }) {
           Auto Cleanse
         </button>
       </div>
+      )}
 
-      {showHint && (
+      {isDevHelperEnabled() && showHint && (
         <div className="p-3 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700 animate-fade-in space-y-1">
           <p className="font-bold text-[#9E6E00]">💡 Obvious Error Clues:</p>
           <p className="text-slate-600 text-[11px]">

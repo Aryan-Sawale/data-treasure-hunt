@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { apiService, getPlayerId } from '../services/apiService';
 import { soundService } from '../services/soundService';
+import { isDevHelperEnabled } from '../config/questConfig';
 
 export default function PublicLeaderboard({ onNavigateHome }) {
   const [data, setData] = useState(null);
@@ -392,12 +393,14 @@ export default function PublicLeaderboard({ onNavigateHome }) {
       <footer className="py-4 px-4 border-t border-slate-200 bg-white text-center text-xs text-[#878787] flex flex-col sm:flex-row items-center justify-between max-w-6xl w-full mx-auto">
         <p>ABN AMRO Data & Analytics • Live Big Screen Leaderboard</p>
         <div className="flex items-center space-x-4 mt-2 sm:mt-0">
-          <a
-            href="./#admin"
-            className="hover:text-[#009488] transition-colors underline font-semibold"
-          >
-            Facilitator Admin Login
-          </a>
+          {isDevHelperEnabled() && (
+            <a
+              href="./#admin"
+              className="hover:text-[#009488] transition-colors underline font-semibold"
+            >
+              Facilitator Admin Login
+            </a>
+          )}
           <button
             onClick={() => onNavigateHome ? onNavigateHome() : window.location.assign('./')}
             className="hover:text-[#009488] transition-colors font-semibold"

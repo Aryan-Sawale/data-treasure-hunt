@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Lightbulb, RotateCcw, CheckCircle2, Database, CreditCard, Home, Smartphone, Briefcase } from 'lucide-react';
 import { soundService } from '../../services/soundService';
+import { isDevHelperEnabled } from '../../config/questConfig';
 import { hapticService } from '../../services/hapticService';
 
 // 4 Pairs = 8 Cards total
@@ -215,23 +216,27 @@ export default function Puzzle1Platform({ onSolved }) {
             <span className="text-[11px] font-bold">Reset</span>
           </button>
 
-          <button
-            onClick={handleHint}
-            disabled={isSuccess || showHint}
-            className="flex items-center space-x-1 text-[#9E6E00] hover:text-[#B45309] px-2.5 py-1.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/60 active:scale-95 transition-all shadow-xs"
-            title="Peek cards for a second"
-          >
-            <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
-            <span className="text-[11px] font-bold">Peek</span>
-          </button>
+          {isDevHelperEnabled() && (
+            <button
+              onClick={handleHint}
+              disabled={isSuccess || showHint}
+              className="flex items-center space-x-1 text-[#9E6E00] hover:text-[#B45309] px-2.5 py-1.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/60 active:scale-95 transition-all shadow-xs"
+              title="Peek cards for a second"
+            >
+              <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
+              <span className="text-[11px] font-bold">Peek</span>
+            </button>
+          )}
         </div>
 
-        <button
-          onClick={handleAutoSolve}
-          className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline font-medium"
-        >
-          Auto Match
-        </button>
+        {isDevHelperEnabled() && (
+          <button
+            onClick={handleAutoSolve}
+            className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline font-medium"
+          >
+            Auto Match
+          </button>
+        )}
       </div>
 
       {/* Success Notification */}

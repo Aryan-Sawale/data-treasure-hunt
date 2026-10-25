@@ -5,6 +5,18 @@
 
 export const DEFAULT_VAULT_CODE = "2374";
 
+// Set to true to re-enable hints, auto-complete buttons, and settings (or visit with ?debug=1)
+export const SHOW_DEV_HELPERS = false;
+
+export const isDevHelperEnabled = () => {
+  if (SHOW_DEV_HELPERS) return true;
+  if (typeof window !== 'undefined' && window.location) {
+    const params = new URLSearchParams(window.location.search);
+    return params.has('debug') || params.has('dev');
+  }
+  return false;
+};
+
 export const QUEST_CONFIG = {
   title: "The Data Vault",
   subtitle: "ABN AMRO Banking Expedition",

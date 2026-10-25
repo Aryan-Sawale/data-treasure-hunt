@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BrainCircuit, CheckCircle2, Lightbulb, ShieldAlert, AlertOctagon, Sparkles } from 'lucide-react';
 import { soundService } from '../../services/soundService';
+import { isDevHelperEnabled } from '../../config/questConfig';
 import { hapticService } from '../../services/hapticService';
 
 const ACCOUNTS = [
@@ -193,6 +194,7 @@ export default function Puzzle5Analytics({ onSolved }) {
       </div>
 
       {/* Controls & Hints */}
+      {isDevHelperEnabled() && (
       <div className="flex items-center justify-between text-xs pt-1">
         <button
           onClick={() => setShowHint(!showHint)}
@@ -209,8 +211,9 @@ export default function Puzzle5Analytics({ onSolved }) {
           Auto Detect
         </button>
       </div>
+      )}
 
-      {showHint && (
+      {isDevHelperEnabled() && showHint && (
         <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs text-purple-300 space-y-1">
           <p className="font-semibold">💡 Fraud Ring Hint:</p>
           <p className="text-slate-300">

@@ -2,6 +2,7 @@ import React from 'react';
 import { Volume2, VolumeX, Settings, Trophy } from 'lucide-react';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
+import { isDevHelperEnabled } from '../config/questConfig';
 
 export default function Header({
   stage,
@@ -87,7 +88,8 @@ export default function Header({
             )}
           </button>
 
-          {/* Facilitator / Admin Tools */}
+          {/* Facilitator / Admin Tools (Hidden by default; rollback with SHOW_DEV_HELPERS or ?debug=1) */}
+          {isDevHelperEnabled() && (
           <button
             onClick={handleSettingsClick}
             className="p-1.5 rounded-lg bg-[#F8FAFA] hover:bg-[#FFFDF5] border border-slate-200 hover:border-[#F9BD20] text-[#878787] hover:text-[#009488] active:scale-95 transition-all shadow-xs"
@@ -96,6 +98,7 @@ export default function Header({
           >
             <Settings className="w-4 h-4" />
           </button>
+          )}
         </div>
       </div>
     </header>

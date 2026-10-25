@@ -7,7 +7,7 @@ import {
   Key, 
   Lightbulb
 } from 'lucide-react';
-import { QUEST_CONFIG } from '../config/questConfig';
+import { QUEST_CONFIG, isDevHelperEnabled } from '../config/questConfig';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
 
@@ -160,7 +160,8 @@ export default function TeamPresentationCard({
               )}
             </div>
 
-            {/* Hint & Fast Check-In Option */}
+            {/* Hint & Fast Check-In Option (Hidden for clients) */}
+            {isDevHelperEnabled() && (
             <div className="flex items-center justify-between text-xs pt-1">
               <button
                 onClick={() => setShowHint(!showHint)}
@@ -177,8 +178,9 @@ export default function TeamPresentationCard({
                 Quick Check-in
               </button>
             </div>
+            )}
 
-            {showHint && (
+            {isDevHelperEnabled() && showHint && (
               <div className="p-2.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700">
                 <p>{team.presentationHint}</p>
                 <p className="text-[10px] text-[#878787] mt-1">

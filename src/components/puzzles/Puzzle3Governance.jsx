@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowDown, ArrowUp, Lightbulb, CheckCircle2, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
 import { soundService } from '../../services/soundService';
+import { isDevHelperEnabled } from '../../config/questConfig';
 import { hapticService } from '../../services/hapticService';
 
 const STAGES = [
@@ -252,6 +253,7 @@ export default function Puzzle3Governance({ onSolved }) {
       </div>
 
       {/* Controls & Hints */}
+      {isDevHelperEnabled() && (
       <div className="flex items-center justify-between text-xs pt-0.5">
         <button
           onClick={() => setShowHint(!showHint)}
@@ -268,8 +270,9 @@ export default function Puzzle3Governance({ onSolved }) {
           Auto Sequence
         </button>
       </div>
+      )}
 
-      {showHint && (
+      {isDevHelperEnabled() && showHint && (
         <div className="p-3 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700 animate-fade-in">
           <p className="font-bold text-[#9E6E00] mb-0.5">💡 Lineage Order:</p>
           <p className="text-slate-600">

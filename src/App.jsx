@@ -10,7 +10,7 @@ import FacilitatorModal from './components/FacilitatorModal';
 import LeaderboardModal from './components/LeaderboardModal';
 import PublicLeaderboard from './components/PublicLeaderboard';
 import AdminDashboard from './components/AdminDashboard';
-import { QUEST_CONFIG } from './config/questConfig';
+import { QUEST_CONFIG, isDevHelperEnabled } from './config/questConfig';
 import { storageService } from './services/storageService';
 import { soundService } from './services/soundService';
 import { apiService, getPlayerName } from './services/apiService';
@@ -380,13 +380,17 @@ export default function App() {
             >
               Leaderboard
             </button>
-            <span>•</span>
-            <button
-              onClick={() => navigateTo('admin')}
-              className="hover:text-[#009488] font-bold"
-            >
-              Facilitator
-            </button>
+            {isDevHelperEnabled() && (
+              <>
+                <span>•</span>
+                <button
+                  onClick={() => navigateTo('admin')}
+                  className="hover:text-[#009488] font-bold"
+                >
+                  Facilitator
+                </button>
+              </>
+            )}
           </div>
         </div>
       </footer>

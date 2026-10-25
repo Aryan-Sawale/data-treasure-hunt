@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Lightbulb, Shuffle, RotateCcw, CheckCircle2, Compass, Sparkles } from 'lucide-react';
 import { soundService } from '../../services/soundService';
+import { isDevHelperEnabled } from '../../config/questConfig';
 import { hapticService } from '../../services/hapticService';
 
 const TARGET_WORD = 'LINEAGE';
@@ -261,23 +262,27 @@ export default function Puzzle4Delivery({ onSolved }) {
             <span className="text-[11px] font-bold">Clear</span>
           </button>
 
-          <button
-            onClick={handleHint}
-            disabled={isSuccess}
-            className="flex items-center space-x-1 text-[#9E6E00] hover:text-[#B45309] px-2.5 py-1.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/60 active:scale-95 transition-all shadow-xs"
-            title="Reveal next letter"
-          >
-            <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
-            <span className="text-[11px] font-bold">Hint</span>
-          </button>
+          {isDevHelperEnabled() && (
+            <button
+              onClick={handleHint}
+              disabled={isSuccess}
+              className="flex items-center space-x-1 text-[#9E6E00] hover:text-[#B45309] px-2.5 py-1.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/60 active:scale-95 transition-all shadow-xs"
+              title="Reveal next letter"
+            >
+              <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
+              <span className="text-[11px] font-bold">Hint</span>
+            </button>
+          )}
         </div>
 
-        <button
-          onClick={handleAutoSolve}
-          className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline font-medium"
-        >
-          Auto Solve
-        </button>
+        {isDevHelperEnabled() && (
+          <button
+            onClick={handleAutoSolve}
+            className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline font-medium"
+          >
+            Auto Solve
+          </button>
+        )}
       </div>
 
       {/* Success Notification */}
