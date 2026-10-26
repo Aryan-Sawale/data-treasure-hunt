@@ -31,6 +31,17 @@ class MilestoneCompleteResponse(BaseModel):
     total_score: int
     already_completed: bool
 
+class PenaltyRequest(BaseModel):
+    player_id: str
+    penalty_points: int = Field(default=5, ge=1, le=50, description="Points to deduct")
+    reason: Optional[str] = Field(default="Wrong Attempt", description="Reason for deduction")
+
+class PenaltyResponse(BaseModel):
+    player_id: str
+    penalty_applied: int
+    total_score: int
+    rank: int
+
 class LeaderboardItem(BaseModel):
     rank: int
     player_id: str

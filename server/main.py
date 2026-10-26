@@ -15,6 +15,8 @@ try:
         PlayerResponse,
         MilestoneCompleteRequest,
         MilestoneCompleteResponse,
+        PenaltyRequest,
+        PenaltyResponse,
         LeaderboardItem,
         LeaderboardResponse,
         ResetResponse,
@@ -33,6 +35,8 @@ except ImportError:
         PlayerResponse,
         MilestoneCompleteRequest,
         MilestoneCompleteResponse,
+        PenaltyRequest,
+        PenaltyResponse,
         LeaderboardItem,
         LeaderboardResponse,
         ResetResponse,
@@ -185,6 +189,35 @@ def complete_milestone(req: MilestoneCompleteRequest, db: Session = Depends(get_
         already_completed=False
     )
 
+@app.post("/api/players/penalty", response_model=PenaltyResponse)
+def apply_penalty(req: PenaltyRequest, db: Session = Depends(get_db)):
+    """
+    Applies negative points for incorrect attempts in puzzles (floor at 0).
+    """
+    player = db.query(Player).filter(Player.id == req.player_id).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    penalty = max(1, req.penalty_points)
+    previous_score = player.total_score
+    new_score = max(0, previous_score - penalty)
+    applied = previous_score - new_score
+
+    player.total_score = new_score
+    player.last_active = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(player)
+
+    higher_count = db.query(Player).filter(Player.total_score > player.total_score).count()
+    player_rank = higher_count + 1
+
+    return PenaltyResponse(
+        player_id=player.id,
+        penalty_applied=applied,
+        total_score=player.total_score,
+        rank=player_rank
+    )
+
 @app.get("/api/leaderboard", response_model=LeaderboardResponse)
 def get_leaderboard(
     player_id: Optional[str] = Query(None, description="Optional ID to get current player rank"),
@@ -193,6 +226,7 @@ def get_leaderboard(
 ):
     """
     Returns the live sorted leaderboard (Highest score first, ties broken by earliest active time).
+    Players with equal scores share the same rank.
     """
     players = db.query(Player).order_by(desc(Player.total_score), Player.last_active.asc()).all()
     
@@ -201,15 +235,20 @@ def get_leaderboard(
     current_player_rank = None
     current_player_score = None
 
+    current_rank = 1
     for idx, p in enumerate(players):
-        rank = idx + 1
+        # Competition ranking with ties:
+        # e.g. scores [200, 200, 150] -> ranks [1, 1, 3]
+        if idx > 0 and p.total_score < players[idx - 1].total_score:
+            current_rank = idx + 1
+
         if player_id and p.id == player_id:
-            current_player_rank = rank
+            current_player_rank = current_rank
             current_player_score = p.total_score
 
         if len(items) < limit:
             items.append(LeaderboardItem(
-                rank=rank,
+                rank=current_rank,
                 player_id=p.id,
                 name=p.name,
                 total_score=p.total_score,
@@ -278,7 +317,11 @@ def get_admin_dashboard(
         milestone_counts[c.milestone_key] = milestone_counts.get(c.milestone_key, 0) + 1
 
     player_details = []
+    current_rank = 1
     for idx, p in enumerate(players):
+        if idx > 0 and p.total_score < players[idx - 1].total_score:
+            current_rank = idx + 1
+
         comp_list = [
             AdminCompletionDetail(
                 milestone_key=c.milestone_key,
@@ -292,7 +335,7 @@ def get_admin_dashboard(
             id=p.id,
             name=p.name,
             total_score=p.total_score,
-            rank=idx + 1,
+            rank=current_rank,
             current_stage=p.current_stage,
             is_vault_cracked=p.is_vault_cracked,
             last_active=p.last_active,
