@@ -25,10 +25,10 @@ export default function ProgressBar({
   };
 
   const teamDisplayNames = {
-    1: 'Metadata',
+    1: 'Marketplace',
     2: 'Data Lake',
-    3: 'Marketplace',
-    4: 'Quality'
+    3: 'Quality',
+    4: 'Lineage'
   };
 
   return (
@@ -120,10 +120,10 @@ export default function ProgressBar({
                 : 'bg-[#F8FAFA] text-[#878787] border border-slate-300'
             }`}
           >
-            🎁
+            🌐
           </div>
           <span className="text-[9px] font-black mt-1 text-[#B45309]">
-            Safe
+            Sphere
           </span>
         </button>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Sparkles, Gift, Compass, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { ArrowRight, Sparkles, Gift, Compass, ChevronDown, ChevronUp, User, Globe2 } from 'lucide-react';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
 import { getPlayerName, setPlayerName } from '../services/apiService';
@@ -56,7 +56,7 @@ export default function WelcomeScreen({ onStart }) {
           <div className="space-y-1">
             <h3 className="font-black text-[#009488] text-base leading-tight">The Mission</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              A locked box awaits on the main table. It is secured with a <strong className="text-[#009488] bg-[#F9BD20]/20 px-1 py-0.5 rounded font-black">4-digit combination padlock</strong>.
+              A locked box awaits on the main table. Visit the 4 domain teams, collect secret letter fragments, and unlock the <strong className="text-[#009488] bg-[#F9BD20]/20 px-1 py-0.5 rounded font-black">Datasphere</strong> to reveal the 4-digit physical safe combination!
             </p>
           </div>
         </div>
@@ -102,14 +102,14 @@ export default function WelcomeScreen({ onStart }) {
                 <span className="w-5 h-5 rounded-full bg-[#F9BD20] text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-xs">
                   3
                 </span>
-                <span><strong>Collect Safe Digits:</strong> Enter the presenter's secret word to reveal a digit for the physical lock!</span>
+                <span><strong>Collect Letter Fragments:</strong> Enter the presenter's secret letters at the end of each showcase.</span>
               </div>
 
               <div className="flex items-start gap-2.5">
                 <span className="w-5 h-5 rounded-full bg-[#009488] text-white font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-xs">
                   4
                 </span>
-                <span><strong>Crack the Safe:</strong> Unlock all 4 digits, dial the combination on the physical box, and open the lock!</span>
+                <span><strong>Open the Datasphere & Vault:</strong> Unscramble the phrase to open the Datasphere, reveal the padlock combination, and open the physical safe!</span>
               </div>
             </div>
           )}

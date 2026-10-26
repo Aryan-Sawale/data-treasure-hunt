@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowDown, ArrowUp, Lightbulb, CheckCircle2, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
+import { ArrowDown, ArrowUp, Lightbulb, CheckCircle2, ShieldCheck, ArrowRight, AlertCircle, GitFork } from 'lucide-react';
 import { soundService } from '../../services/soundService';
 import { isDevHelperEnabled } from '../../config/questConfig';
 import { hapticService } from '../../services/hapticService';
@@ -7,31 +7,31 @@ import { hapticService } from '../../services/hapticService';
 const STAGES = [
   {
     stepId: 1,
-    title: 'Raw Ingestion',
-    subtitle: 'Payment Streams & Transcripts',
-    icon: '📥'
+    title: 'Discover & Scan Metadata',
+    subtitle: 'Scan technical data catalogs',
+    icon: '🔍'
   },
   {
     stepId: 2,
-    title: 'PII Masking & Privacy',
-    subtitle: 'GDPR & Tokenization Engine',
-    icon: '🔒'
+    title: 'Enrich & Understand Data',
+    subtitle: 'Classify and assign ownership',
+    icon: '🧠'
   },
   {
     stepId: 3,
-    title: 'Gold Catalog & Lineage',
-    subtitle: 'Business Dictionary & Metadata',
-    icon: '🏷️'
+    title: 'Connect & Trace Lineage',
+    subtitle: 'Trace end-to-end pipeline hops',
+    icon: '🔗'
   },
   {
     stepId: 4,
-    title: 'Statutory Audit Report',
-    subtitle: 'Regulatory Compliance Filing',
-    icon: '🏛️'
+    title: 'Visualize & Act',
+    subtitle: 'Analyze impacts and act',
+    icon: '📊'
   }
 ];
 
-export default function Puzzle3Governance({ onSolved }) {
+export default function Puzzle3Governance({ onSolved, onPenalty }) {
   // Scrambled initial order: [3, 1, 4, 2]
   const [items, setItems] = useState([
     STAGES[2],
@@ -93,7 +93,7 @@ export default function Puzzle3Governance({ onSolved }) {
     setSelectedIdx(null);
   };
 
-  // Submit button verification handler
+  // Submit button verification handler (No intermediate green feedback)
   const handleSubmit = () => {
     if (isSuccess) return;
 
@@ -111,8 +111,10 @@ export default function Puzzle3Governance({ onSolved }) {
     } else {
       soundService.playError();
       hapticService.error();
-      setErrorMessage("Sequence is not quite right yet. Reorder steps from 1 to 4 and try again!");
-      setTimeout(() => setErrorMessage(null), 3000);
+      setErrorMessage('Sequence is incorrect (-5 pts). Reorder steps from 1 to 4 and submit again!');
+      if (onPenalty) {
+        onPenalty(5, 'Incorrect Lineage Sequence');
+      }
     }
   };
 
@@ -123,33 +125,37 @@ export default function Puzzle3Governance({ onSolved }) {
     setItems(correctOrder);
     setErrorMessage(null);
     setSelectedIdx(null);
+    setIsSuccess(true);
+    setTimeout(() => {
+      onSolved();
+    }, 1000);
   };
-
-  const correctCount = items.filter((item, idx) => item.stepId === idx + 1).length;
 
   return (
     <div className="space-y-3.5">
       {/* Objective Header */}
       <div className="flex items-center justify-between px-1">
         <div>
-          <h3 className="text-sm font-black text-[#009488]">Data Lineage Trail</h3>
+          <h3 className="text-sm font-black text-[#009488] flex items-center gap-1.5">
+            <GitFork className="w-4 h-4" />
+            The Data Lineage Sequence
+          </h3>
           <p className="text-xs text-[#878787]">
             {selectedIdx !== null ? (
-              <span className="text-[#9E6E00] font-bold">Now tap another step to swap!</span>
+              <span className="text-[#9E6E00] font-bold">Tap another step to swap.</span>
             ) : (
-              <span>Order steps from first (1) to final (4), then submit.</span>
+              <span>Order 4 steps and submit.</span>
             )}
           </p>
         </div>
-        <span className="text-xs font-mono font-black px-2 py-0.5 rounded-lg bg-[#F0FDF4] text-[#009488] border border-[#009488]/30">
-          {correctCount}/4 in place
+        <span className="text-xs font-mono font-black px-2 py-0.5 rounded-lg bg-[#F8FAFA] text-slate-700 border border-slate-300">
+          4 Steps
         </span>
       </div>
 
-      {/* Sequential Lineage Chain */}
+      {/* Sequential Lineage Chain (Neutral styling - no early green spoiler) */}
       <div className="space-y-2">
         {items.map((item, idx) => {
-          const isAtCorrectPosition = item.stepId === idx + 1;
           const isSelected = selectedIdx === idx;
 
           return (
@@ -161,26 +167,24 @@ export default function Puzzle3Governance({ onSolved }) {
                   ? 'bg-[#FFFDF5] border-[#F9BD20] ring-2 ring-[#F9BD20]/30 shadow-md'
                   : isSuccess
                   ? 'bg-[#F0FDF4] border-[#009488] scale-[1.01]'
-                  : isAtCorrectPosition
-                  ? 'bg-[#F0FDF4] border-[#009488]/40'
                   : 'bg-white border-slate-200 hover:border-slate-300'
               }`}
             >
               {/* Step Slot & Icon */}
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 min-w-0">
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-xs ${
-                  isSuccess || isAtCorrectPosition
+                  isSuccess
                     ? 'bg-[#009488] text-white'
                     : 'bg-slate-100 text-slate-700'
                 }`}>
                   {isSuccess ? <CheckCircle2 className="w-4 h-4" /> : `${idx + 1}`}
                 </div>
                 <div className="text-2xl shrink-0">{item.icon}</div>
-                <div>
-                  <h4 className="font-extrabold text-xs text-slate-900 leading-tight">
+                <div className="min-w-0">
+                  <h4 className="font-extrabold text-xs text-slate-900 leading-tight truncate">
                     {item.title}
                   </h4>
-                  <p className="text-[11px] text-[#878787] mt-0.5 leading-tight">
+                  <p className="text-[11px] text-[#878787] mt-0.5 leading-tight truncate">
                     {item.subtitle}
                   </p>
                 </div>
@@ -218,66 +222,62 @@ export default function Puzzle3Governance({ onSolved }) {
         })}
       </div>
 
-      {/* Error message if sequence is incorrect */}
+      {/* Error Message */}
       {errorMessage && (
-        <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-700 text-xs flex items-center space-x-2 animate-shake">
-          <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-          <span>{errorMessage}</span>
+        <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start space-x-2 animate-shake">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+          <span className="font-medium">{errorMessage}</span>
         </div>
       )}
 
       {/* Submit Button */}
-      <div className="pt-1">
-        <button
-          onClick={handleSubmit}
-          disabled={isSuccess}
-          className={`w-full py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center space-x-2.5 transition-all shadow-md active:scale-[0.98] ${
-            isSuccess
-              ? 'bg-[#009488] text-white border-b-4 border-[#006E64]'
-              : 'bg-[#009488] hover:bg-[#007E74] text-white shadow-[#009488]/25 border-b-4 border-[#006E64]'
-          }`}
-        >
-          {isSuccess ? (
-            <>
-              <CheckCircle2 className="w-5 h-5 text-white animate-bounce" />
-              <span>Sequence Verified! Proceeding...</span>
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="w-4 h-4 text-[#F9BD20]" />
-              <span>Submit Sequence</span>
-              <ArrowRight className="w-4 h-4" />
-            </>
-          )}
-        </button>
-      </div>
+      <button
+        onClick={handleSubmit}
+        disabled={isSuccess}
+        className="w-full py-3.5 px-4 rounded-xl bg-[#009488] hover:bg-[#007E74] disabled:opacity-40 text-white font-black text-sm flex items-center justify-center space-x-2 shadow-md shadow-[#009488]/20 border-b-4 border-[#006E64] active:scale-[0.98] transition-all"
+      >
+        <CheckCircle2 className="w-4 h-4 text-[#F9BD20]" />
+        <span>Submit Sequence</span>
+      </button>
 
-      {/* Controls & Hints */}
+      {/* Dev Helper Options */}
       {isDevHelperEnabled() && (
-      <div className="flex items-center justify-between text-xs pt-0.5">
-        <button
-          onClick={() => setShowHint(!showHint)}
-          className="flex items-center space-x-1.5 text-[#878787] hover:text-[#009488] px-3 py-1.5 rounded-xl bg-white border border-slate-200 active:scale-95 transition-all shadow-xs"
-        >
-          <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
-          <span>{showHint ? "Hide Hint" : "Hint"}</span>
-        </button>
+        <div className="flex items-center justify-between text-xs pt-1 px-1">
+          <button
+            onClick={() => setShowHint(!showHint)}
+            className="flex items-center space-x-1 text-[#878787] hover:text-[#B45309]"
+          >
+            <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
+            <span>{showHint ? 'Hide Hint' : 'View Lifecycle Order'}</span>
+          </button>
 
-        <button
-          onClick={handleAutoSolve}
-          className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline font-medium"
-        >
-          Auto Sequence
-        </button>
-      </div>
+          <button
+            onClick={handleAutoSolve}
+            className="text-[#878787] hover:text-[#009488] text-[11px] underline font-medium"
+          >
+            Auto Order
+          </button>
+        </div>
       )}
 
       {isDevHelperEnabled() && showHint && (
-        <div className="p-3 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700 animate-fade-in">
-          <p className="font-bold text-[#9E6E00] mb-0.5">💡 Lineage Order:</p>
-          <p className="text-slate-600">
-            1. Raw Ingestion ➔ 2. PII Masking ➔ 3. Gold Catalog ➔ 4. Audit Report
-          </p>
+        <div className="p-2.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700 space-y-1">
+          <p className="font-bold text-[#9E6E00]">Standard Lineage Lifecycle:</p>
+          <ol className="list-decimal pl-4 space-y-0.5 text-[11px] text-slate-600">
+            <li>Discover & Scan Metadata</li>
+            <li>Enrich & Understand Data</li>
+            <li>Connect & Trace Lineage</li>
+            <li>Visualize & Act</li>
+          </ol>
+        </div>
+      )}
+
+      {/* Success Notification */}
+      {isSuccess && (
+        <div className="p-3.5 rounded-2xl bg-[#F0FDF4] border-2 border-[#009488] text-center animate-fade-in shadow-md">
+          <CheckCircle2 className="w-6 h-6 text-[#009488] mx-auto mb-1 animate-bounce" />
+          <h4 className="text-xs font-black text-[#009488]">Lineage Sequence Certified!</h4>
+          <p className="text-[11px] text-slate-600">Stop 4: BDM and Data Lineage (House Slytherin) Unlocked</p>
         </div>
       )}
     </div>

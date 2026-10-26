@@ -5,7 +5,8 @@ import {
   ArrowRight, 
   CheckCircle2, 
   Key, 
-  Lightbulb
+  Lightbulb,
+  Globe2
 } from 'lucide-react';
 import { QUEST_CONFIG, isDevHelperEnabled } from '../config/questConfig';
 import { soundService } from '../services/soundService';
@@ -13,7 +14,6 @@ import { hapticService } from '../services/hapticService';
 
 export default function TeamPresentationCard({
   team,
-  vaultCode,
   isPresentationDone,
   onVerifyPresentation,
   onProceedToNext
@@ -22,7 +22,7 @@ export default function TeamPresentationCard({
   const [showHint, setShowHint] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [justUnlockedModal, setJustUnlockedModal] = useState(false);
-  const [revealedDigitData, setRevealedDigitData] = useState(null);
+  const [revealedFragmentData, setRevealedFragmentData] = useState(null);
 
   const totalTeams = QUEST_CONFIG.teams.length;
 
@@ -48,25 +48,22 @@ export default function TeamPresentationCard({
       hapticService.victory();
       triggerConfetti();
 
-      let digitChar = null;
-      if (team.digitReveal && team.digitReveal.digitIndex !== null) {
-        digitChar = vaultCode[team.digitReveal.digitIndex];
-      }
+      const letters = team.letters || team.presentationSecretCode;
 
-      setRevealedDigitData({
-        digitChar,
-        digitIndex: team.digitReveal ? team.digitReveal.digitIndex : null,
-        title: team.digitReveal ? team.digitReveal.title : 'Milestone Achieved!',
-        flavor: team.digitReveal ? team.digitReveal.flavor : 'Presentation verified!'
+      setRevealedFragmentData({
+        letters: letters,
+        teamId: team.id,
+        title: team.fragmentReveal?.title || `Letter Fragment #${team.id} Discovered: ${letters}`,
+        flavor: team.fragmentReveal?.flavor || `You collected letters [${letters}] for the Datasphere cipher!`
       });
 
       setJustUnlockedModal(true);
-      onVerifyPresentation(team.id, team.digitReveal?.digitIndex, digitChar);
+      onVerifyPresentation(team.id, letters);
       setErrorMsg(null);
     } else {
       soundService.playError();
       hapticService.error();
-      setErrorMsg(`Incorrect code. Check the presentation slides or tap 'Quick Check-in'.`);
+      setErrorMsg(`Incorrect code. Enter the secret letters provided by the presenters!`);
     }
   };
 
@@ -88,7 +85,7 @@ export default function TeamPresentationCard({
           {team.tagline}
         </p>
 
-        {/* Booth Location: Harry Potter House (No Presenters) */}
+        {/* Booth Location: Harry Potter House */}
         <div className="bg-black/35 backdrop-blur-md p-3 rounded-xl border border-[#F9BD20]/50 flex items-center justify-between text-xs">
           <div className="flex items-center space-x-2.5">
             <span className="text-2xl">{team.houseEmoji || "🏰"}</span>
@@ -129,7 +126,7 @@ export default function TeamPresentationCard({
         {!isPresentationDone ? (
           <>
             <p className="text-xs text-slate-600">
-              Visit <strong className="text-[#009488] font-bold">{team.room}</strong> for the presentation. At the end, enter the secret keyword to reveal your safe digit!
+              Visit <strong className="text-[#009488] font-bold">{team.room}</strong> for the presentation. At the end, enter the secret letters given by the presenters to collect your Datasphere fragment!
             </p>
 
             {/* Input & Submit */}
@@ -139,8 +136,8 @@ export default function TeamPresentationCard({
                   type="text"
                   value={passcodeInput}
                   onChange={(e) => setPasscodeInput(e.target.value)}
-                  placeholder="Enter secret word..."
-                  className="flex-1 bg-[#F8FAFA] border border-slate-300 rounded-xl px-3 py-2.5 text-xs text-slate-800 placeholder-[#878787] focus:outline-none focus:border-[#F9BD20] focus:bg-white font-mono uppercase shadow-inner"
+                  placeholder="Enter secret letters..."
+                  className="flex-1 bg-[#F8FAFA] border border-slate-300 rounded-xl px-3 py-2.5 text-xs text-slate-800 placeholder-[#878787] focus:outline-none focus:border-[#F9BD20] focus:bg-white font-mono uppercase tracking-widest font-black shadow-inner"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleVerify(false);
                   }}
@@ -162,39 +159,44 @@ export default function TeamPresentationCard({
 
             {/* Hint & Fast Check-In Option (Hidden for clients) */}
             {isDevHelperEnabled() && (
-            <div className="flex items-center justify-between text-xs pt-1">
-              <button
-                onClick={() => setShowHint(!showHint)}
-                className="flex items-center space-x-1 text-[#878787] hover:text-[#B45309]"
-              >
-                <Lightbulb className="w-3 h-3 text-[#F9BD20]" />
-                <span>{showHint ? "Hide Word Clue" : "Where is the word?"}</span>
-              </button>
+              <div className="flex items-center justify-between text-xs pt-1">
+                <button
+                  onClick={() => setShowHint(!showHint)}
+                  className="flex items-center space-x-1 text-[#878787] hover:text-[#B45309]"
+                >
+                  <Lightbulb className="w-3 h-3 text-[#F9BD20]" />
+                  <span>{showHint ? "Hide Clue" : "Where are the letters?"}</span>
+                </button>
 
-              <button
-                onClick={() => handleVerify(true)}
-                className="text-[#878787] hover:text-[#009488] text-[11px] underline font-medium"
-              >
-                Quick Check-in
-              </button>
-            </div>
+                <button
+                  onClick={() => handleVerify(true)}
+                  className="text-[#878787] hover:text-[#009488] text-[11px] underline font-medium"
+                >
+                  Quick Check-in
+                </button>
+              </div>
             )}
 
             {isDevHelperEnabled() && showHint && (
               <div className="p-2.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700">
                 <p>{team.presentationHint}</p>
                 <p className="text-[10px] text-[#878787] mt-1">
-                  Keyword for this presentation: <strong className="font-mono text-[#009488] font-bold">{team.presentationSecretCode}</strong>
+                  Secret letters for this presentation: <strong className="font-mono text-[#009488] font-bold">{team.presentationSecretCode}</strong>
                 </p>
               </div>
             )}
           </>
         ) : (
           <div className="space-y-3">
-            <div className="p-3 rounded-xl bg-[#F0FDF4] border border-[#009488]/30 text-xs text-[#009488] font-medium flex items-center space-x-2.5">
-              <CheckCircle2 className="w-5 h-5 shrink-0 text-[#009488]" />
-              <span>
-                Presentation verified at {team.room}! Safe digit collected.
+            <div className="p-3 rounded-xl bg-[#F0FDF4] border border-[#009488]/30 text-xs text-[#009488] font-medium flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <CheckCircle2 className="w-5 h-5 shrink-0 text-[#009488]" />
+                <span>
+                  Verified at {team.room}! Letter fragment collected:
+                </span>
+              </div>
+              <span className="font-mono font-black text-sm px-2.5 py-0.5 rounded-lg bg-white border border-[#009488]/40 text-[#009488]">
+                {team.letters}
               </span>
             </div>
 
@@ -202,7 +204,7 @@ export default function TeamPresentationCard({
               onClick={onProceedToNext}
               className="w-full py-3.5 px-4 rounded-xl bg-[#009488] hover:bg-[#007E74] text-white font-black text-sm flex items-center justify-center space-x-2.5 shadow-lg shadow-[#009488]/20 border-b-4 border-[#006E64] active:scale-[0.98] transition-all group"
             >
-              <span>{team.id === totalTeams ? "Proceed to Final Vault Crack" : `Unlock Stop #${team.id + 1} Puzzle`}</span>
+              <span>{team.id === totalTeams ? "Proceed to Final Datasphere Unlock" : `Unlock Stop #${team.id + 1} Puzzle`}</span>
               <span className="w-6 h-6 rounded-full bg-[#F9BD20] text-slate-950 flex items-center justify-center shadow-xs group-hover:translate-x-0.5 transition-transform">
                 <ArrowRight className="w-3.5 h-3.5 stroke-[3]" />
               </span>
@@ -211,34 +213,32 @@ export default function TeamPresentationCard({
         )}
       </div>
 
-      {/* Digit Unlocked Celebration Modal */}
-      {justUnlockedModal && revealedDigitData && (
+      {/* Letter Fragment Unlocked Celebration Modal */}
+      {justUnlockedModal && revealedFragmentData && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white border-4 border-[#F9BD20] p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl relative">
             <div className="w-14 h-14 rounded-2xl bg-[#F9BD20] text-slate-950 flex items-center justify-center mx-auto text-2xl font-black shadow-md shadow-[#F9BD20]/30 animate-bounce">
-              {revealedDigitData.digitChar ? '🔐' : '🏆'}
+              <Globe2 className="w-7 h-7 text-slate-950" />
             </div>
 
             <div className="space-y-1">
               <h3 className="text-xl font-black text-[#009488]">
-                {revealedDigitData.title}
+                {revealedFragmentData.title}
               </h3>
               <p className="text-xs text-slate-600">
-                {revealedDigitData.flavor}
+                {revealedFragmentData.flavor}
               </p>
             </div>
 
-            {/* If a digit is revealed */}
-            {revealedDigitData.digitChar && (
-              <div className="py-3 px-6 bg-[#FFFDF5] rounded-2xl border-2 border-[#F9BD20] inline-block shadow-inner">
-                <span className="text-[10px] font-mono uppercase text-[#9E6E00] font-black block">
-                  COMBINATION DIGIT #{revealedDigitData.digitIndex + 1}
-                </span>
-                <span className="font-mono text-5xl font-black text-[#B45309] tracking-wider">
-                  {revealedDigitData.digitChar}
-                </span>
-              </div>
-            )}
+            {/* Glowing Letter Fragment Display */}
+            <div className="py-3 px-6 bg-[#FFFDF5] rounded-2xl border-2 border-[#F9BD20] inline-block shadow-inner">
+              <span className="text-[10px] font-mono uppercase text-[#9E6E00] font-black block mb-1">
+                DATASPERE CIPHER FRAGMENT #{revealedFragmentData.teamId}
+              </span>
+              <span className="font-mono text-3xl font-black text-[#B45309] tracking-widest">
+                [ {revealedFragmentData.letters} ]
+              </span>
+            </div>
 
             <button
               onClick={() => {
@@ -247,7 +247,7 @@ export default function TeamPresentationCard({
               }}
               className="w-full py-3 rounded-xl bg-[#009488] hover:bg-[#007066] text-white font-black text-sm shadow-md transition-all active:scale-95"
             >
-              Add to Vault HUD & Continue
+              Add to Datasphere HUD & Continue
             </button>
           </div>
         </div>

@@ -357,40 +357,54 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                 Milestone Progress Funnel
               </h3>
               <p className="text-xs text-[#878787]">
-                Number of participants who have cracked each puzzle and verified presenter passcodes
+                Participants who completed each game puzzle and collected letter fragments
               </p>
             </div>
             <div className="text-xs font-mono font-bold bg-[#F8FAFA] px-2.5 py-1 rounded-lg border text-slate-600">
-              Vault Padlock: <strong className="text-[#009488] font-black">2 - 3 - 7 - 4</strong>
+              Datasphere: <strong className="text-indigo-600 font-black">DATA VALUE CHAIN</strong> • Safe Code: <strong className="text-[#009488] font-black">2 - 3 - 4 - 7</strong>
             </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { stop: 1, name: 'Governance', puzzle: 'PUZZLE_1', code: 'CODE_1', word: 'GOVERNANCE', digit: '2' },
-              { stop: 2, name: 'Data Lake', puzzle: 'PUZZLE_2', code: 'CODE_2', word: 'LAKEHOUSE', digit: '3' },
-              { stop: 3, name: 'Marketplace', puzzle: 'PUZZLE_3', code: 'CODE_3', word: 'MARKETPLACE', digit: '7' },
-              { stop: 4, name: 'Quality', puzzle: 'PUZZLE_4', code: 'CODE_4', word: 'INTEGRITY', digit: '4' }
+              { stop: 1, name: 'Data Marketplace', house: 'Ravenclaw', game: 'Emoji Decrypt', puzzle: 'PUZZLE_1', code: 'CODE_1', letters: 'HACN' },
+              { stop: 2, name: 'Enterprise Data Lake', house: 'Hufflepuff', game: 'Memory Match', puzzle: 'PUZZLE_2', code: 'CODE_2', letters: 'EUL' },
+              { stop: 3, name: 'Assets & Data Quality', house: 'Gryffindor', game: 'Quality Audit', puzzle: 'PUZZLE_3', code: 'CODE_3', letters: 'ATD' },
+              { stop: 4, name: 'BDM & Data Lineage', house: 'Slytherin', game: 'Lineage Sequence', puzzle: 'PUZZLE_4', code: 'CODE_4', letters: 'AAIV' }
             ].map(m => (
               <div key={m.stop} className="p-3.5 rounded-2xl bg-[#F8FAFA] border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-black text-xs text-[#009488]">Stop {m.stop}: {m.name}</span>
-                  <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded">
-                    Digit {m.digit}
+                  <div>
+                    <span className="font-black text-xs text-[#009488] block">Stop {m.stop}: {m.name}</span>
+                    <span className="text-[10px] text-slate-500 font-medium">{m.game} • {m.house}</span>
+                  </div>
+                  <span className="text-[10px] font-mono font-black bg-amber-100 text-amber-900 px-2 py-0.5 rounded shadow-2xs">
+                    [{m.letters}]
                   </span>
                 </div>
-                <div className="space-y-1 text-xs">
+                <div className="space-y-1 text-xs pt-1 border-t border-slate-200/60">
                   <div className="flex justify-between items-center text-slate-600">
                     <span>🧩 Puzzle Solved:</span>
                     <strong className="text-slate-900 font-mono">{milestoneCounts[m.puzzle] || 0}</strong>
                   </div>
                   <div className="flex justify-between items-center text-slate-600">
-                    <span>🔑 Code ({m.word}):</span>
+                    <span>🔑 Code [{m.letters}]:</span>
                     <strong className="text-slate-900 font-mono">{milestoneCounts[m.code] || 0}</strong>
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Datasphere Milestone Summary */}
+          <div className="p-3 rounded-2xl bg-indigo-50/60 border border-indigo-200/60 flex items-center justify-between text-xs">
+            <span className="text-indigo-900 font-bold flex items-center gap-1.5">
+              <span>🌐</span>
+              <span>Datasphere Solved & Padlock Code Revealed (VAULT_UNLOCKED):</span>
+            </span>
+            <span className="font-mono font-black text-sm text-indigo-700 bg-white px-2.5 py-0.5 rounded-lg border border-indigo-200 shadow-2xs">
+              {milestoneCounts['VAULT_UNLOCKED'] || 0} Solvers
+            </span>
           </div>
         </div>
 
@@ -483,16 +497,32 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                           {player.completions.length === 0 ? (
                             <span className="text-slate-400 italic">None yet</span>
                           ) : (
-                            player.completions.map((c, i) => (
-                              <span
-                                key={i}
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-teal-50 border border-[#009488]/30 text-[#009488] font-mono text-[10px] font-bold"
-                                title={`Awarded ${c.points_awarded} pts (${c.rank_order === 1 ? '1st' : `${c.rank_order}th`} solver)`}
-                              >
-                                {c.milestone_key.startsWith('PUZZLE') ? '🧩' : '🔑'} {c.milestone_key}
-                                <span className="text-[#9E6E00]">+{c.points_awarded}</span>
-                              </span>
-                            ))
+                            player.completions.map((c, i) => {
+                              const friendlyName = 
+                                c.milestone_key === 'PUZZLE_1' ? 'P1 (Marketplace)' :
+                                c.milestone_key === 'CODE_1' ? 'C1 [HACN]' :
+                                c.milestone_key === 'PUZZLE_2' ? 'P2 (Data Lake)' :
+                                c.milestone_key === 'CODE_2' ? 'C2 [EUL]' :
+                                c.milestone_key === 'PUZZLE_3' ? 'P3 (Quality)' :
+                                c.milestone_key === 'CODE_3' ? 'C3 [ATD]' :
+                                c.milestone_key === 'PUZZLE_4' ? 'P4 (Lineage)' :
+                                c.milestone_key === 'CODE_4' ? 'C4 [AAIV]' :
+                                c.milestone_key === 'VAULT_UNLOCKED' ? 'Datasphere' :
+                                c.milestone_key;
+
+                              const icon = c.milestone_key.startsWith('PUZZLE') ? '🧩' : c.milestone_key === 'VAULT_UNLOCKED' ? '🌐' : '🔑';
+
+                              return (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-teal-50 border border-[#009488]/30 text-[#009488] font-mono text-[10px] font-bold"
+                                  title={`Awarded ${c.points_awarded} pts (${c.rank_order === 1 ? '1st' : `${c.rank_order}th`} solver)`}
+                                >
+                                  {icon} {friendlyName}
+                                  <span className="text-[#9E6E00]">+{c.points_awarded}</span>
+                                </span>
+                              );
+                            })
                           )}
                         </div>
                       </td>

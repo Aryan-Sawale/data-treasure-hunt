@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
-import { Lock, Gift, ChevronDown, ChevronUp } from 'lucide-react';
+import { Globe2, Lock, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
 
-export default function VaultHud({ unlockedDigits, vaultCode, onOpenVaultPreview }) {
+const FRAGMENT_KEYS = [
+  { id: 1, name: 'Marketplace', target: 'HACN' },
+  { id: 2, name: 'Data Lake', target: 'EUL' },
+  { id: 3, name: 'Quality', target: 'ATD' },
+  { id: 4, name: 'Lineage', target: 'AAIV' }
+];
+
+export default function VaultHud({ unlockedFragments = {}, onOpenVaultPreview }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const digits = vaultCode ? vaultCode.split('') : ['2', '3', '7', '4'];
-  const unlockedCount = Object.keys(unlockedDigits).length;
+
+  const unlockedCount = Object.keys(unlockedFragments).length;
   const isAllUnlocked = unlockedCount >= 4;
 
   const handleToggle = () => {
@@ -37,28 +44,31 @@ export default function VaultHud({ unlockedDigits, vaultCode, onOpenVaultPreview
         onClick={handleToggle}
         className="p-3 flex items-center justify-between cursor-pointer active:bg-slate-50 transition-colors"
       >
-        {/* Left: Icon & Inline Digits Preview */}
-        <div className="flex items-center space-x-2.5">
-          <div className="w-7 h-7 rounded-lg bg-[#F9BD20] text-slate-950 flex items-center justify-center font-black shrink-0 shadow-xs">
-            {isAllUnlocked ? <Gift className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5 stroke-[2.5]" />}
+        {/* Left: Icon & Inline Fragments Preview */}
+        <div className="flex items-center space-x-2.5 min-w-0">
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black shrink-0 shadow-xs ${
+            isAllUnlocked ? 'bg-[#F9BD20] text-slate-950' : 'bg-[#009488] text-white'
+          }`}>
+            <Globe2 className="w-3.5 h-3.5" />
           </div>
           
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-black text-[#009488]">Safe:</span>
-            {/* Inline Compact Digits */}
-            <div className="flex items-center space-x-1 font-mono">
-              {[0, 1, 2, 3].map((idx) => {
-                const isUnlocked = unlockedDigits[idx] !== undefined;
+          <div className="flex items-center space-x-1.5 min-w-0">
+            <span className="text-xs font-black text-[#009488] shrink-0">Datasphere:</span>
+            {/* Inline Compact Fragments */}
+            <div className="flex items-center space-x-1 font-mono text-[10px]">
+              {FRAGMENT_KEYS.map((item) => {
+                const fragment = unlockedFragments[item.id];
+                const isUnlocked = !!fragment;
                 return (
                   <span
-                    key={idx}
-                    className={`w-5 h-6 rounded flex items-center justify-center text-xs font-black transition-all ${
+                    key={item.id}
+                    className={`px-1.5 py-0.5 rounded font-black tracking-wider transition-all ${
                       isUnlocked
                         ? 'bg-[#FFFDF5] border border-[#F9BD20] text-[#B45309] shadow-2xs'
                         : 'bg-slate-100 border border-slate-200 text-slate-400'
                     }`}
                   >
-                    {isUnlocked ? unlockedDigits[idx] : '•'}
+                    {isUnlocked ? fragment : '••••'}
                   </span>
                 );
               })}
@@ -67,13 +77,13 @@ export default function VaultHud({ unlockedDigits, vaultCode, onOpenVaultPreview
         </div>
 
         {/* Right: Badge & Chevron Toggle */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 shrink-0">
           {isAllUnlocked ? (
             <button
               onClick={handleReadyClick}
               className="bg-[#F9BD20] hover:bg-[#E5AC15] text-slate-950 text-[10px] px-2.5 py-1 rounded-lg font-black shadow-xs animate-pulse"
             >
-              CRACK SAFE 🔓
+              OPEN SPHERE 🌐
             </button>
           ) : (
             <span className="text-[11px] font-mono font-black text-[#009488] bg-[#F0FDF4] border border-[#009488]/30 px-2 py-0.5 rounded-lg">
@@ -91,41 +101,45 @@ export default function VaultHud({ unlockedDigits, vaultCode, onOpenVaultPreview
         </div>
       </div>
 
-      {/* Expanded Detailed Tumbler View */}
+      {/* Expanded Detailed Fragments View */}
       {isExpanded && (
         <div className="px-3.5 pb-3.5 pt-1 border-t border-slate-100 space-y-2.5 animate-fade-in bg-[#FAFCFC]">
           <div className="flex items-center justify-between text-[11px] text-[#878787] pt-1">
-            <span>Physical combination padlock status:</span>
+            <span>Datasphere letter fragments collected:</span>
             <span className="font-semibold text-slate-700">
-              {isAllUnlocked ? 'All digits cracked!' : `${4 - unlockedCount} digits left`}
+              {isAllUnlocked ? 'All 4 fragments ready to unscramble!' : `${4 - unlockedCount} fragments remaining`}
             </span>
           </div>
 
-          {/* 4 Lock Tumbler Wheels */}
-          <div className="grid grid-cols-4 gap-2">
-            {[0, 1, 2, 3].map((idx) => {
-              const isUnlocked = unlockedDigits[idx] !== undefined;
-              const digitValue = isUnlocked ? unlockedDigits[idx] : '?';
+          {/* 4 Fragment Slots */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {FRAGMENT_KEYS.map((item) => {
+              const fragment = unlockedFragments[item.id];
+              const isUnlocked = !!fragment;
 
               return (
                 <div
-                  key={idx}
-                  className={`py-2 px-1 rounded-xl border flex flex-col items-center justify-center transition-all ${
+                  key={item.id}
+                  className={`py-2 px-1.5 rounded-xl border flex flex-col items-center justify-center transition-all ${
                     isUnlocked
                       ? 'bg-white border-2 border-[#F9BD20] shadow-xs text-slate-950'
                       : 'bg-slate-50 border-slate-200 text-[#878787]'
                   }`}
                 >
-                  <span className={`font-mono text-xl font-black ${isUnlocked ? 'text-[#B45309]' : 'text-slate-400'}`}>
-                    {digitValue}
+                  <span className={`font-mono text-sm font-black tracking-widest ${isUnlocked ? 'text-[#B45309]' : 'text-slate-400'}`}>
+                    {isUnlocked ? fragment : '— — —'}
                   </span>
                   <span className={`text-[9px] font-mono uppercase font-bold mt-0.5 ${isUnlocked ? 'text-[#9E6E00]' : 'text-slate-400'}`}>
-                    {isUnlocked ? `#${idx + 1}` : 'Lock'}
+                    Stop #{item.id}
                   </span>
                 </div>
               );
             })}
           </div>
+
+          <p className="text-[11px] text-slate-500 leading-tight text-center pt-0.5">
+            Unscramble the collected letters at the Datasphere to reveal the 4-digit physical safe combination!
+          </p>
         </div>
       )}
     </div>

@@ -208,6 +208,54 @@ export const apiService = {
   },
 
   /**
+   * Deduct penalty points for incorrect puzzle attempts
+   */
+  deductPenalty: async (penaltyPoints = 5, reason = 'Wrong Attempt') => {
+    const playerId = getPlayerId();
+    const base = getApiBaseUrl();
+
+    try {
+      const res = await fetch(`${base}/api/players/penalty`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id: playerId,
+          penalty_points: penaltyPoints,
+          reason: reason
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem(STORAGE_KEYS.LOCAL_SCORE, data.total_score.toString());
+        localStorage.setItem(STORAGE_KEYS.LOCAL_RANK, (data.rank || 1).toString());
+        return {
+          success: true,
+          penaltyApplied: data.penalty_applied,
+          totalScore: data.total_score,
+          rank: data.rank
+        };
+      }
+    } catch (err) {
+      console.warn('API penalty submit failed, applying locally:', err);
+    }
+
+    // Offline fallback: decrement local score (floor at 0)
+    const currentScore = parseInt(localStorage.getItem(STORAGE_KEYS.LOCAL_SCORE) || '0', 10);
+    const newScore = Math.max(0, currentScore - penaltyPoints);
+    const applied = currentScore - newScore;
+    localStorage.setItem(STORAGE_KEYS.LOCAL_SCORE, newScore.toString());
+
+    return {
+      success: false,
+      penaltyApplied: applied,
+      totalScore: newScore,
+      rank: parseInt(localStorage.getItem(STORAGE_KEYS.LOCAL_RANK) || '1', 10),
+      offline: true
+    };
+  },
+
+  /**
    * Fetch live leaderboard rankings
    */
   getLeaderboard: async (limit = 50) => {

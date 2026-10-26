@@ -34,7 +34,7 @@ export default function FacilitatorModal({
     } else {
       soundService.playError();
       hapticService.error();
-      alert("Combination must be exactly 4 numeric digits (e.g. 2374)");
+      alert("Combination must be exactly 4 numeric digits (e.g. 2347)");
     }
   };
 

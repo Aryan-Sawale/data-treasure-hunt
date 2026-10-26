@@ -1,24 +1,24 @@
 import React from 'react';
+import Puzzle1EmojiPhrase from './puzzles/Puzzle1EmojiPhrase';
 import Puzzle1Platform from './puzzles/Puzzle1Platform';
 import Puzzle2Quality from './puzzles/Puzzle2Quality';
 import Puzzle3Governance from './puzzles/Puzzle3Governance';
-import Puzzle4Delivery from './puzzles/Puzzle4Delivery';
 
-export default function PuzzleContainer({ currentStage, onPuzzleSolved }) {
+export default function PuzzleContainer({ currentStage, onPuzzleSolved, onPenalty }) {
   const renderPuzzle = () => {
     switch (currentStage) {
       case 1:
-        // Team 1: Metadata and governance solutions
-        return <Puzzle3Governance onSolved={onPuzzleSolved} />;
+        // Stop 1: Data Marketplace (Emoji Phrase Guess)
+        return <Puzzle1EmojiPhrase onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       case 2:
-        // Team 2: Enterprise Data Lake
-        return <Puzzle1Platform onSolved={onPuzzleSolved} />;
+        // Stop 2: Enterprise Data Lake (Memory Matching Game)
+        return <Puzzle1Platform onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       case 3:
-        // Team 3: Data Marketplace & Data Lineage
-        return <Puzzle4Delivery onSolved={onPuzzleSolved} />;
+        // Stop 3: Enterprise Data Assets & Data Quality (Corrupted Record Audit)
+        return <Puzzle2Quality onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       case 4:
-        // Team 4: Enterprise Data Assets & Data Quality
-        return <Puzzle2Quality onSolved={onPuzzleSolved} />;
+        // Stop 4: BDM and Data Lineage (Sequence Game)
+        return <Puzzle3Governance onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       default:
         return null;
     }

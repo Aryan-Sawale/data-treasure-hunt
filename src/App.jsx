@@ -14,7 +14,7 @@ import { QUEST_CONFIG, isDevHelperEnabled } from './config/questConfig';
 import { storageService } from './services/storageService';
 import { soundService } from './services/soundService';
 import { apiService, getPlayerName } from './services/apiService';
-import { Trophy, Sparkles } from 'lucide-react';
+import { Trophy, Sparkles, AlertTriangle } from 'lucide-react';
 
 const getInitialRoute = () => {
   if (typeof window === 'undefined') return 'quest';
@@ -157,8 +157,23 @@ export default function App() {
     }));
   };
 
-  // Called when a presentation is verified
-  const handleVerifyPresentation = async (teamId, digitIndex, digitChar) => {
+  // Called when wrong attempt penalty is applied
+  const handlePenalty = async (points = 5, reason = 'Wrong Attempt') => {
+    const res = await apiService.deductPenalty(points, reason);
+    if (res) {
+      setPlayerScore(res.totalScore);
+      if (res.rank) setPlayerRank(res.rank);
+      setScoreToast({
+        points: -res.penaltyApplied,
+        isPenalty: true,
+        title: reason
+      });
+      setTimeout(() => setScoreToast(null), 3000);
+    }
+  };
+
+  // Called when a presentation is verified with secret letters
+  const handleVerifyPresentation = async (teamId, letters) => {
     // Award competitive rank-based points
     const milestoneKey = `CODE_${teamId}`;
     const res = await apiService.completeMilestone(milestoneKey, teamId);
@@ -168,25 +183,25 @@ export default function App() {
       setScoreToast({
         points: res.pointsAwarded,
         rank: res.rankOrder,
-        title: `Stop #${teamId} Code Verified`
+        title: `Stop #${teamId} Fragment [${letters}] Verified`
       });
       setTimeout(() => setScoreToast(null), 3500);
     }
 
     setState(prev => {
-      const nextUnlocked = { ...prev.unlockedDigits };
-      if (digitIndex !== null && digitIndex !== undefined && digitChar) {
-        nextUnlocked[digitIndex] = digitChar;
+      const nextFragments = { ...(prev.unlockedFragments || {}) };
+      if (teamId && letters) {
+        nextFragments[teamId] = letters;
       }
       return {
         ...prev,
         verifiedPresentations: Array.from(new Set([...prev.verifiedPresentations, teamId])),
-        unlockedDigits: nextUnlocked
+        unlockedFragments: nextFragments
       };
     });
   };
 
-  // Move from presentation to next team's puzzle or vault
+  // Move from presentation to next team's puzzle or vault/datasphere
   const handleProceedToNext = () => {
     if (state.stage < totalTeams) {
       setState(prev => ({
@@ -195,21 +210,29 @@ export default function App() {
         step: 'PUZZLE'
       }));
     } else {
-      // All 4 teams completed! Proceed to Vault
-      apiService.completeMilestone('VAULT_UNLOCKED', vaultStage, true);
+      // All 4 teams completed! Proceed to Datasphere Unscramble
       setState(prev => ({
         ...prev,
         stage: vaultStage,
-        step: 'VAULT',
-        isVaultCracked: true
+        step: 'VAULT'
       }));
     }
+  };
+
+  // Called when Datasphere is successfully unlocked by entering DATA VALUE CHAIN
+  const handleDatasphereUnlocked = async () => {
+    await apiService.completeMilestone('VAULT_UNLOCKED', vaultStage, true);
+    setState(prev => ({
+      ...prev,
+      isVaultCracked: true,
+      isDatasphereUnlocked: true
+    }));
   };
 
   // User clicked on a progress bar stage
   const handleSelectStage = (targetStage) => {
     if (targetStage === vaultStage) {
-      setState(prev => ({ ...prev, stage: vaultStage, step: 'VAULT', isVaultCracked: true }));
+      setState(prev => ({ ...prev, stage: vaultStage, step: 'VAULT' }));
       return;
     }
 
@@ -283,24 +306,45 @@ export default function App() {
       {/* Real-time Floating Score Toast (Bottom-centered, flexbox aligned, zero clipping) */}
       {scoreToast && (
         <div className="fixed bottom-6 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
-          <div className="pointer-events-auto bg-[#009488] text-white px-3.5 py-2 rounded-2xl shadow-2xl flex items-center space-x-2.5 border-2 border-[#F9BD20] animate-bounce max-w-[92vw] sm:max-w-md">
-            <div className="w-7 h-7 rounded-lg bg-[#F9BD20] text-slate-950 flex items-center justify-center font-black shrink-0 shadow-xs">
-              <Trophy className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center space-x-1.5 flex-wrap">
-                <span className="font-mono font-black text-sm text-[#F9BD20]">
-                  +{scoreToast.points} PTS!
-                </span>
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-black whitespace-nowrap">
-                  {scoreToast.rank === 1 ? '🥇 1st Solver!' : scoreToast.rank === 2 ? '🥈 2nd Solver!' : scoreToast.rank === 3 ? '🥉 3rd Solver!' : 'Solved!'}
-                </span>
+          {scoreToast.isPenalty ? (
+            <div className="pointer-events-auto bg-rose-600 text-white px-3.5 py-2 rounded-2xl shadow-2xl flex items-center space-x-2.5 border-2 border-rose-300 animate-shake max-w-[92vw] sm:max-w-md">
+              <div className="w-7 h-7 rounded-lg bg-rose-800 text-white flex items-center justify-center font-black shrink-0 shadow-xs">
+                <AlertTriangle className="w-4 h-4 text-white" />
               </div>
-              <p className="text-[10px] text-white/90 font-medium truncate max-w-[210px] sm:max-w-xs">
-                {scoreToast.title}
-              </p>
+              <div className="min-w-0">
+                <div className="flex items-center space-x-1.5">
+                  <span className="font-mono font-black text-sm text-white">
+                    {scoreToast.points} PTS
+                  </span>
+                  <span className="text-[10px] bg-black/20 px-1.5 py-0.5 rounded font-bold">
+                    Deduction
+                  </span>
+                </div>
+                <p className="text-[10px] text-white/90 font-medium truncate max-w-[210px] sm:max-w-xs">
+                  {scoreToast.title}
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="pointer-events-auto bg-[#009488] text-white px-3.5 py-2 rounded-2xl shadow-2xl flex items-center space-x-2.5 border-2 border-[#F9BD20] animate-bounce max-w-[92vw] sm:max-w-md">
+              <div className="w-7 h-7 rounded-lg bg-[#F9BD20] text-slate-950 flex items-center justify-center font-black shrink-0 shadow-xs">
+                <Trophy className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center space-x-1.5 flex-wrap">
+                  <span className="font-mono font-black text-sm text-[#F9BD20]">
+                    +{scoreToast.points} PTS!
+                  </span>
+                  <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-black whitespace-nowrap">
+                    {scoreToast.rank === 1 ? '🥇 1st Solver!' : scoreToast.rank === 2 ? '🥈 2nd Solver!' : scoreToast.rank === 3 ? '🥉 3rd Solver!' : 'Solved!'}
+                  </span>
+                </div>
+                <p className="text-[10px] text-white/90 font-medium truncate max-w-[210px] sm:max-w-xs">
+                  {scoreToast.title}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -322,10 +366,9 @@ export default function App() {
           <WelcomeScreen onStart={handleStartQuest} />
         ) : (
           <>
-            {/* Top Vault Lock HUD */}
+            {/* Top Datasphere Cipher HUD */}
             <VaultHud
-              unlockedDigits={state.unlockedDigits}
-              vaultCode={state.vaultCode}
+              unlockedFragments={state.unlockedFragments || {}}
               onOpenVaultPreview={() => handleSelectStage(vaultStage)}
             />
 
@@ -344,11 +387,11 @@ export default function App() {
                   <PuzzleContainer
                     currentStage={state.stage}
                     onPuzzleSolved={handlePuzzleSolved}
+                    onPenalty={handlePenalty}
                   />
                 ) : (
                   <TeamPresentationCard
                     team={currentTeam}
-                    vaultCode={state.vaultCode}
                     isPresentationDone={state.verifiedPresentations.includes(state.stage)}
                     onVerifyPresentation={handleVerifyPresentation}
                     onProceedToNext={handleProceedToNext}
@@ -357,14 +400,16 @@ export default function App() {
               </>
             )}
 
-            {/* Final Vault Screen (Congratulations & Master Padlock Code) */}
+            {/* Final Vault / Datasphere Screen */}
             {state.stage === vaultStage && (
               <VaultScreen
                 vaultCode={state.vaultCode}
                 playerScore={playerScore}
                 playerRank={playerRank}
+                isUnlockedInitially={state.isDatasphereUnlocked || state.isVaultCracked}
                 onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
-                onResetQuest={handleResetQuest}
+                onPenalty={handlePenalty}
+                onDatasphereUnlocked={handleDatasphereUnlocked}
               />
             )}
           </>

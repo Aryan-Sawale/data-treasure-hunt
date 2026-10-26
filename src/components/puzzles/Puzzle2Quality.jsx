@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, CheckCircle2, AlertTriangle, Lightbulb, Coffee, Calendar, DollarSign, Hotel, Mail, Users, Sparkles } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, AlertTriangle, AlertCircle, Lightbulb, Coffee, Calendar, DollarSign, Hotel, Mail, Users, Check } from 'lucide-react';
 import { soundService } from '../../services/soundService';
 import { isDevHelperEnabled } from '../../config/questConfig';
 import { hapticService } from '../../services/hapticService';
@@ -64,56 +64,70 @@ const BUSINESS_RECORDS = [
   }
 ];
 
-export default function Puzzle2Quality({ onSolved }) {
-  const [cleansedIds, setCleansedIds] = useState([]);
-  const [wrongId, setWrongId] = useState(null);
-  const [showHint, setShowHint] = useState(false);
+export default function Puzzle2Quality({ onSolved, onPenalty }) {
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [errorMsg, setErrorMsg] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
-  const totalCorrupted = BUSINESS_RECORDS.filter(r => r.isCorrupted).length; // 3
-  const cleansedCount = cleansedIds.length;
-  const integrityScore = Math.min(100, Math.round(40 + (cleansedCount / totalCorrupted) * 60));
+  const totalRequired = 3;
 
-  const handleRecordClick = (record) => {
-    if (cleansedIds.includes(record.id) || isSuccess) return;
+  // Toggle selection on card click (no immediate correctness feedback)
+  const handleToggleSelect = (recordId) => {
+    if (isSuccess) return;
+    soundService.playDialTick();
+    hapticService.light();
+    setErrorMsg(null);
 
-    if (record.isCorrupted) {
+    setSelectedIds(prev => {
+      if (prev.includes(recordId)) {
+        return prev.filter(id => id !== recordId);
+      } else {
+        if (prev.length >= totalRequired) {
+          // Replace oldest selection or prevent more than 3
+          return [...prev.slice(1), recordId];
+        }
+        return [...prev, recordId];
+      }
+    });
+  };
+
+  // Submit Audit button
+  const handleSubmitAudit = () => {
+    if (isSuccess || selectedIds.length !== totalRequired) return;
+
+    // Check if all selected records are corrupted
+    const corruptedIds = BUSINESS_RECORDS.filter(r => r.isCorrupted).map(r => r.id);
+    const allCorrect = selectedIds.length === 3 && selectedIds.every(id => corruptedIds.includes(id));
+
+    if (allCorrect) {
+      setIsSuccess(true);
+      setErrorMsg(null);
       soundService.playSuccess();
       hapticService.success();
-      setWrongId(null);
-
-      const next = [...cleansedIds, record.id];
-      setCleansedIds(next);
-
-      if (next.length === totalCorrupted) {
-        setIsSuccess(true);
-        setTimeout(() => {
-          onSolved();
-        }, 1200);
-      }
+      setTimeout(() => {
+        onSolved();
+      }, 1500);
     } else {
       soundService.playError();
       hapticService.error();
-      setWrongId(record.id);
-      setTimeout(() => setWrongId(null), 800);
+      setErrorMsg('Audit Failed (-5 pts): Selected records include valid transactions. Find all 3 business anomalies and try again!');
+      if (onPenalty) {
+        onPenalty(5, 'Failed Data Audit');
+      }
     }
   };
 
-  const handleHint = () => {
-    soundService.playSuccess();
-    hapticService.medium();
-    setShowHint(true);
-  };
-
   const handleAutoSolve = () => {
+    const corruptedIds = BUSINESS_RECORDS.filter(r => r.isCorrupted).map(r => r.id);
+    setSelectedIds(corruptedIds);
+    setIsSuccess(true);
+    setErrorMsg(null);
     soundService.playSuccess();
     hapticService.medium();
-    const all = BUSINESS_RECORDS.filter(r => r.isCorrupted).map(r => r.id);
-    setCleansedIds(all);
-    setIsSuccess(true);
     setTimeout(() => {
       onSolved();
-    }, 1000);
+    }, 1200);
   };
 
   return (
@@ -123,130 +137,150 @@ export default function Puzzle2Quality({ onSolved }) {
         <div>
           <h3 className="text-sm font-black text-[#009488] flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4" />
-            Data Quality Audit
+            The Data Quality Audit
           </h3>
           <p className="text-xs text-[#878787]">
-            Tap the 3 records with obvious business errors to cleanse the feed.
+            Find and select the <strong>3 corrupted records</strong>, then submit.
           </p>
         </div>
-        <span className="text-xs font-mono font-black px-2 py-0.5 rounded-lg bg-[#F0FDF4] text-[#009488] border border-[#009488]/30">
-          {cleansedCount}/{totalCorrupted} Cleansed
+        <span className="text-xs font-mono font-black px-2 py-0.5 rounded-lg bg-[#F8FAFA] text-slate-700 border border-slate-300">
+          {selectedIds.length}/{totalRequired} Selected
         </span>
       </div>
 
-      {/* Real-time Data Integrity Meter */}
-      <div className="bg-[#F8FAFA] p-2.5 rounded-2xl border border-slate-200 space-y-1.5">
-        <div className="flex items-center justify-between text-[11px] font-mono font-bold">
-          <span className="text-slate-600">DATASET HEALTH SCORE</span>
-          <span className={integrityScore === 100 ? 'text-[#009488] font-black animate-pulse' : 'text-[#9E6E00]'}>
-            {integrityScore}% {integrityScore === 100 ? '• 100% CERTIFIED' : '• DEFECTS DETECTED'}
-          </span>
-        </div>
-        <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden p-0.5">
-          <div
-            className="h-full rounded-full bg-[#009488] transition-all duration-500"
-            style={{ width: `${integrityScore}%` }}
-          />
-        </div>
+      {/* Instruction Banner */}
+      <div className="bg-[#FFFDF5] border border-[#F9BD20]/50 rounded-2xl p-2.5 text-xs text-slate-700 flex items-center justify-between">
+        <span>Tap cards to select <strong>exactly 3</strong> anomalies:</span>
+        <span className="text-[10px] font-mono font-bold bg-[#F9BD20] text-slate-950 px-2 py-0.5 rounded">
+          {3 - selectedIds.length === 0 ? 'Ready to submit!' : `Select ${3 - selectedIds.length} more`}
+        </span>
       </div>
 
-      {/* 6 Business Records List */}
-      <div className="space-y-2">
-        {BUSINESS_RECORDS.map((rec) => {
-          const isCleansed = cleansedIds.includes(rec.id);
-          const isWrong = wrongId === rec.id;
-          const isHighlightedHint = showHint && rec.isCorrupted && !isCleansed;
-          const Icon = rec.icon;
+      {/* Grid of Business Records */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {BUSINESS_RECORDS.map((record) => {
+          const isSelected = selectedIds.includes(record.id);
+          const Icon = record.icon;
 
           return (
             <div
-              key={rec.id}
-              onClick={() => handleRecordClick(rec)}
-              className={`p-2.5 px-3 rounded-2xl border-2 transition-all cursor-pointer select-none active:scale-[0.99] flex items-center justify-between shadow-xs ${
-                isCleansed
-                  ? 'bg-[#F0FDF4] border-[#009488]/50 shadow-xs'
-                  : isWrong
-                  ? 'bg-rose-50 border-rose-300 animate-shake'
-                  : isHighlightedHint
-                  ? 'bg-[#FFFDF5] border-[#F9BD20] ring-2 ring-[#F9BD20]/40'
-                  : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300'
+              key={record.id}
+              onClick={() => handleToggleSelect(record.id)}
+              className={`p-3 rounded-2xl border-2 transition-all cursor-pointer relative select-none active:scale-[0.98] ${
+                isSuccess && record.isCorrupted
+                  ? 'bg-[#F0FDF4] border-[#009488] shadow-sm'
+                  : isSuccess && !record.isCorrupted
+                  ? 'bg-slate-50 border-slate-200 opacity-60'
+                  : isSelected
+                  ? 'bg-[#FFFDF5] border-[#F9BD20] ring-2 ring-[#F9BD20]/40 shadow-sm'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 shadow-2xs'
               }`}
             >
-              {/* Record Left Info */}
-              <div className="flex items-center space-x-2.5">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                  isCleansed ? 'bg-[#009488]/15 text-[#009488]' : 'bg-slate-100 text-slate-700'
-                }`}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-extrabold text-xs text-slate-900 leading-tight">
-                      {rec.label}
-                    </span>
-                    {isCleansed && (
-                      <span className="text-[9px] font-black uppercase text-[#009488] bg-[#009488]/10 px-1.5 py-0.2 rounded">
-                        Cleaned
-                      </span>
-                    )}
+              <div className="flex items-start justify-between">
+                <div className="flex items-center space-x-2.5 min-w-0">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
+                    isSelected
+                      ? 'bg-[#F9BD20]/20 border-[#F9BD20] text-[#9E6E00]'
+                      : 'bg-slate-100 border-slate-200 text-slate-600'
+                  }`}>
+                    <Icon className="w-4 h-4" />
                   </div>
-                  <p className="text-[11px] text-slate-600 mt-0.5 leading-tight">
-                    {isCleansed ? (
-                      <span className="text-[#009488] font-bold">{rec.errorReason}</span>
-                    ) : (
-                      <span>{rec.detail} • <span className="font-mono text-slate-500 text-[10px]">{rec.account}</span></span>
-                    )}
-                  </p>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-black text-slate-900 truncate">
+                      {record.label}
+                    </h4>
+                    <p className="text-[10px] font-mono text-[#878787] truncate">
+                      {record.account}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Selection Checkbox Pill */}
+                <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${
+                  isSuccess && record.isCorrupted
+                    ? 'bg-[#009488] border-[#009488] text-white'
+                    : isSelected
+                    ? 'bg-[#F9BD20] border-[#F9BD20] text-slate-950 font-black'
+                    : 'bg-white border-slate-300'
+                }`}>
+                  {(isSelected || (isSuccess && record.isCorrupted)) && (
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  )}
                 </div>
               </div>
 
-              {/* Record Right Amount / Status */}
-              <div className="text-right shrink-0 ml-2">
-                <span className={`font-mono text-xs font-black ${
-                  isCleansed
-                    ? 'text-[#009488] line-through opacity-70'
-                    : rec.isCorrupted
-                    ? 'text-slate-900'
-                    : 'text-slate-900'
-                }`}>
-                  {rec.amount}
+              {/* Record Metadata & Value */}
+              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span className="text-[10px] text-slate-500 font-medium">
+                  {record.detail}
                 </span>
-                {isCleansed && (
-                  <CheckCircle2 className="w-4 h-4 text-[#009488] ml-auto mt-0.5" />
-                )}
+                <span className="font-mono font-black text-slate-800">
+                  {record.amount}
+                </span>
               </div>
+
+              {/* Error Explanation Reveal (Shown ONLY after successful submit) */}
+              {isSuccess && record.isCorrupted && (
+                <div className="mt-2 p-1.5 rounded-lg bg-teal-100/60 border border-[#009488]/40 text-[10px] text-[#007066] font-bold animate-fade-in flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>{record.errorReason}</span>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
+      {/* Error Alert */}
+      {errorMsg && (
+        <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2 text-rose-700 text-xs animate-shake">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+          <span className="font-medium">{errorMsg}</span>
+        </div>
+      )}
+
+      {/* Submit Audit Button */}
+      <button
+        onClick={handleSubmitAudit}
+        disabled={isSuccess || selectedIds.length !== totalRequired}
+        className="w-full py-3.5 px-4 rounded-xl bg-[#009488] hover:bg-[#007E74] disabled:opacity-40 text-white font-black text-sm flex items-center justify-center space-x-2 shadow-md shadow-[#009488]/20 border-b-4 border-[#006E64] active:scale-[0.98] transition-all"
+      >
+        <ShieldCheck className="w-4 h-4 text-[#F9BD20]" />
+        <span>
+          {selectedIds.length === totalRequired
+            ? 'Submit Audit (3 Records Selected)'
+            : `Select ${totalRequired - selectedIds.length} More Record${totalRequired - selectedIds.length === 1 ? '' : 's'}`}
+        </span>
+      </button>
+
       {/* Controls & Actions */}
       {isDevHelperEnabled() && (
-      <div className="flex items-center justify-between text-xs pt-1">
-        <button
-          onClick={handleHint}
-          disabled={isSuccess || showHint}
-          className="flex items-center space-x-1.5 text-[#9E6E00] hover:text-[#B45309] px-3 py-1.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/60 active:scale-95 transition-all shadow-xs"
-        >
-          <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
-          <span>{showHint ? "Hint: Highlighted" : "Hint"}</span>
-        </button>
+        <div className="flex items-center justify-between text-xs pt-1 px-1">
+          <button
+            onClick={() => setShowHint(!showHint)}
+            className="flex items-center space-x-1 text-[#878787] hover:text-[#B45309]"
+          >
+            <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
+            <span>{showHint ? 'Hide Hint' : 'Inspection Clue'}</span>
+          </button>
 
-        <button
-          onClick={handleAutoSolve}
-          className="text-[#878787] hover:text-[#009488] text-[11px] px-2 py-1 rounded underline font-medium"
-        >
-          Auto Cleanse
-        </button>
-      </div>
+          <button
+            onClick={handleAutoSolve}
+            className="text-[#878787] hover:text-[#009488] text-[11px] underline font-medium"
+          >
+            Auto Cleanse
+          </button>
+        </div>
       )}
 
       {isDevHelperEnabled() && showHint && (
-        <div className="p-3 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700 animate-fade-in space-y-1">
-          <p className="font-bold text-[#9E6E00]">💡 Obvious Error Clues:</p>
-          <p className="text-slate-600 text-[11px]">
-            1. February 31st date • 2. Negative transfer (-€85k) • 3. Invalid email with triple @@@!
-          </p>
+        <div className="p-2.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700 space-y-1">
+          <p className="font-bold text-[#9E6E00]">Data Observability Rules:</p>
+          <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-slate-600">
+            <li>Check for calendar integrity (February never has 31 days).</li>
+            <li>Outbound financial transfers cannot carry negative value.</li>
+            <li>Email addresses cannot contain consecutive duplicate @@ symbols.</li>
+          </ul>
         </div>
       )}
 
@@ -254,8 +288,8 @@ export default function Puzzle2Quality({ onSolved }) {
       {isSuccess && (
         <div className="p-3.5 rounded-2xl bg-[#F0FDF4] border-2 border-[#009488] text-center animate-fade-in shadow-md">
           <CheckCircle2 className="w-6 h-6 text-[#009488] mx-auto mb-1 animate-bounce" />
-          <h4 className="text-xs font-black text-[#009488]">100% Data Asset Health Restored!</h4>
-          <p className="text-[11px] text-slate-600">Enterprise Data Assets & Quality (House Slytherin) Unlocked</p>
+          <h4 className="text-xs font-black text-[#009488]">All 3 Corrupted Records Cleansed!</h4>
+          <p className="text-[11px] text-slate-600">Stop 3: Enterprise Data Assets & Data Quality (House Gryffindor) Unlocked</p>
         </div>
       )}
     </div>
