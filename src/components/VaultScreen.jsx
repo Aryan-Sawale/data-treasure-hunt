@@ -1,17 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Trophy, 
   Sparkles, 
-  CheckCircle2, 
-  ShieldCheck, 
   Globe2, 
   KeyRound, 
   AlertCircle, 
   Lightbulb, 
-  ArrowRight,
-  Unlock,
-  Layers
+  Layers,
+  RotateCcw
 } from 'lucide-react';
 import { QUEST_CONFIG, isDevHelperEnabled, DATASPHERE_PHRASE } from '../config/questConfig';
 import { soundService } from '../services/soundService';
@@ -21,11 +18,23 @@ import { getPlayerName } from '../services/apiService';
 const TARGET_PHRASE = DATASPHERE_PHRASE || 'DATA VALUE CHAIN';
 const NORMALIZED_TARGET = TARGET_PHRASE.replace(/\s+/g, '').toUpperCase();
 
-const FRAGMENTS = [
-  { id: 1, label: 'Stop 1', letters: 'HACN' },
-  { id: 2, label: 'Stop 2', letters: 'EUL' },
-  { id: 3, label: 'Stop 3', letters: 'ATD' },
-  { id: 4, label: 'Stop 4', letters: 'AAIV' }
+// 14 Letters collected across 4 team stops:
+// Stop 1: HACN | Stop 2: EUL | Stop 3: ATD | Stop 4: AAIV
+const COLLECTED_TILES = [
+  { id: 't-0', letter: 'H' },
+  { id: 't-1', letter: 'A' },
+  { id: 't-2', letter: 'C' },
+  { id: 't-3', letter: 'N' },
+  { id: 't-4', letter: 'E' },
+  { id: 't-5', letter: 'U' },
+  { id: 't-6', letter: 'L' },
+  { id: 't-7', letter: 'A' },
+  { id: 't-8', letter: 'T' },
+  { id: 't-9', letter: 'D' },
+  { id: 't-10', letter: 'A' },
+  { id: 't-11', letter: 'A' },
+  { id: 't-12', letter: 'I' },
+  { id: 't-13', letter: 'V' },
 ];
 
 export default function VaultScreen({
@@ -38,14 +47,25 @@ export default function VaultScreen({
   onDatasphereUnlocked
 }) {
   const [isSphereOpen, setIsSphereOpen] = useState(isUnlockedInitially);
-  const [inputPhrase, setInputPhrase] = useState('');
+  const [slots, setSlots] = useState(Array(14).fill(null));
+  const [selectedSlotIdx, setSelectedSlotIdx] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [showHint, setShowHint] = useState(false);
   const [hintLevel, setHintLevel] = useState(0); // 0 = none, 1 = first word DATA, 2 = 3rd word CHAIN ⛓️
   const [isOpeningAnim, setIsOpeningAnim] = useState(false);
 
+  // Drag and touch tracking
+  const [draggedTile, setDraggedTile] = useState(null);
+  const [touchDragTile, setTouchDragTile] = useState(null);
+  const [touchPos, setTouchPos] = useState(null);
+  const touchStartPos = useRef({ x: 0, y: 0 });
+  const justTouchedRef = useRef(false);
+
   const codeDigits = (vaultCode || '2347').split('');
   const playerName = getPlayerName() || 'Data Explorer';
+
+  const usedTileIds = new Set(slots.filter(Boolean).map((s) => s.id));
+  const placedCount = slots.filter(Boolean).length;
 
   const triggerConfetti = () => {
     try {
@@ -84,22 +104,160 @@ export default function VaultScreen({
     }
   }, [isUnlockedInitially]);
 
-  const handleSubmitPhrase = (e) => {
-    if (e) e.preventDefault();
+  // Place tile in specific slot
+  const placeTileInSlot = (tile, targetIdx) => {
+    if (targetIdx < 0 || targetIdx >= 14) return;
+    soundService.playDialTick();
+    hapticService.light();
+
+    setSlots((prev) => {
+      const next = [...prev];
+      const existingIdx = next.findIndex((s) => s && s.id === tile.id);
+      const targetTile = next[targetIdx];
+
+      if (existingIdx !== -1) {
+        next[existingIdx] = targetTile;
+      }
+      next[targetIdx] = tile;
+      return next;
+    });
+    if (errorMsg) setErrorMsg(null);
+  };
+
+  // Place tile in first available empty slot
+  const placeTileInNextEmptySlot = (tile) => {
+    const emptyIdx = slots.findIndex((s) => s === null);
+    if (emptyIdx !== -1) {
+      placeTileInSlot(tile, emptyIdx);
+    }
+  };
+
+  // Handle direct tap on an available letter tile
+  const handleTileTap = (tile) => {
+    if (usedTileIds.has(tile.id)) return;
+    soundService.playDialTick();
+    hapticService.light();
+
+    if (selectedSlotIdx !== null && selectedSlotIdx >= 0 && selectedSlotIdx < 14) {
+      // Place into selected slot
+      placeTileInSlot(tile, selectedSlotIdx);
+      // Advance selection to next empty slot
+      const nextEmpty = slots.findIndex((s, i) => i > selectedSlotIdx && s === null);
+      if (nextEmpty !== -1) {
+        setSelectedSlotIdx(nextEmpty);
+      } else {
+        const anyEmpty = slots.findIndex((s) => s === null);
+        setSelectedSlotIdx(anyEmpty !== -1 ? anyEmpty : null);
+      }
+    } else {
+      placeTileInNextEmptySlot(tile);
+    }
+  };
+
+  // Remove tile from slot back to pool
+  const removeTileFromSlot = (slotIdx) => {
+    soundService.playClick();
+    hapticService.light();
+    setSlots((prev) => {
+      const next = [...prev];
+      next[slotIdx] = null;
+      return next;
+    });
+    if (errorMsg) setErrorMsg(null);
+  };
+
+  // Clear all slots
+  const handleClearAll = () => {
+    soundService.playClick();
+    hapticService.light();
+    setSlots(Array(14).fill(null));
+    setSelectedSlotIdx(null);
+    if (errorMsg) setErrorMsg(null);
+  };
+
+  // HTML5 Drag and Drop handlers
+  const handleDragStart = (tile, e) => {
+    e.dataTransfer.setData('text/plain', tile.id);
+    setDraggedTile(tile);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDropOnSlot = (slotIdx, e) => {
+    e.preventDefault();
+    const tileId = e.dataTransfer.getData('text/plain') || draggedTile?.id;
+    const tile = COLLECTED_TILES.find((t) => t.id === tileId) || slots.find((s) => s && s.id === tileId);
+    if (tile) {
+      placeTileInSlot(tile, slotIdx);
+      setSelectedSlotIdx(null);
+    }
+    setDraggedTile(null);
+  };
+
+  // Mobile Touch Drag handlers (touch-action: none prevents page scrolling)
+  const handleTouchStart = (tile, e) => {
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    setTouchDragTile(tile);
+    setTouchPos({ x: touch.clientX, y: touch.clientY });
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchDragTile) return;
+    if (e.cancelable) {
+      e.preventDefault(); // Prevents page scrolling on mobile while dragging
+    }
+    const touch = e.touches[0];
+    setTouchPos({ x: touch.clientX, y: touch.clientY });
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!touchDragTile) return;
+    justTouchedRef.current = true;
+    setTimeout(() => {
+      justTouchedRef.current = false;
+    }, 350);
+
+    const touch = e.changedTouches[0];
+    const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+    const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+
+    if (dx > 12 || dy > 12) {
+      // Drag & drop release
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      const slotEl = el?.closest('[data-slot-idx]');
+      if (slotEl) {
+        const slotIdx = parseInt(slotEl.getAttribute('data-slot-idx'), 10);
+        placeTileInSlot(touchDragTile, slotIdx);
+        setSelectedSlotIdx(null);
+      }
+    } else {
+      // Tap to place
+      handleTileTap(touchDragTile);
+    }
+
+    setTouchDragTile(null);
+    setTouchPos(null);
+  };
+
+  // Submit and verify phrase
+  const handleUnlockSubmit = () => {
     if (isSphereOpen || isOpeningAnim) return;
 
-    const cleanInput = inputPhrase.trim().toUpperCase();
-    const normalized = cleanInput.replace(/\s+/g, '');
+    const currentPhrase = slots.map((s) => (s ? s.letter : '')).join('');
 
-    if (!cleanInput) {
-      setErrorMsg('Please enter your unscrambled phrase!');
+    if (currentPhrase.length < 14) {
       soundService.playError();
       hapticService.error();
+      setErrorMsg(`Please fill all 14 letter boxes! (${14 - currentPhrase.length} remaining)`);
       return;
     }
 
-    if (normalized === NORMALIZED_TARGET) {
-      // Correct! Trigger Datasphere Opening
+    if (currentPhrase === NORMALIZED_TARGET) {
+      // Solved!
       soundService.playSuccess();
       hapticService.victory();
       setErrorMsg(null);
@@ -113,7 +271,7 @@ export default function VaultScreen({
         if (onDatasphereUnlocked) onDatasphereUnlocked();
       }, 1200);
     } else {
-      // Incorrect unscramble attempt (-5 pts penalty)
+      // Incorrect
       soundService.playError();
       hapticService.error();
 
@@ -145,7 +303,23 @@ export default function VaultScreen({
   };
 
   const handleAutoSolve = () => {
-    setInputPhrase(TARGET_PHRASE);
+    const solvedSlots = [
+      COLLECTED_TILES.find((t) => t.id === 't-9'), // D
+      COLLECTED_TILES.find((t) => t.id === 't-1'), // A
+      COLLECTED_TILES.find((t) => t.id === 't-8'), // T
+      COLLECTED_TILES.find((t) => t.id === 't-7'), // A
+      COLLECTED_TILES.find((t) => t.id === 't-13'), // V
+      COLLECTED_TILES.find((t) => t.id === 't-10'), // A
+      COLLECTED_TILES.find((t) => t.id === 't-6'), // L
+      COLLECTED_TILES.find((t) => t.id === 't-5'), // U
+      COLLECTED_TILES.find((t) => t.id === 't-4'), // E
+      COLLECTED_TILES.find((t) => t.id === 't-2'), // C
+      COLLECTED_TILES.find((t) => t.id === 't-0'), // H
+      COLLECTED_TILES.find((t) => t.id === 't-11'), // A
+      COLLECTED_TILES.find((t) => t.id === 't-12'), // I
+      COLLECTED_TILES.find((t) => t.id === 't-3'), // N
+    ];
+    setSlots(solvedSlots);
     soundService.playSuccess();
     hapticService.victory();
     setErrorMsg(null);
@@ -160,8 +334,51 @@ export default function VaultScreen({
     }, 800);
   };
 
+  // Render a single target box slot
+  const renderBoxSlot = (slotIdx) => {
+    const tile = slots[slotIdx];
+    const isSelected = selectedSlotIdx === slotIdx;
+
+    return (
+      <div
+        key={slotIdx}
+        data-slot-idx={slotIdx}
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDropOnSlot(slotIdx, e)}
+        onClick={() => {
+          if (tile) {
+            removeTileFromSlot(slotIdx);
+            setSelectedSlotIdx(slotIdx);
+          } else {
+            setSelectedSlotIdx(selectedSlotIdx === slotIdx ? null : slotIdx);
+          }
+        }}
+        className={`w-7 h-9 sm:w-8 sm:h-10 rounded-xl border-2 flex items-center justify-center font-mono font-black text-sm sm:text-base select-none touch-none transition-all ${
+          tile
+            ? 'bg-teal-50 border-[#009488] text-[#009488] shadow-xs cursor-pointer active:scale-95'
+            : isSelected
+            ? 'bg-amber-50 border-[#F9BD20] ring-2 ring-[#F9BD20]/60 text-amber-900 cursor-pointer animate-pulse'
+            : 'bg-white border-dashed border-slate-300 text-slate-300 hover:border-[#F9BD20] cursor-pointer'
+        }`}
+        title={tile ? `${tile.letter} (Tap to remove)` : isSelected ? 'Selected box (Tap a letter)' : 'Empty box (Tap to select)'}
+      >
+        {tile ? tile.letter : ''}
+      </div>
+    );
+  };
+
   return (
     <div className="px-4 py-4 max-w-md mx-auto space-y-4">
+      {/* Floating Drag Avatar for Touch Dragging on Mobile */}
+      {touchDragTile && touchPos && (
+        <div
+          className="fixed pointer-events-none z-50 transform -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-[#F9BD20] text-slate-950 font-mono font-black text-base flex items-center justify-center shadow-2xl border-2 border-white ring-4 ring-[#009488]/30 scale-125"
+          style={{ left: touchPos.x, top: touchPos.y }}
+        >
+          {touchDragTile.letter}
+        </div>
+      )}
+
       {/* Hero Badge */}
       <div className="text-center space-y-1">
         <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#FFFBEB] border border-[#F9BD20] text-[#9E6E00] text-xs font-black shadow-xs">
@@ -171,29 +388,28 @@ export default function VaultScreen({
         <h2 className="text-2xl font-black text-slate-900 tracking-tight">
           {isSphereOpen ? 'Datasphere Unlocked!' : 'Unlock The Datasphere'}
         </h2>
-        <p className="text-xs text-slate-600 font-medium">
+        <p className="text-sm sm:text-base text-slate-600 font-bold">
           {isSphereOpen 
-            ? 'The physical combination safe code is revealed below.'
-            : 'Unscramble your letter fragments to open the Datasphere.'}
+            ? 'Physical safe code revealed below.'
+            : 'Solve the riddle using collected letters.'}
         </p>
       </div>
 
-      {/* 3D Animated Datasphere Container */}
-      <div className="relative py-6 flex flex-col items-center justify-center">
-        {/* Glowing Sphere Visual */}
+      {/* 3D Animated Datasphere Graphic */}
+      <div className="relative py-5 flex flex-col items-center justify-center">
         <div className="relative w-44 h-44 sm:w-48 sm:h-48 flex items-center justify-center">
-          {/* Orbital Ring 1 - Electric Cyan */}
+          {/* Orbital Ring 1 - Cyan */}
           <div 
             className="absolute inset-0 rounded-full border-2 border-dashed border-cyan-400/60 animate-sphere-orbit pointer-events-none shadow-[0_0_15px_rgba(34,211,238,0.35)]" 
             style={{ width: '100%', height: '100%' }}
           />
-          {/* Orbital Ring 2 - Deep Violet / Indigo */}
+          {/* Orbital Ring 2 - Indigo */}
           <div 
             className="absolute inset-0 rounded-full border-2 border-dashed border-indigo-400/60 animate-sphere-reverse pointer-events-none shadow-[0_0_15px_rgba(129,140,248,0.35)]" 
             style={{ width: '100%', height: '100%' }}
           />
 
-          {/* Core Orb - Cosmic Cyber Sphere */}
+          {/* Core Orb */}
           <div 
             className={`w-32 h-32 sm:w-36 sm:h-36 rounded-full flex flex-col items-center justify-center text-center p-3 transition-all duration-700 select-none ${
               isSphereOpen
@@ -229,163 +445,177 @@ export default function VaultScreen({
         </div>
       </div>
 
-      {/* State A: Sealed -> Unscramble Input */}
+      {/* State A: Sealed -> Question, Target Boxes, and Drag Letter Tiles */}
       {!isSphereOpen ? (
-        <div className="bg-white border-2 border-[#009488]/30 rounded-3xl p-5 shadow-lg space-y-4">
-          {/* Letter Fragments Bank */}
+        <div className="bg-white border-2 border-[#009488]/30 rounded-3xl p-4 sm:p-5 shadow-lg space-y-4">
+          {/* Question / Riddle Card */}
+          <div className="bg-[#FFFDF5] border-2 border-[#F9BD20] rounded-2xl p-4 text-center shadow-xs space-y-1.5">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-black uppercase tracking-wider text-[#9E6E00] px-2.5 py-0.5 rounded-full bg-amber-100/70 border border-amber-300">
+              <span>🧩</span>
+              <span>The Datasphere Riddle</span>
+            </span>
+            <p className="text-sm sm:text-base font-black text-slate-800 leading-snug">
+              "Something of worth, built from links which takes data from raw to ready."
+            </p>
+          </div>
+
+          {/* Simple Target Boxes with Spaces (No Word 1, 0/4, etc.) */}
+          <div className="bg-[#F8FAFA] border-2 border-slate-200 rounded-2xl p-3 sm:p-3.5 space-y-2.5 shadow-inner">
+            <div className="flex items-center justify-between text-xs px-1">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
+                Tap letters to fill (or drag)
+              </span>
+              {placedCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="text-[10px] font-mono font-bold text-slate-500 hover:text-rose-600 underline cursor-pointer flex items-center gap-1"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Clear</span>
+                </button>
+              )}
+            </div>
+
+            {/* Boxes Groupings with Spaces between words */}
+            <div className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-5 gap-y-2.5 py-1">
+              {/* Word 1: 4 Boxes */}
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                {[0, 1, 2, 3].map((idx) => renderBoxSlot(idx))}
+              </div>
+
+              {/* Space Separator */}
+              <div className="w-1.5 sm:w-2" />
+
+              {/* Word 2: 5 Boxes */}
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                {[4, 5, 6, 7, 8].map((idx) => renderBoxSlot(idx))}
+              </div>
+
+              {/* Space Separator */}
+              <div className="w-1.5 sm:w-2" />
+
+              {/* Word 3: 5 Boxes */}
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                {[9, 10, 11, 12, 13].map((idx) => renderBoxSlot(idx))}
+              </div>
+            </div>
+          </div>
+
+          {/* Collected Letter Tiles (Draggable / Tappable) */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center justify-between text-xs px-0.5">
               <span className="font-black uppercase tracking-wider text-[#009488] flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-[#F9BD20]" />
-                Collected Letter Fragments
+                Collected Letters
               </span>
-              <span className="text-[10px] font-mono font-bold text-slate-500">
-                4 Stops
+              <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                placedCount === 14 
+                  ? 'bg-teal-50 text-[#009488] border border-[#009488]/30 font-black' 
+                  : 'bg-slate-100 text-slate-600'
+              }`}>
+                {placedCount === 14 ? 'All 14 Placed ✓' : `${14 - placedCount} Left`}
               </span>
             </div>
 
-            <div className="grid grid-cols-4 gap-2">
-              {FRAGMENTS.map((frag) => (
-                <div
-                  key={frag.id}
-                  className="bg-[#FFFDF5] border-2 border-[#F9BD20]/70 rounded-xl p-2 text-center shadow-xs"
-                >
-                  <span className="text-[9px] font-mono font-bold text-[#9E6E00] uppercase block">
-                    {frag.label}
-                  </span>
-                  <span className="font-mono text-base font-black text-[#B45309] tracking-wider block mt-0.5">
-                    {frag.letters}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+            {/* 14 Letter Tiles Grid */}
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+              {COLLECTED_TILES.map((tile) => {
+                const isUsed = usedTileIds.has(tile.id);
 
-          {/* Dynamic Word Pattern & Hint Reveal */}
-          <div className="bg-[#F8FAFA] border border-slate-200 rounded-2xl p-3 text-center space-y-1.5 shadow-2xs">
-            <span className="text-[10px] font-mono uppercase text-slate-500 font-bold block">
-              Unscramble Pattern (3 Words • 14 Letters)
-            </span>
-            <div className="font-mono text-xs font-black tracking-widest flex items-center justify-center gap-1.5 flex-wrap">
-              {hintLevel >= 1 ? (
-                <span className="text-[#009488] bg-teal-50 border border-[#009488]/40 px-2 py-0.5 rounded-lg shadow-2xs animate-fade-in font-black">
-                  [ D A T A ]
-                </span>
-              ) : (
-                <span className="text-indigo-700 bg-white border border-slate-200 px-2 py-0.5 rounded-lg">
-                  [ • • • • ]
-                </span>
-              )}
-
-              <span className="text-slate-400 font-sans">&bull;</span>
-
-              <span className="text-indigo-700 bg-white border border-slate-200 px-2 py-0.5 rounded-lg">
-                [ • • • • • ]
-              </span>
-
-              <span className="text-slate-400 font-sans">&bull;</span>
-
-              {hintLevel >= 2 ? (
-                <span className="text-[#B45309] bg-amber-50 border border-[#F9BD20]/60 px-2 py-0.5 rounded-lg shadow-2xs animate-fade-in flex items-center gap-1 font-black">
-                  <span>[ • • • • • ]</span>
-                  <span className="text-sm">⛓️</span>
-                </span>
-              ) : (
-                <span className="text-indigo-700 bg-white border border-slate-200 px-2 py-0.5 rounded-lg">
-                  [ • • • • • ]
-                </span>
-              )}
+                return (
+                  <div
+                    key={tile.id}
+                    draggable={!isUsed}
+                    onDragStart={(e) => handleDragStart(tile, e)}
+                    onTouchStart={(e) => {
+                      if (!isUsed) handleTouchStart(tile, e);
+                    }}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onClick={() => {
+                      if (!isUsed && !justTouchedRef.current) handleTileTap(tile);
+                    }}
+                    className={`h-10 sm:h-11 rounded-xl flex items-center justify-center font-mono font-black text-sm sm:text-base select-none touch-none transition-all ${
+                      isUsed
+                        ? 'bg-slate-100 border-2 border-dashed border-slate-200 text-slate-300 opacity-40 cursor-default scale-95'
+                        : 'bg-[#FFFDF5] border-2 border-[#F9BD20] text-[#B45309] shadow-xs hover:border-[#009488] hover:text-[#009488] active:scale-95 cursor-grab active:cursor-grabbing'
+                    }`}
+                    title={isUsed ? `${tile.letter} (Placed in box)` : `Tap to place ${tile.letter} (or drag)`}
+                  >
+                    {tile.letter}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Unlocked Penalty Hints Display */}
-          {hintLevel > 0 && (
-            <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200/90 text-xs text-amber-950 space-y-1.5 animate-fade-in shadow-2xs">
-              <div className="flex items-center gap-1.5 font-black text-[#9E6E00] uppercase text-[10px] tracking-wider">
-                <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
-                <span>Datasphere Clues Unlocked</span>
-              </div>
-              {hintLevel >= 1 && (
-                <div className="flex items-center gap-1.5 text-xs">
-                  <span className="font-bold text-[#009488]">Hint 1:</span>
-                  <span>The first word is <strong className="font-mono font-black text-[#009488]">DATA</strong></span>
-                </div>
-              )}
-              {hintLevel >= 2 && (
-                <div className="flex items-center gap-1.5 text-xs">
-                  <span className="font-bold text-[#B45309]">Hint 2:</span>
-                  <span>The 3rd word is <span className="text-base">⛓️</span></span>
-                </div>
-              )}
+          {/* Error Message */}
+          {errorMsg && (
+            <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2 text-rose-700 text-xs animate-shake">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+              <span className="font-medium">{errorMsg}</span>
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmitPhrase} className="space-y-3">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 block">
-                Enter Unscrambled Phrase:
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={inputPhrase}
-                  onChange={(e) => {
-                    setInputPhrase(e.target.value);
-                    if (errorMsg) setErrorMsg(null);
-                  }}
-                  placeholder=""
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck="false"
-                  className="w-full bg-[#F8FAFA] border-2 border-slate-200 focus:border-indigo-600 focus:bg-white rounded-xl px-3.5 py-3 text-sm text-slate-900 font-bold uppercase tracking-wider focus:outline-none transition-all shadow-inner"
-                />
-                {inputPhrase && (
-                  <button
-                    type="button"
-                    onClick={() => setInputPhrase('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold px-1.5 py-0.5 rounded bg-slate-200"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            </div>
+          {/* Unlock Datasphere Button */}
+          <button
+            type="button"
+            onClick={handleUnlockSubmit}
+            disabled={isOpeningAnim || placedCount === 0}
+            className="w-full py-3.5 px-4 rounded-xl bg-[#009488] hover:bg-[#007E74] disabled:opacity-50 text-white font-black text-sm flex items-center justify-center space-x-2 shadow-lg shadow-[#009488]/20 border-b-4 border-[#006E64] active:scale-[0.98] transition-all cursor-pointer"
+          >
+            <KeyRound className="w-4 h-4 text-[#F9BD20]" />
+            <span>Unlock Datasphere</span>
+          </button>
 
-            {/* Error Message */}
-            {errorMsg && (
-              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2 text-rose-700 text-xs animate-shake">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
-                <span className="font-medium">{errorMsg}</span>
+          {/* Simple Decluttered Clue & Hint Section */}
+          <div className="pt-0.5">
+            {hintLevel === 0 ? (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleBuyHint}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#FFFDF5] hover:bg-[#FEF9C3] border border-[#F9BD20] text-[#9E6E00] hover:text-[#B45309] font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
+                  <span>Need a Hint? (-5 pts)</span>
+                </button>
+              </div>
+            ) : (
+              <div className="p-3 rounded-2xl bg-[#FFFDF5] border border-[#F9BD20] space-y-1.5 text-xs shadow-2xs animate-fade-in">
+                <div className="flex items-center justify-between text-[#9E6E00] font-black text-[11px] uppercase tracking-wider">
+                  <span className="flex items-center gap-1.5">
+                    <Lightbulb className="w-3.5 h-3.5 fill-[#F9BD20]" />
+                    <span>Hints</span>
+                  </span>
+                  {hintLevel < 2 && (
+                    <button
+                      type="button"
+                      onClick={handleBuyHint}
+                      className="text-[#9E6E00] hover:text-[#B45309] underline font-bold lowercase text-[11px] cursor-pointer"
+                    >
+                      get 2nd hint (-5 pts)
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-1 text-slate-800 font-medium pl-1">
+                  <p className="flex items-center gap-1.5">
+                    <span className="text-[#009488] font-bold">1.</span>
+                    <span>First word is <strong className="font-mono text-[#009488] font-bold">DATA</strong></span>
+                  </p>
+                  {hintLevel >= 2 && (
+                    <p className="flex items-center gap-1.5">
+                      <span className="text-[#009488] font-bold">2.</span>
+                      <span>Third word is <span className="text-base">⛓️</span></span>
+                    </p>
+                  )}
+                </div>
               </div>
             )}
+          </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isOpeningAnim || !inputPhrase.trim()}
-              className="w-full py-3.5 px-4 rounded-xl bg-[#009488] hover:bg-[#007E74] disabled:opacity-50 text-white font-black text-sm flex items-center justify-center space-x-2 shadow-lg shadow-[#009488]/20 border-b-4 border-[#006E64] active:scale-[0.98] transition-all"
-            >
-              <KeyRound className="w-4 h-4 text-[#F9BD20]" />
-              <span>Unlock Datasphere</span>
-            </button>
-
-            {/* Optional "Unlock Hint (-5 PTS)" button if not all hints unlocked */}
-            {hintLevel < 2 && (
-              <button
-                type="button"
-                onClick={handleBuyHint}
-                className="w-full py-2 px-3 rounded-xl bg-amber-50/70 hover:bg-amber-100/70 border border-amber-200/80 text-amber-900 text-xs font-bold flex items-center justify-center space-x-1.5 transition-all active:scale-[0.98]"
-              >
-                <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
-                <span>
-                  {hintLevel === 0 ? 'Need a Clue? Unlock Hint #1 (-5 PTS)' : 'Need Another Clue? Unlock Hint #2 (-5 PTS)'}
-                </span>
-              </button>
-            )}
-          </form>
-
-          {/* Dev Helper */}
+          {/* Dev Helper Options */}
           {isDevHelperEnabled() && (
             <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
               <button
@@ -394,15 +624,15 @@ export default function VaultScreen({
                 className="flex items-center space-x-1 text-[#878787] hover:text-[#B45309]"
               >
                 <Lightbulb className="w-3.5 h-3.5 text-[#F9BD20]" />
-                <span>{showHint ? 'Hide Clue' : 'Phrase Clue'}</span>
+                <span>{showHint ? 'Hide Clue' : 'Target Phrase'}</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleAutoSolve}
-                className="text-[#878787] hover:text-[#009488] text-[11px] underline font-medium"
+                className="text-xs font-black bg-amber-400 hover:bg-amber-500 text-slate-950 px-2.5 py-1 rounded-lg shadow-xs transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
               >
-                Auto Unscramble
+                ⚡ Quick Open Datasphere ➔
               </button>
             </div>
           )}
@@ -416,7 +646,6 @@ export default function VaultScreen({
       ) : (
         /* State B: Unlocked -> Master Safe Code Display */
         <div className="bg-gradient-to-b from-[#FFFDF5] to-white border-2 border-[#F9BD20] rounded-3xl p-6 text-center space-y-4 shadow-xl animate-fade-in relative overflow-hidden">
-          {/* Confetti & Congratulations */}
           <div className="space-y-1">
             <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full bg-[#F0FDF4] border border-[#009488]/30 text-[#009488] text-xs font-black">
               <Sparkles className="w-3.5 h-3.5 text-[#009488]" />
@@ -476,45 +705,13 @@ export default function VaultScreen({
               hapticService.light();
               if (onOpenLeaderboard) onOpenLeaderboard();
             }}
-            className="w-full py-3.5 px-4 rounded-2xl bg-[#009488] hover:bg-[#007E74] text-white font-black text-sm flex items-center justify-center space-x-2 shadow-lg shadow-[#009488]/25 border-b-4 border-[#006E64] active:scale-[0.98] transition-all"
+            className="w-full py-3.5 px-4 rounded-2xl bg-[#009488] hover:bg-[#007E74] text-white font-black text-sm flex items-center justify-center space-x-2 shadow-lg shadow-[#009488]/25 border-b-4 border-[#006E64] active:scale-[0.98] transition-all cursor-pointer"
           >
             <Trophy className="w-4 h-4 text-[#F9BD20]" />
             <span>View Final Leaderboard</span>
           </button>
         </div>
       )}
-
-      {/* Recap of 4 Teams Completed */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-2.5">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-black uppercase tracking-wider text-[#009488] flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" />
-            4 Completed Stops
-          </span>
-          <span className="text-[10px] font-mono font-bold text-[#009488] bg-[#F0FDF4] px-2 py-0.5 rounded-full">
-            4 / 4 Certified
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          {QUEST_CONFIG.teams.map((t) => (
-            <div
-              key={t.id}
-              className="p-2.5 rounded-xl border border-slate-200 bg-[#F8FAFA] text-left space-y-0.5"
-            >
-              <div className="flex items-center space-x-1.5">
-                <span className="text-sm">{t.badge}</span>
-                <span className="text-xs font-black text-slate-900 truncate">
-                  {t.shortName}
-                </span>
-              </div>
-              <p className="text-[10px] text-[#009488] font-mono font-bold">
-                {t.letters} • {t.house}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

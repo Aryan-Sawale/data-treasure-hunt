@@ -1,5 +1,5 @@
-import React from 'react';
-import { Volume2, VolumeX, Settings, Trophy } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Volume2, VolumeX, Settings, Trophy, Maximize, Minimize } from 'lucide-react';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
 import { isDevHelperEnabled } from '../config/questConfig';
@@ -14,6 +14,39 @@ export default function Header({
   playerRank = null,
   vaultUnlocked
 }) {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+    };
+  }, []);
+
+  const handleToggleFullscreen = () => {
+    hapticService.light();
+    soundService.playClick();
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      const el = document.documentElement;
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(() => {});
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  };
+
   const handleSoundClick = () => {
     hapticService.light();
     onToggleSound();
@@ -72,6 +105,20 @@ export default function Header({
             <span>{playerScore}</span>
             <span className="text-[9px] text-[#9E6E00] font-sans font-bold">PTS</span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" title="Live Sync Active" />
+          </button>
+
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={handleToggleFullscreen}
+            className="p-1.5 rounded-lg bg-[#F8FAFA] hover:bg-[#FFFDF5] border border-slate-200 hover:border-[#F9BD20] text-slate-600 active:scale-95 transition-all shadow-xs"
+            aria-label={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? (
+              <Minimize className="w-4 h-4 text-[#009488]" />
+            ) : (
+              <Maximize className="w-4 h-4 text-slate-600" />
+            )}
           </button>
 
           {/* Sound Toggle */}

@@ -419,8 +419,8 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
               </span>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <div className="relative flex-1 sm:w-64">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 sm:w-56">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
@@ -430,6 +430,26 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                   className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 bg-white focus:outline-none focus:border-[#009488]"
                 />
               </div>
+
+              {players.length > 0 && (
+                <select
+                  onChange={(e) => {
+                    const found = players.find(p => p.id === e.target.value);
+                    if (found) setPlayerToDelete(found);
+                    e.target.value = '';
+                  }}
+                  defaultValue=""
+                  className="bg-rose-50/70 border border-rose-200 text-rose-700 hover:bg-rose-100 rounded-xl px-2.5 py-1.5 text-xs font-bold focus:outline-none cursor-pointer shadow-2xs"
+                  title="Select individual player to delete"
+                >
+                  <option value="" disabled>🗑️ Delete Player...</option>
+                  {players.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.total_score} pts)
+                    </option>
+                  ))}
+                </select>
+              )}
 
               <button
                 onClick={fetchDashboard}

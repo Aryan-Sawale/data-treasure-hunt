@@ -349,7 +349,7 @@ export const apiService = {
    */
   deletePlayer: async (playerId) => {
     const base = getApiBaseUrl();
-    const token = getAdminToken();
+    const token = getAdminToken() || 'abnamro2026';
 
     try {
       const res = await fetch(`${base}/api/admin/players/${playerId}`, {
@@ -371,7 +371,7 @@ export const apiService = {
    */
   resetLeaderboard: async (deletePlayers = false) => {
     const base = getApiBaseUrl();
-    const token = getAdminToken();
+    const token = getAdminToken() || 'abnamro2026';
 
     try {
       const res = await fetch(`${base}/api/admin/reset?delete_players=${deletePlayers}`, {

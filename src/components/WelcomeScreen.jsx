@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowRight, Sparkles, Gift, Compass, ChevronDown, ChevronUp, User, Globe2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, Sparkles, Gift, Compass, ChevronDown, ChevronUp, User, Globe2, Loader2, Maximize, Minimize } from 'lucide-react';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
 import { getPlayerName, setPlayerName } from '../services/apiService';
@@ -8,6 +8,48 @@ export default function WelcomeScreen({ onStart }) {
   const [playerName, setPlayerNameState] = useState(() => getPlayerName());
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [nameError, setNameError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+    };
+  }, []);
+
+  const handleToggleFullscreen = () => {
+    hapticService.light();
+    soundService.playClick();
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      const el = document.documentElement;
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(() => {});
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  };
+
+  useEffect(() => {
+    // Quick initial skeleton loader for smooth appearance & session verification
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 450);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleStart = () => {
     if (!playerName.trim()) {
@@ -17,11 +59,14 @@ export default function WelcomeScreen({ onStart }) {
       return;
     }
 
+    setIsSubmitting(true);
     soundService.playSuccess();
     hapticService.success();
     const cleanName = playerName.trim();
     setPlayerName(cleanName);
-    onStart(cleanName);
+    setTimeout(() => {
+      onStart(cleanName);
+    }, 250);
   };
 
   const toggleHowItWorks = () => {
@@ -30,8 +75,46 @@ export default function WelcomeScreen({ onStart }) {
     setShowHowItWorks(!showHowItWorks);
   };
 
+  if (isLoading) {
+    return (
+      <div className="px-4 py-6 max-w-md mx-auto space-y-5 animate-pulse" aria-busy="true" aria-label="Loading welcome screen">
+        {/* Hero Badge Skeleton */}
+        <div className="flex flex-col items-center pt-1 space-y-2.5">
+          <div className="w-36 h-6 rounded-full bg-amber-100/80"></div>
+          <div className="w-48 h-8 rounded-xl bg-slate-200"></div>
+          <div className="w-56 h-4 rounded-lg bg-slate-100"></div>
+        </div>
+
+        {/* Main Quest Brief Skeleton Card */}
+        <div className="p-4 sm:p-5 rounded-2xl border-2 border-slate-200/80 bg-white space-y-3.5 shadow-sm">
+          <div className="flex items-start space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-[#F9BD20]/30 shrink-0"></div>
+            <div className="flex-1 space-y-2">
+              <div className="w-28 h-4 rounded-md bg-slate-200"></div>
+              <div className="w-full h-3 rounded-md bg-slate-100"></div>
+              <div className="w-5/6 h-3 rounded-md bg-slate-100"></div>
+            </div>
+          </div>
+          <div className="w-full h-10 rounded-xl bg-slate-100"></div>
+        </div>
+
+        {/* Name Input Skeleton */}
+        <div className="bg-white p-4 rounded-2xl border-2 border-slate-200 shadow-sm space-y-2.5">
+          <div className="w-48 h-3.5 rounded-md bg-teal-100/80"></div>
+          <div className="w-full h-11 rounded-xl bg-slate-100"></div>
+        </div>
+
+        {/* Start Button Skeleton */}
+        <div className="pt-1 space-y-2">
+          <div className="w-full h-14 rounded-2xl bg-[#009488]/30"></div>
+          <div className="w-48 h-3 rounded-md bg-slate-100 mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="px-4 py-6 max-w-md mx-auto space-y-5">
+    <div className="px-4 py-6 max-w-md mx-auto space-y-5 animate-fade-in">
       {/* Hero Badge */}
       <div className="relative text-center pt-1">
         <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-[#FFFBEB] border border-[#F9BD20] text-[#9E6E00] text-xs font-black mb-2.5 shadow-xs">
@@ -120,7 +203,7 @@ export default function WelcomeScreen({ onStart }) {
       <div className="bg-white p-4 rounded-2xl border-2 border-slate-200 shadow-sm space-y-2">
         <label htmlFor="playerName" className="text-xs font-black uppercase tracking-wider text-[#009488] flex items-center gap-1.5">
           <User className="w-3.5 h-3.5" />
-          <span>Enter your name</span>
+          <span>Enter Name / team name</span>
         </label>
         <input
           id="playerName"
@@ -133,7 +216,7 @@ export default function WelcomeScreen({ onStart }) {
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleStart();
           }}
-          placeholder="e.g. Alexander"
+          placeholder="e.g. Alexander or Gryffindor Squad"
           maxLength={40}
           className={`w-full px-3.5 py-3 rounded-xl border text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
             nameError
@@ -143,23 +226,52 @@ export default function WelcomeScreen({ onStart }) {
         />
         {nameError && (
           <p className="text-[11px] text-rose-600 font-semibold animate-fade-in">
-            Please enter your name to join the leaderboard!
+            Please enter your name or team name to join the leaderboard!
           </p>
         )}
       </div>
 
-      {/* Start Button */}
-      <div className="pt-1">
+      {/* Start Button & Controls */}
+      <div className="pt-1 space-y-2.5">
         <button
           onClick={handleStart}
-          className="w-full py-4 px-6 rounded-2xl bg-[#009488] hover:bg-[#007E74] text-white font-black text-base flex items-center justify-center space-x-3 shadow-xl shadow-[#009488]/25 border-b-4 border-[#006E64] active:scale-[0.98] transition-all group"
+          disabled={isSubmitting}
+          className="w-full py-4 px-6 rounded-2xl bg-[#009488] hover:bg-[#007E74] disabled:opacity-75 text-white font-black text-base flex items-center justify-center space-x-3 shadow-xl shadow-[#009488]/25 border-b-4 border-[#006E64] active:scale-[0.98] transition-all group"
         >
-          <span className="tracking-wide">Begin The Data Quest</span>
-          <span className="w-7 h-7 rounded-full bg-[#F9BD20] text-slate-950 flex items-center justify-center shadow-xs group-hover:translate-x-1 transition-transform">
-            <ArrowRight className="w-4 h-4 stroke-[3]" />
-          </span>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin text-white" />
+              <span className="tracking-wide">Entering The Vault...</span>
+            </>
+          ) : (
+            <>
+              <span className="tracking-wide">Begin The Data Quest</span>
+              <span className="w-7 h-7 rounded-full bg-[#F9BD20] text-slate-950 flex items-center justify-center shadow-xs group-hover:translate-x-1 transition-transform">
+                <ArrowRight className="w-4 h-4 stroke-[3]" />
+              </span>
+            </>
+          )}
         </button>
-        <p className="text-center text-[11px] text-[#878787] mt-2 font-medium">
+
+        <button
+          type="button"
+          onClick={handleToggleFullscreen}
+          className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 cursor-pointer"
+        >
+          {isFullscreen ? (
+            <>
+              <Minimize className="w-4 h-4 text-[#009488]" />
+              <span>Exit Fullscreen</span>
+            </>
+          ) : (
+            <>
+              <Maximize className="w-4 h-4 text-[#009488]" />
+              <span>Fullscreen Mode</span>
+            </>
+          )}
+        </button>
+
+        <p className="text-center text-[11px] text-[#878787] mt-1 font-medium">
           ABN AMRO Client Experience • Live Competitive Leaderboard
         </p>
       </div>

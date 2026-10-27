@@ -6,14 +6,14 @@
 export const DEFAULT_VAULT_CODE = "2347";
 export const DATASPHERE_PHRASE = "DATA VALUE CHAIN";
 
-// Set to true to re-enable hints, auto-complete buttons, and settings (or visit with ?debug=1)
+// Set to true to re-enable hints, quick-complete buttons, and dev helpers (or visit with ?debug=1 or ?dev=1 or ?test=1)
 export const SHOW_DEV_HELPERS = false;
 
 export const isDevHelperEnabled = () => {
   if (SHOW_DEV_HELPERS) return true;
   if (typeof window !== 'undefined' && window.location) {
     const params = new URLSearchParams(window.location.search);
-    return params.has('debug') || params.has('dev');
+    return params.has('debug') || params.has('dev') || params.has('test');
   }
   return false;
 };

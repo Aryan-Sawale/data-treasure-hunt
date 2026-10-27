@@ -132,28 +132,27 @@ export default function Puzzle2Quality({ onSolved, onPenalty }) {
 
   return (
     <div className="space-y-3.5">
-      {/* Objective Header */}
-      <div className="flex items-center justify-between px-1">
-        <div>
-          <h3 className="text-sm font-black text-[#009488] flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" />
-            The Data Quality Audit
-          </h3>
-          <p className="text-xs text-[#878787]">
-            Find and select the <strong>3 corrupted records</strong>, then submit.
+      {/* Challenge Header & Concise Prompt (Emoji Puzzle Style) */}
+      <div className="bg-[#FFFDF5] p-3.5 rounded-2xl border-2 border-[#F9BD20]/70 space-y-2 shadow-xs">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-mono font-black uppercase tracking-wider text-[#9E6E00]">
+            Challenge 3 of 4
+          </span>
+          <span className="text-xs font-mono font-black px-2.5 py-0.5 rounded-lg bg-[#F0FDF4] border border-[#009488]/30 text-[#009488]">
+            {selectedIds.length}/{totalRequired} Selected
+          </span>
+        </div>
+
+        {/* Larger Font, Green Brand Color with Icon */}
+        <div className="space-y-0.5">
+          <h2 className="text-lg sm:text-xl font-black text-[#009488] leading-tight flex items-center gap-2">
+            <span className="text-xl">🛡️</span>
+            <span>Data Quality Audit</span>
+          </h2>
+          <p className="text-xs sm:text-sm font-bold text-slate-600">
+            Select the 3 corrupted records and submit.
           </p>
         </div>
-        <span className="text-xs font-mono font-black px-2 py-0.5 rounded-lg bg-[#F8FAFA] text-slate-700 border border-slate-300">
-          {selectedIds.length}/{totalRequired} Selected
-        </span>
-      </div>
-
-      {/* Instruction Banner */}
-      <div className="bg-[#FFFDF5] border border-[#F9BD20]/50 rounded-2xl p-2.5 text-xs text-slate-700 flex items-center justify-between">
-        <span>Tap cards to select <strong>exactly 3</strong> anomalies:</span>
-        <span className="text-[10px] font-mono font-bold bg-[#F9BD20] text-slate-950 px-2 py-0.5 rounded">
-          {3 - selectedIds.length === 0 ? 'Ready to submit!' : `Select ${3 - selectedIds.length} more`}
-        </span>
       </div>
 
       {/* Grid of Business Records */}
@@ -178,25 +177,25 @@ export default function Puzzle2Quality({ onSolved, onPenalty }) {
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-2.5 min-w-0">
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
                     isSelected
                       ? 'bg-[#F9BD20]/20 border-[#F9BD20] text-[#9E6E00]'
                       : 'bg-slate-100 border-slate-200 text-slate-600'
                   }`}>
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="text-xs font-black text-slate-900 truncate">
+                    <h4 className="text-sm sm:text-base font-black text-slate-900 truncate">
                       {record.label}
                     </h4>
-                    <p className="text-[10px] font-mono text-[#878787] truncate">
+                    <p className="text-xs font-mono font-bold text-slate-500 truncate">
                       {record.account}
                     </p>
                   </div>
                 </div>
 
                 {/* Selection Checkbox Pill */}
-                <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${
+                <div className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all shrink-0 ${
                   isSuccess && record.isCorrupted
                     ? 'bg-[#009488] border-[#009488] text-white'
                     : isSelected
@@ -204,25 +203,25 @@ export default function Puzzle2Quality({ onSolved, onPenalty }) {
                     : 'bg-white border-slate-300'
                 }`}>
                   {(isSelected || (isSuccess && record.isCorrupted)) && (
-                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    <Check className="w-4 h-4 stroke-[3]" />
                   )}
                 </div>
               </div>
 
               {/* Record Metadata & Value */}
-              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-[10px] text-slate-500 font-medium">
+              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
+                <span className="text-xs text-slate-600 font-semibold">
                   {record.detail}
                 </span>
-                <span className="font-mono font-black text-slate-800">
+                <span className="font-mono font-black text-slate-900 text-xs sm:text-sm">
                   {record.amount}
                 </span>
               </div>
 
               {/* Error Explanation Reveal (Shown ONLY after successful submit) */}
               {isSuccess && record.isCorrupted && (
-                <div className="mt-2 p-1.5 rounded-lg bg-teal-100/60 border border-[#009488]/40 text-[10px] text-[#007066] font-bold animate-fade-in flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <div className="mt-2 p-2 rounded-xl bg-teal-100/60 border border-[#009488]/40 text-xs text-[#007066] font-bold animate-fade-in flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
                   <span>{record.errorReason}</span>
                 </div>
               )}
@@ -265,10 +264,10 @@ export default function Puzzle2Quality({ onSolved, onPenalty }) {
           </button>
 
           <button
-            onClick={handleAutoSolve}
-            className="text-[#878787] hover:text-[#009488] text-[11px] underline font-medium"
+            onClick={() => onSolved()}
+            className="text-xs font-black bg-amber-400 hover:bg-amber-500 text-slate-950 px-2.5 py-1 rounded-lg shadow-xs transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
           >
-            Auto Cleanse
+            ⚡ Quick Complete ➔
           </button>
         </div>
       )}

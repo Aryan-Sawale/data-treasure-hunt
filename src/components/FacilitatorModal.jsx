@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Key, RefreshCw, Check, Shield } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Key, RefreshCw, Check, Shield, Trash2, UserX } from 'lucide-react';
 import { QUEST_CONFIG } from '../config/questConfig';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
@@ -20,7 +20,36 @@ export default function FacilitatorModal({
   const [apiUrlDraft, setApiUrlDraft] = useState(() => getStoredApiUrl());
   const [showApiSavedToast, setShowApiSavedToast] = useState(false);
 
+  // Player deletion state
+  const [playersList, setPlayersList] = useState([]);
+  const [selectedPlayerId, setSelectedPlayerId] = useState('');
+  const [isDeletingPlayer, setIsDeletingPlayer] = useState(false);
+  const [deleteMsg, setDeleteMsg] = useState('');
+
   const vaultStage = QUEST_CONFIG.teams.length + 1;
+
+  const loadPlayers = async () => {
+    try {
+      const lb = await apiService.getLeaderboard(100);
+      if (lb && Array.isArray(lb.players)) {
+        setPlayersList(lb.players);
+        if (lb.players.length > 0) {
+          setSelectedPlayerId((prev) => {
+            const exists = lb.players.some((p) => p.id === prev);
+            return exists ? prev : lb.players[0].id;
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load players:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      loadPlayers();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -44,6 +73,32 @@ export default function FacilitatorModal({
     setStoredApiUrl(apiUrlDraft);
     setShowApiSavedToast(true);
     setTimeout(() => setShowApiSavedToast(false), 2000);
+  };
+
+  const handleDeleteSelectedPlayer = async () => {
+    if (!selectedPlayerId) return;
+    const player = playersList.find((p) => p.id === selectedPlayerId);
+    const targetName = player ? player.name : selectedPlayerId;
+
+    if (!confirm(`Permanently remove participant "${targetName}" from the session and leaderboard?`)) {
+      return;
+    }
+
+    setIsDeletingPlayer(true);
+    const ok = await apiService.deletePlayer(selectedPlayerId);
+    setIsDeletingPlayer(false);
+
+    if (ok) {
+      soundService.playSuccess();
+      hapticService.success();
+      setDeleteMsg(`Player "${targetName}" deleted.`);
+      setTimeout(() => setDeleteMsg(''), 3000);
+      await loadPlayers();
+    } else {
+      soundService.playError();
+      hapticService.error();
+      alert(`Failed to delete "${targetName}". Check connection.`);
+    }
   };
 
   return (
@@ -184,7 +239,51 @@ export default function FacilitatorModal({
           )}
         </div>
 
-        {/* 5. Link to Full Admin Console */}
+        {/* 5. Delete Individual Player */}
+        <div className="bg-[#FFF5F5] p-3 rounded-2xl border border-rose-200 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-rose-900 flex items-center gap-1.5">
+              <UserX className="w-3.5 h-3.5 text-rose-600" />
+              Delete Individual Player
+            </span>
+            <span className="text-[10px] text-rose-500 font-medium">Remove by ID</span>
+          </div>
+
+          {playersList.length === 0 ? (
+            <p className="text-[11px] text-slate-500 italic">No participants registered on leaderboard yet.</p>
+          ) : (
+            <div className="space-y-2">
+              <select
+                value={selectedPlayerId}
+                onChange={(e) => setSelectedPlayerId(e.target.value)}
+                className="w-full bg-white border border-rose-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-rose-500"
+              >
+                {playersList.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} (Rank #{p.rank} • {p.score} pts)
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={handleDeleteSelectedPlayer}
+                disabled={isDeletingPlayer || !selectedPlayerId}
+                className="w-full py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isDeletingPlayer ? 'Deleting...' : 'Delete Selected Player'}</span>
+              </button>
+            </div>
+          )}
+
+          {deleteMsg && (
+            <p className="text-[11px] text-rose-700 font-semibold flex items-center gap-1">
+              <Check className="w-3 h-3 text-emerald-600" /> {deleteMsg}
+            </p>
+          )}
+        </div>
+
+        {/* 6. Link to Full Admin Console */}
         <button
           onClick={() => {
             onClose();
@@ -197,7 +296,7 @@ export default function FacilitatorModal({
           <span>Open Full Admin Dashboard (/admin)</span>
         </button>
 
-        {/* 6. Reset Button */}
+        {/* 7. Reset Button */}
         <button
           onClick={async () => {
             if (confirm("Reset game progress AND leaderboard scores for a new session?")) {

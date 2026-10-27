@@ -169,10 +169,14 @@ export default function TeamPresentationCard({
                 </button>
 
                 <button
-                  onClick={() => handleVerify(true)}
-                  className="text-[#878787] hover:text-[#009488] text-[11px] underline font-medium"
+                  onClick={() => {
+                    const letters = team.letters || team.presentationSecretCode;
+                    onVerifyPresentation(team.id, letters);
+                    if (onProceedToNext) onProceedToNext();
+                  }}
+                  className="text-xs font-black bg-amber-400 hover:bg-amber-500 text-slate-950 px-2.5 py-1 rounded-lg shadow-xs transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
                 >
-                  Quick Check-in
+                  ⚡ Quick Complete ➔
                 </button>
               </div>
             )}

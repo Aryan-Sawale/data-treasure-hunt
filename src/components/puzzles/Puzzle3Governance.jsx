@@ -133,24 +133,31 @@ export default function Puzzle3Governance({ onSolved, onPenalty }) {
 
   return (
     <div className="space-y-3.5">
-      {/* Objective Header */}
-      <div className="flex items-center justify-between px-1">
-        <div>
-          <h3 className="text-sm font-black text-[#009488] flex items-center gap-1.5">
-            <GitFork className="w-4 h-4" />
-            The Data Lineage Sequence
-          </h3>
-          <p className="text-xs text-[#878787]">
+      {/* Challenge Header & Concise Prompt (Emoji Puzzle Style) */}
+      <div className="bg-[#FFFDF5] p-3.5 rounded-2xl border-2 border-[#F9BD20]/70 space-y-2 shadow-xs">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-mono font-black uppercase tracking-wider text-[#9E6E00]">
+            Challenge 4 of 4
+          </span>
+          <span className="text-xs font-mono font-black px-2.5 py-0.5 rounded-lg bg-[#F0FDF4] border border-[#009488]/30 text-[#009488]">
+            4 Steps
+          </span>
+        </div>
+
+        {/* Larger Font, Green Brand Color with Icon */}
+        <div className="space-y-0.5">
+          <h2 className="text-lg sm:text-xl font-black text-[#009488] leading-tight flex items-center gap-2">
+            <span className="text-xl">⚡</span>
+            <span>Data Lineage Sequence</span>
+          </h2>
+          <p className="text-xs sm:text-sm font-bold text-slate-600">
             {selectedIdx !== null ? (
-              <span className="text-[#9E6E00] font-bold">Tap another step to swap.</span>
+              <span className="text-[#9E6E00]">Tap another step to swap positions.</span>
             ) : (
-              <span>Order 4 steps and submit.</span>
+              <span>Tap steps to swap into correct order.</span>
             )}
           </p>
         </div>
-        <span className="text-xs font-mono font-black px-2 py-0.5 rounded-lg bg-[#F8FAFA] text-slate-700 border border-slate-300">
-          4 Steps
-        </span>
       </div>
 
       {/* Sequential Lineage Chain (Neutral styling - no early green spoiler) */}
@@ -252,10 +259,10 @@ export default function Puzzle3Governance({ onSolved, onPenalty }) {
           </button>
 
           <button
-            onClick={handleAutoSolve}
-            className="text-[#878787] hover:text-[#009488] text-[11px] underline font-medium"
+            onClick={() => onSolved()}
+            className="text-xs font-black bg-amber-400 hover:bg-amber-500 text-slate-950 px-2.5 py-1 rounded-lg shadow-xs transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
           >
-            Auto Order
+            ⚡ Quick Complete ➔
           </button>
         </div>
       )}
