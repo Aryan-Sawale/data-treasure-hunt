@@ -139,7 +139,7 @@ export default function WelcomeScreen({ onStart }) {
           <div className="space-y-1">
             <h3 className="font-black text-[#009488] text-base leading-tight">The Mission</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              A locked box awaits on the main table. Visit the 4 domain teams, collect secret letter fragments, and unlock the <strong className="text-[#009488] bg-[#F9BD20]/20 px-1 py-0.5 rounded font-black">Datasphere</strong> to reveal the 4-digit physical safe combination!
+              Visit 4 teams, collect secret letters, and unlock the <strong className="text-[#009488] font-black">Datasphere</strong> to reveal the safe combination!
             </p>
           </div>
         </div>

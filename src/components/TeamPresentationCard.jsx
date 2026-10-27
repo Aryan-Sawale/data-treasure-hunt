@@ -125,10 +125,6 @@ export default function TeamPresentationCard({
 
         {!isPresentationDone ? (
           <>
-            <p className="text-xs text-slate-600">
-              Visit <strong className="text-[#009488] font-bold">{team.room}</strong> for the presentation. At the end, enter the secret letters given by the presenters to collect your Datasphere fragment!
-            </p>
-
             {/* Input & Submit */}
             <div className="space-y-2">
               <div className="flex space-x-2">
