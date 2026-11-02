@@ -148,6 +148,52 @@ class SoundService {
     }
   }
 
+  // Breakout sound effects for BDM Term Linker
+  playBreakoutBounce(type = 'wall') {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      if (type === 'brick') {
+        // High bright bell chime for linking BDM term
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(640, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+        gain.gain.setValueAtTime(0.24, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        osc.start(now);
+        osc.stop(now + 0.09);
+      } else if (type === 'paddle') {
+        // Punchy resonant bounce off paddle
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(420, now);
+        osc.frequency.linearRampToValueAtTime(540, now + 0.06);
+        gain.gain.setValueAtTime(0.20, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+        osc.start(now);
+        osc.stop(now + 0.07);
+      } else {
+        // Soft wall tick
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, now);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        osc.start(now);
+        osc.stop(now + 0.04);
+      }
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+    } catch (e) {
+      console.warn("Audio error:", e);
+    }
+  }
+
   // Quick UI tap / click sound
   playClick() {
     if (this.muted) return;

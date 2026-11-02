@@ -9,6 +9,7 @@ import Puzzle2Quality from './puzzles/Puzzle2Quality';
 import Puzzle2WordSearch from './puzzles/Puzzle2WordSearch';
 import Puzzle3LineageSimon from './puzzles/Puzzle3LineageSimon';
 import Puzzle3Governance from './puzzles/Puzzle3Governance';
+import Puzzle3BdmBreakout from './puzzles/Puzzle3BdmBreakout';
 import { isDevHelperEnabled } from '../config/questConfig';
 
 export default function PuzzleContainer({ currentStage, onPuzzleSolved, onPenalty }) {
@@ -40,7 +41,12 @@ export default function PuzzleContainer({ currentStage, onPuzzleSolved, onPenalt
 
   const [stage4Step, setStage4Step] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('dutch_banking_stage4_simon_done') === 'true' ? 'SEQUENCE' : 'MEMORY_BUTTONS';
+      if (localStorage.getItem('dutch_banking_stage4_sequence_done') === 'true') {
+        return 'BDM_BREAKOUT';
+      }
+      if (localStorage.getItem('dutch_banking_stage4_simon_done') === 'true') {
+        return 'SEQUENCE';
+      }
     }
     return 'MEMORY_BUTTONS';
   });
@@ -109,7 +115,7 @@ export default function PuzzleContainer({ currentStage, onPuzzleSolved, onPenalt
         }
         return <Puzzle2WordSearch onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       case 4:
-        // Stop 4: BDM and Data Lineage (Challenge 8: Memory Buttons -> Challenge 9: Data Lineage Sequence)
+        // Stop 4: BDM and Data Lineage (Challenge 8: Memory Buttons -> Challenge 9: Lineage Sequence -> Challenge 10: BDM Breakout)
         if (stage4Step === 'MEMORY_BUTTONS') {
           return (
             <Puzzle3LineageSimon
@@ -123,7 +129,20 @@ export default function PuzzleContainer({ currentStage, onPuzzleSolved, onPenalt
             />
           );
         }
-        return <Puzzle3Governance onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
+        if (stage4Step === 'SEQUENCE') {
+          return (
+            <Puzzle3Governance
+              onSolved={() => {
+                try {
+                  localStorage.setItem('dutch_banking_stage4_sequence_done', 'true');
+                } catch (e) {}
+                setStage4Step('BDM_BREAKOUT');
+              }}
+              onPenalty={onPenalty}
+            />
+          );
+        }
+        return <Puzzle3BdmBreakout onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       default:
         return null;
     }

@@ -69,6 +69,7 @@ export const storageService = {
       localStorage.removeItem('dutch_banking_stage3_whack_done');
       localStorage.removeItem('dutch_banking_stage3_audit_done');
       localStorage.removeItem('dutch_banking_stage4_simon_done');
+      localStorage.removeItem('dutch_banking_stage4_sequence_done');
     } catch (e) {
       console.warn('Failed to clear state:', e);
     }
