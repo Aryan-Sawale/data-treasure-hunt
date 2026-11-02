@@ -288,7 +288,7 @@ export default function Puzzle2Quality({ onSolved, onPenalty }) {
         <div className="p-3.5 rounded-2xl bg-[#F0FDF4] border-2 border-[#009488] text-center animate-fade-in shadow-md">
           <CheckCircle2 className="w-6 h-6 text-[#009488] mx-auto mb-1 animate-bounce" />
           <h4 className="text-xs font-black text-[#009488]">All 3 Corrupted Records Cleansed!</h4>
-          <p className="text-[11px] text-slate-600">Stop 3: Enterprise Data Assets & Data Quality (House Gryffindor) Unlocked</p>
+          <p className="text-[11px] text-slate-600">Proceeding to Challenge 7: Word Search...</p>
         </div>
       )}
     </div>

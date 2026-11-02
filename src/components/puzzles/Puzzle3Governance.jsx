@@ -137,7 +137,7 @@ export default function Puzzle3Governance({ onSolved, onPenalty }) {
       <div className="bg-[#FFFDF5] p-3.5 rounded-2xl border-2 border-[#F9BD20]/70 space-y-2 shadow-xs">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-mono font-black uppercase tracking-wider text-[#9E6E00]">
-            Challenge 8
+            Challenge 9
           </span>
           <span className="text-xs font-mono font-black px-2.5 py-0.5 rounded-lg bg-[#F0FDF4] border border-[#009488]/30 text-[#009488]">
             4 Steps

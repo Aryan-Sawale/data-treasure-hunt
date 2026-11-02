@@ -6,6 +6,7 @@ import Puzzle1LakehouseSweeper from './puzzles/Puzzle1LakehouseSweeper';
 import Puzzle1Platform from './puzzles/Puzzle1Platform';
 import Puzzle2AnomalyWhack from './puzzles/Puzzle2AnomalyWhack';
 import Puzzle2Quality from './puzzles/Puzzle2Quality';
+import Puzzle2WordSearch from './puzzles/Puzzle2WordSearch';
 import Puzzle3LineageSimon from './puzzles/Puzzle3LineageSimon';
 import Puzzle3Governance from './puzzles/Puzzle3Governance';
 import { isDevHelperEnabled } from '../config/questConfig';
@@ -27,7 +28,12 @@ export default function PuzzleContainer({ currentStage, onPuzzleSolved, onPenalt
 
   const [stage3Step, setStage3Step] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('dutch_banking_stage3_whack_done') === 'true' ? 'AUDIT' : 'WHACK';
+      if (localStorage.getItem('dutch_banking_stage3_audit_done') === 'true') {
+        return 'WORD_SEARCH';
+      }
+      if (localStorage.getItem('dutch_banking_stage3_whack_done') === 'true') {
+        return 'AUDIT';
+      }
     }
     return 'WHACK';
   });
@@ -74,7 +80,7 @@ export default function PuzzleContainer({ currentStage, onPuzzleSolved, onPenalt
         }
         return <Puzzle1Platform onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       case 3:
-        // Stop 3: Enterprise Data Assets & Data Quality (Challenge 5: Anomaly Whacker -> Challenge 6: Corrupted Record Audit)
+        // Stop 3: Enterprise Data Assets & Data Quality (Challenge 5: Whack -> Challenge 6: Audit -> Challenge 7: Word Search)
         if (stage3Step === 'WHACK') {
           return (
             <Puzzle2AnomalyWhack
@@ -88,9 +94,22 @@ export default function PuzzleContainer({ currentStage, onPuzzleSolved, onPenalt
             />
           );
         }
-        return <Puzzle2Quality onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
+        if (stage3Step === 'AUDIT') {
+          return (
+            <Puzzle2Quality
+              onSolved={() => {
+                try {
+                  localStorage.setItem('dutch_banking_stage3_audit_done', 'true');
+                } catch (e) {}
+                setStage3Step('WORD_SEARCH');
+              }}
+              onPenalty={onPenalty}
+            />
+          );
+        }
+        return <Puzzle2WordSearch onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       case 4:
-        // Stop 4: BDM and Data Lineage (Challenge 7: Memory Buttons -> Challenge 8: Data Lineage Sequence)
+        // Stop 4: BDM and Data Lineage (Challenge 8: Memory Buttons -> Challenge 9: Data Lineage Sequence)
         if (stage4Step === 'MEMORY_BUTTONS') {
           return (
             <Puzzle3LineageSimon
