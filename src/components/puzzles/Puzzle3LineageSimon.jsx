@@ -219,7 +219,7 @@ export default function Puzzle3LineageSimon({ onSolved, onPenalty }) {
       <div className="bg-[#FFFDF5] p-3.5 rounded-2xl border-2 border-[#F9BD20]/70 space-y-1.5 shadow-xs">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-mono font-black uppercase tracking-wider text-[#9E6E00]">
-            Challenge 8
+            Challenge 9
           </span>
           <span
             className={`text-xs font-mono font-black px-2.5 py-0.5 rounded-lg border ${
@@ -395,7 +395,7 @@ export default function Puzzle3LineageSimon({ onSolved, onPenalty }) {
             onClick={onSolved}
             className="w-full py-3.5 px-4 rounded-xl bg-[#009488] hover:bg-[#007E74] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-[#009488]/20 border-b-4 border-[#006E64] active:scale-[0.98] transition-all cursor-pointer"
           >
-            <span>Proceed to Challenge 9</span>
+            <span>Proceed to Challenge 10</span>
             <ArrowRight className="w-4 h-4 stroke-[3]" />
           </button>
         </div>

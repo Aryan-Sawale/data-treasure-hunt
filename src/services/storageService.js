@@ -65,6 +65,7 @@ export const storageService = {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem('dutch_banking_stage1_match_done');
       localStorage.removeItem('dutch_banking_stage2_asteroids_done');
+      localStorage.removeItem('dutch_banking_stage2_memory_done');
       localStorage.removeItem('dutch_banking_stage2_minesweeper_done');
       localStorage.removeItem('dutch_banking_stage3_whack_done');
       localStorage.removeItem('dutch_banking_stage3_audit_done');

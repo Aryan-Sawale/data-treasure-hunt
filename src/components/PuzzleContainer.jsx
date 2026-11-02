@@ -4,6 +4,7 @@ import Puzzle1EmojiPhrase from './puzzles/Puzzle1EmojiPhrase';
 import Puzzle1LakehouseAsteroids from './puzzles/Puzzle1LakehouseAsteroids';
 import Puzzle1LakehouseSweeper from './puzzles/Puzzle1LakehouseSweeper';
 import Puzzle1Platform from './puzzles/Puzzle1Platform';
+import Puzzle1LakehouseSnake from './puzzles/Puzzle1LakehouseSnake';
 import Puzzle2AnomalyWhack from './puzzles/Puzzle2AnomalyWhack';
 import Puzzle2Quality from './puzzles/Puzzle2Quality';
 import Puzzle2WordSearch from './puzzles/Puzzle2WordSearch';
@@ -22,7 +23,12 @@ export default function PuzzleContainer({ currentStage, onPuzzleSolved, onPenalt
 
   const [stage2Step, setStage2Step] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('dutch_banking_stage2_asteroids_done') === 'true' ? 'MEMORY' : 'ASTEROIDS';
+      if (localStorage.getItem('dutch_banking_stage2_memory_done') === 'true') {
+        return 'SNAKE';
+      }
+      if (localStorage.getItem('dutch_banking_stage2_asteroids_done') === 'true') {
+        return 'MEMORY';
+      }
     }
     return 'ASTEROIDS';
   });
@@ -70,7 +76,7 @@ export default function PuzzleContainer({ currentStage, onPuzzleSolved, onPenalt
         }
         return <Puzzle1EmojiPhrase onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       case 2:
-        // Stop 2: Enterprise Data Lake (Challenge 3: Stream Defender -> Challenge 4: Memory Matching Game)
+        // Stop 2: Enterprise Data Lake (Challenge 3: Stream Defender -> Challenge 4: Memory Matching -> Challenge 5: Ingestion Snake)
         if (stage2Step === 'ASTEROIDS') {
           return (
             <Puzzle1LakehouseAsteroids
@@ -84,7 +90,20 @@ export default function PuzzleContainer({ currentStage, onPuzzleSolved, onPenalt
             />
           );
         }
-        return <Puzzle1Platform onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
+        if (stage2Step === 'MEMORY') {
+          return (
+            <Puzzle1Platform
+              onSolved={() => {
+                try {
+                  localStorage.setItem('dutch_banking_stage2_memory_done', 'true');
+                } catch (e) {}
+                setStage2Step('SNAKE');
+              }}
+              onPenalty={onPenalty}
+            />
+          );
+        }
+        return <Puzzle1LakehouseSnake onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       case 3:
         // Stop 3: Enterprise Data Assets & Data Quality (Challenge 5: Whack -> Challenge 6: Audit -> Challenge 7: Word Search)
         if (stage3Step === 'WHACK') {

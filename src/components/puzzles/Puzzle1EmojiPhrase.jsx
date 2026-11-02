@@ -10,8 +10,8 @@ const WORDS = [
     word: 'DATA',
     len: 4,
     label: 'Word 1',
-    emojis: ['💾', '📊'],
-    hint: 'Digital facts or records stored in databases (D _ _ _)',
+    isExcelGrid: true,
+    hint: 'Structured rows & columns in spreadsheets or databases (D _ _ _)',
   },
   {
     id: 2,
@@ -190,7 +190,7 @@ export default function Puzzle1EmojiPhrase({ onSolved, onPenalty }) {
             <span>Guess the Phrase!</span>
           </h2>
           <p className="text-xs sm:text-sm font-bold text-slate-600">
-            Guess each word from the emojis below.
+            Guess each word from the clues below.
           </p>
         </div>
       </div>
@@ -230,8 +230,39 @@ export default function Puzzle1EmojiPhrase({ onSolved, onPenalty }) {
                 ) : null}
               </div>
 
-              {/* Clue Visuals: Emojis or Social Media Share Icon */}
-              {w.isShareIcon ? (
+              {/* Clue Visuals: Excel Cell Grid, Social Media Share Icon, or Emojis */}
+              {w.isExcelGrid ? (
+                <div className="flex items-center justify-center py-0.5 select-none">
+                  <div className="bg-white border-2 border-emerald-600 rounded-lg shadow-2xs overflow-hidden w-20 text-[8px] font-mono leading-tight">
+                    {/* Excel Title Bar */}
+                    <div className="bg-[#107C41] text-white flex items-center justify-between px-1.5 py-0.5 font-bold">
+                      <span className="text-[8px] flex items-center gap-0.5">
+                        <span>📊</span>
+                        <span>.xlsx</span>
+                      </span>
+                      <span className="text-[7px] text-emerald-100 font-mono">fx</span>
+                    </div>
+                    {/* Table Column Headers */}
+                    <div className="grid grid-cols-3 bg-slate-100 text-slate-500 border-b border-slate-200 text-center font-bold text-[7px] py-0.5">
+                      <span className="border-r border-slate-200">A</span>
+                      <span className="border-r border-slate-200">B</span>
+                      <span>C</span>
+                    </div>
+                    {/* Row 1 */}
+                    <div className="grid grid-cols-3 text-slate-700 text-center text-[7px] border-b border-slate-100 py-0.5">
+                      <span className="border-r border-slate-100 bg-emerald-50/70 font-bold text-emerald-800">104</span>
+                      <span className="border-r border-slate-100 font-medium">89</span>
+                      <span className="font-medium">42</span>
+                    </div>
+                    {/* Row 2 */}
+                    <div className="grid grid-cols-3 text-slate-700 text-center text-[7px] py-0.5">
+                      <span className="border-r border-slate-100 font-medium">250</span>
+                      <span className="border-r border-slate-100 font-medium">18</span>
+                      <span className="bg-emerald-50/70 font-bold text-emerald-800">95</span>
+                    </div>
+                  </div>
+                </div>
+              ) : w.isShareIcon ? (
                 <div className="flex items-center justify-center gap-1.5 py-0.5 filter drop-shadow-xs">
                   <div
                     className={`w-8 h-8 rounded-xl flex items-center justify-center border shadow-2xs transition-colors ${
@@ -246,7 +277,7 @@ export default function Puzzle1EmojiPhrase({ onSolved, onPenalty }) {
                 </div>
               ) : (
                 <div className="text-3xl sm:text-4xl filter drop-shadow-xs flex items-center justify-center gap-1 select-none py-0.5">
-                  {w.emojis.map((em, i) => (
+                  {w.emojis?.map((em, i) => (
                     <span key={i}>{em}</span>
                   ))}
                 </div>

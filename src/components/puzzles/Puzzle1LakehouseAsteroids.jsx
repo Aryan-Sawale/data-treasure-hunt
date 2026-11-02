@@ -32,6 +32,7 @@ export default function Puzzle1LakehouseAsteroids({ onSolved, onPenalty }) {
   const gameStateRef = useRef({
     shipX: CANVAS_WIDTH / 2,
     targetShipX: CANVAS_WIDTH / 2,
+    holdSteerDir: 0,
     lasers: [],
     asteroids: [],
     particles: [],
@@ -56,6 +57,125 @@ export default function Puzzle1LakehouseAsteroids({ onSolved, onPenalty }) {
     }
     gameStateRef.current.stars = stars;
   }, []);
+
+  // Draw paused preview frame before game starts so user can get used to the screen
+  useEffect(() => {
+    if (gameStarted || isSuccess) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    // Deep space background
+    ctx.fillStyle = '#021B19';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // Starfield
+    (gameStateRef.current.stars || []).forEach((star) => {
+      ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+      ctx.fillRect(star.x, star.y, star.size, star.size);
+    });
+
+    // Ingestion buffer boundary
+    ctx.strokeStyle = 'rgba(0, 148, 136, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(0, CANVAS_HEIGHT - 22);
+    ctx.lineTo(CANVAS_WIDTH, CANVAS_HEIGHT - 22);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = 'rgba(0, 148, 136, 0.7)';
+    ctx.font = 'bold 8px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('▼ DATA LAKE INGESTION BOUNDARY ▼', CANVAS_WIDTH / 2, CANVAS_HEIGHT - 10);
+
+    // Sample preview asteroids (floating in space)
+    const previewAsteroids = [
+      { x: 75, y: 80, radius: 24, label: 'Corrupt Parquet' },
+      { x: 275, y: 105, radius: 22, label: 'Schema Drift' },
+      { x: 175, y: 170, radius: 25, label: 'Zombie Stream' },
+    ];
+
+    previewAsteroids.forEach((ast) => {
+      ctx.save();
+      ctx.translate(ast.x, ast.y);
+
+      // Glow backing
+      ctx.shadowColor = '#F43F5E';
+      ctx.shadowBlur = 10;
+
+      // Asteroid polygon body
+      ctx.beginPath();
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7) * Math.PI * 2;
+        const r = ast.radius * (0.85 + (i % 2 === 0 ? 0.2 : -0.1));
+        const px = Math.cos(a) * r;
+        const py = Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = '#2A0808';
+      ctx.fill();
+      ctx.strokeStyle = '#F43F5E';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Label Pill
+      ctx.shadowBlur = 0;
+      ctx.font = 'bold 8px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const textWidth = ctx.measureText(ast.label).width;
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+      ctx.fillRect(-textWidth / 2 - 3, -6, textWidth + 6, 12);
+      ctx.fillStyle = '#FFAEAE';
+      ctx.fillText(ast.label, 0, 0);
+
+      ctx.restore();
+    });
+
+    // Ready Lasers
+    ctx.fillStyle = '#F9BD20';
+    ctx.fillRect(CANVAS_WIDTH / 2 - 11, CANVAS_HEIGHT - 70, 3, 14);
+    ctx.fillRect(CANVAS_WIDTH / 2 + 8, CANVAS_HEIGHT - 70, 3, 14);
+
+    // Spaceship (Lakehouse Ingestion Pod)
+    const sx = CANVAS_WIDTH / 2;
+    const sy = CANVAS_HEIGHT - 44;
+
+    // Thruster flame
+    ctx.beginPath();
+    ctx.moveTo(sx - 5, sy + 18);
+    ctx.lineTo(sx + 5, sy + 18);
+    ctx.lineTo(sx, sy + 28);
+    ctx.closePath();
+    ctx.fillStyle = '#F9BD20';
+    ctx.fill();
+
+    // Main Ship Body
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - 14);
+    ctx.lineTo(sx + 15, sy + 15);
+    ctx.lineTo(sx + 7, sy + 12);
+    ctx.lineTo(sx, sy + 8);
+    ctx.lineTo(sx - 7, sy + 12);
+    ctx.lineTo(sx - 15, sy + 15);
+    ctx.closePath();
+    ctx.fillStyle = '#009488';
+    ctx.fill();
+    ctx.strokeStyle = '#00E5D4';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Cockpit / Engine Core
+    ctx.beginPath();
+    ctx.arc(sx, sy + 2, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#F9BD20';
+    ctx.fill();
+  }, [gameStarted, isSuccess]);
 
   // Main game loop running on Canvas
   useEffect(() => {
@@ -109,6 +229,14 @@ export default function Puzzle1LakehouseAsteroids({ onSolved, onPenalty }) {
 
     const loop = (timestamp) => {
       if (!running) return;
+
+      // Apply continuous steering if holding steer buttons
+      if (state.holdSteerDir) {
+        state.targetShipX = Math.max(
+          25,
+          Math.min(CANVAS_WIDTH - 25, state.targetShipX + state.holdSteerDir * 6.5)
+        );
+      }
 
       // Smooth ship movement toward target
       state.shipX += (state.targetShipX - state.shipX) * 0.22;
@@ -356,15 +484,45 @@ export default function Puzzle1LakehouseAsteroids({ onSolved, onPenalty }) {
     gameStateRef.current.targetShipX = Math.max(25, Math.min(CANVAS_WIDTH - 25, relativeX));
   };
 
-  const handleNudge = (delta) => {
+  const handleStartHold = (dir) => {
     if (!gameStarted || isSuccess) return;
+    gameStateRef.current.holdSteerDir = dir;
     gameStateRef.current.targetShipX = Math.max(
       25,
-      Math.min(CANVAS_WIDTH - 25, gameStateRef.current.shipX + delta)
+      Math.min(CANVAS_WIDTH - 25, gameStateRef.current.targetShipX + dir * 26)
     );
     soundService.playClick();
     hapticService.light();
   };
+
+  const handleStopHold = () => {
+    gameStateRef.current.holdSteerDir = 0;
+  };
+
+  // Keyboard navigation for holding arrow keys
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!gameStarted || isSuccess) return;
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        gameStateRef.current.holdSteerDir = -1;
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        gameStateRef.current.holdSteerDir = 1;
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      if (['ArrowLeft', 'ArrowRight', 'a', 'A', 'd', 'D'].includes(e.key)) {
+        gameStateRef.current.holdSteerDir = 0;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [gameStarted, isSuccess]);
 
   // Start game handler
   const handleStartGame = () => {
@@ -374,6 +532,7 @@ export default function Puzzle1LakehouseAsteroids({ onSolved, onPenalty }) {
     gameStateRef.current = {
       shipX: CANVAS_WIDTH / 2,
       targetShipX: CANVAS_WIDTH / 2,
+      holdSteerDir: 0,
       lasers: [],
       asteroids: [],
       particles: [],
@@ -448,7 +607,7 @@ export default function Puzzle1LakehouseAsteroids({ onSolved, onPenalty }) {
             <span>Lakehouse Stream Defender</span>
           </h2>
           <p className="text-xs sm:text-sm font-bold text-slate-600">
-            Blast 10 corrupted data asteroids to secure the Enterprise Data Lake!
+            Drag the ship or use buttons to steer and destroy all asteroids!
           </p>
         </div>
       </div>
@@ -481,17 +640,26 @@ export default function Puzzle1LakehouseAsteroids({ onSolved, onPenalty }) {
           className="w-full h-full block"
         />
 
-        {/* Idle Overlay (before launch) */}
+        {/* Paused Preview Frame Overlay with Play Button */}
         {!gameStarted && !isSuccess && (
-          <div className="absolute inset-0 bg-[#021B19]/80 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center space-y-3">
-            <span className="text-4xl animate-bounce">🚀</span>
-            <div className="space-y-1">
-              <h4 className="text-white font-black text-base sm:text-lg">
-                Data Stream Radar Ready
-              </h4>
-              <p className="text-xs text-slate-300 font-medium">
-                Drag your finger to steer the ship. Twin lasers auto-fire to blast incoming corrupted blocks!
-              </p>
+          <div className="absolute inset-0 bg-[#021B19]/50 backdrop-blur-[1.5px] flex flex-col items-center justify-center p-6 text-center space-y-4 select-none animate-fade-in">
+            {/* Big Circular Pulsing Play Button */}
+            <button
+              type="button"
+              onClick={handleStartGame}
+              className="w-18 h-18 sm:w-20 sm:h-20 rounded-full bg-[#009488] hover:bg-[#007E74] text-white flex items-center justify-center shadow-xl shadow-[#009488]/40 border-4 border-white active:scale-95 transition-all cursor-pointer group"
+              aria-label="Play Stream Defender"
+            >
+              <Play className="w-8 h-8 sm:w-9 sm:h-9 fill-white translate-x-0.5 group-hover:scale-110 transition-transform" />
+            </button>
+
+            <div className="bg-black/75 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20 text-center max-w-[280px]">
+              <span className="text-white font-black text-xs sm:text-sm block">
+                Tap Play to Start
+              </span>
+              <span className="text-[10px] text-slate-300 font-medium block mt-0.5">
+                Steer your ship to blast incoming rogue data blocks!
+              </span>
             </div>
           </div>
         )}
@@ -502,25 +670,38 @@ export default function Puzzle1LakehouseAsteroids({ onSolved, onPenalty }) {
         <div className="flex items-center justify-between gap-3 pt-0.5">
           <button
             type="button"
-            onClick={() => handleNudge(-40)}
-            className="flex-1 py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 text-xs font-black flex items-center justify-center gap-1.5 active:scale-95 shadow-xs cursor-pointer"
+            onPointerDown={() => handleStartHold(-1)}
+            onPointerUp={handleStopHold}
+            onPointerLeave={handleStopHold}
+            onPointerCancel={handleStopHold}
+            onContextMenu={(e) => e.preventDefault()}
+            className="flex-1 py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 text-xs font-black flex items-center justify-center gap-1.5 active:scale-95 shadow-xs cursor-pointer select-none"
           >
             <ChevronLeft className="w-4 h-4 text-[#009488]" />
-            <span>Steer Left</span>
+            <span>Hold Steer Left</span>
           </button>
           <button
             type="button"
-            onClick={() => handleNudge(40)}
-            className="flex-1 py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 text-xs font-black flex items-center justify-center gap-1.5 active:scale-95 shadow-xs cursor-pointer"
+            onPointerDown={() => handleStartHold(1)}
+            onPointerUp={handleStopHold}
+            onPointerLeave={handleStopHold}
+            onPointerCancel={handleStopHold}
+            onContextMenu={(e) => e.preventDefault()}
+            className="flex-1 py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 text-xs font-black flex items-center justify-center gap-1.5 active:scale-95 shadow-xs cursor-pointer select-none"
           >
-            <span>Steer Right</span>
+            <span>Hold Steer Right</span>
             <ChevronRight className="w-4 h-4 text-[#009488]" />
           </button>
         </div>
       )}
 
-      {/* Auto-scroll anchor */}
-      <div ref={bottomAnchorRef} className="h-1 w-full pointer-events-none" />
+      {/* Auto-scroll anchor with finger comfort space */}
+      <div
+        ref={bottomAnchorRef}
+        className={`w-full pointer-events-none transition-all ${
+          gameStarted && !isSuccess ? 'h-20 sm:h-24' : 'h-0'
+        }`}
+      />
 
       {/* Error / Breach notification */}
       {errorMsg && (

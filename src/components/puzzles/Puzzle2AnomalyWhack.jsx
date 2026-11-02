@@ -244,7 +244,7 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
       <div className="bg-[#FFFDF5] p-3.5 rounded-2xl border-2 border-[#F9BD20]/70 space-y-1.5 shadow-xs">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-mono font-black uppercase tracking-wider text-[#9E6E00]">
-            Challenge 5
+            Challenge 6
           </span>
           <div className="flex items-center gap-2">
             {/* Live Timer Badge */}
@@ -281,7 +281,7 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
             <span>Data Anomaly Whacker</span>
           </h2>
           <p className="text-xs sm:text-sm font-bold text-slate-600">
-            Whack {TARGET_CLEANSED} data bugs in {TIME_LIMIT} seconds! Avoid clean assets.
+            Tap the red tiles only! Whack {TARGET_CLEANSED} data bugs in {TIME_LIMIT} seconds!
           </p>
         </div>
       </div>
@@ -418,7 +418,7 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
             onClick={onSolved}
             className="w-full py-3.5 px-4 rounded-xl bg-[#009488] hover:bg-[#007E74] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-[#009488]/20 border-b-4 border-[#006E64] active:scale-[0.98] transition-all cursor-pointer"
           >
-            <span>Proceed to Challenge 6</span>
+            <span>Proceed to Challenge 7</span>
             <ArrowRight className="w-4 h-4 stroke-[3]" />
           </button>
         </div>

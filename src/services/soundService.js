@@ -194,6 +194,34 @@ class SoundService {
     }
   }
 
+  // Bubbly ascending blip for Snake eating an EDL data node
+  playSnakeEat() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(940, now + 0.08);
+
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.09);
+    } catch (e) {
+      console.warn("Audio error:", e);
+    }
+  }
+
   // Quick UI tap / click sound
   playClick() {
     if (this.muted) return;

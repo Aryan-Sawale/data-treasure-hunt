@@ -356,7 +356,7 @@ export default function Puzzle1Platform({ onSolved, onPenalty }) {
           <CheckCircle2 className="w-6 h-6 text-[#009488] mx-auto mb-1 animate-bounce" />
           <h4 className="text-xs sm:text-sm font-black text-[#009488]">All 4 Pairs Matched!</h4>
           <p className="text-[11px] text-slate-600 mt-0.5">
-            Stop 2: Enterprise Data Lake Unlocked
+            Proceeding to Challenge 5: Collect all technologies...
           </p>
         </div>
       )}

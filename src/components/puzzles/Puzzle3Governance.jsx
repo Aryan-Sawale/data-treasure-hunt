@@ -137,7 +137,7 @@ export default function Puzzle3Governance({ onSolved, onPenalty }) {
       <div className="bg-[#FFFDF5] p-3.5 rounded-2xl border-2 border-[#F9BD20]/70 space-y-2 shadow-xs">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-mono font-black uppercase tracking-wider text-[#9E6E00]">
-            Challenge 9
+            Challenge 10
           </span>
           <span className="text-xs font-mono font-black px-2.5 py-0.5 rounded-lg bg-[#F0FDF4] border border-[#009488]/30 text-[#009488]">
             4 Steps
@@ -284,7 +284,7 @@ export default function Puzzle3Governance({ onSolved, onPenalty }) {
         <div className="p-3.5 rounded-2xl bg-[#F0FDF4] border-2 border-[#009488] text-center animate-fade-in shadow-md">
           <CheckCircle2 className="w-6 h-6 text-[#009488] mx-auto mb-1 animate-bounce" />
           <h4 className="text-xs font-black text-[#009488]">Lineage Sequence Certified!</h4>
-          <p className="text-[11px] text-slate-600">Proceeding to Challenge 10: BDM Term Linker...</p>
+          <p className="text-[11px] text-slate-600">Proceeding to Challenge 11: BDM Term Linker...</p>
         </div>
       )}
     </div>
