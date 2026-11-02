@@ -6,8 +6,8 @@ import { hapticService } from '../../services/hapticService';
 
 // 4 Pairs = 8 Cards total
 const CARD_PAIRS = [
-  { pairId: 1, name: 'Provider onboarding', icon: UserCheck, color: 'text-teal-700', bg: 'bg-teal-50' },
-  { pairId: 2, name: 'Consumer Delivery', icon: Send, color: 'text-amber-700', bg: 'bg-amber-50' },
+  { pairId: 1, name: 'Onboarding', icon: UserCheck, color: 'text-teal-700', bg: 'bg-teal-50' },
+  { pairId: 2, name: 'Delivery', icon: Send, color: 'text-amber-700', bg: 'bg-amber-50' },
   { pairId: 3, name: 'DAS', icon: Database, color: 'text-sky-700', bg: 'bg-sky-50' },
   { pairId: 4, name: 'RDS', icon: HardDrive, color: 'text-emerald-700', bg: 'bg-emerald-50' },
 ];
@@ -87,10 +87,10 @@ export default function Puzzle1Platform({ onSolved, onPenalty }) {
   const [isSuccess, setIsSuccess] = useState(false);
   const [mismatchCount, setMismatchCount] = useState(0);
 
-  // 4-second initial memorization preview states
+  // 8-second initial memorization preview states
   const [gameStarted, setGameStarted] = useState(false);
   const [isMemorizing, setIsMemorizing] = useState(false);
-  const [memorizeSecondsLeft, setMemorizeSecondsLeft] = useState(4);
+  const [memorizeSecondsLeft, setMemorizeSecondsLeft] = useState(8);
 
   // 2-second penalty reshow states (-10 points)
   const [isReshowing, setIsReshowing] = useState(false);
@@ -99,18 +99,18 @@ export default function Puzzle1Platform({ onSolved, onPenalty }) {
   const matchedCount = matchedPairIds.length;
   const totalPairs = CARD_PAIRS.length; // 4
 
-  // Start 4-second initial memory preview
+  // Start 8-second initial memory preview
   const handleStartGame = () => {
     if (isMemorizing || isReshowing || isSuccess) return;
     soundService.playSuccess();
     hapticService.medium();
     setIsMemorizing(true);
-    setMemorizeSecondsLeft(4);
+    setMemorizeSecondsLeft(8);
 
     const startTime = Date.now();
     const interval = setInterval(() => {
       const elapsed = (Date.now() - startTime) / 1000;
-      const remaining = Math.max(0, 4 - elapsed);
+      const remaining = Math.max(0, 8 - elapsed);
       setMemorizeSecondsLeft(remaining > 0 ? remaining.toFixed(1) : '0.0');
     }, 100);
 
@@ -120,7 +120,7 @@ export default function Puzzle1Platform({ onSolved, onPenalty }) {
       setGameStarted(true);
       soundService.playDialTick();
       hapticService.success();
-    }, 4000);
+    }, 8000);
   };
 
   // Reshow cards for 2 seconds with a 10-point penalty
@@ -216,7 +216,7 @@ export default function Puzzle1Platform({ onSolved, onPenalty }) {
       <div className="bg-[#FFFDF5] p-3.5 rounded-2xl border-2 border-[#F9BD20]/70 space-y-2 shadow-xs">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-mono font-black uppercase tracking-wider text-[#9E6E00]">
-            Challenge 2 of 4
+            Challenge 4
           </span>
           <span className="text-xs font-mono font-black px-2.5 py-0.5 rounded-lg bg-[#F0FDF4] border border-[#009488]/30 text-[#009488]">
             {matchedCount}/{totalPairs} Pairs
@@ -230,7 +230,7 @@ export default function Puzzle1Platform({ onSolved, onPenalty }) {
             <span>Memory Matching</span>
           </h2>
           <p className="text-xs sm:text-sm font-bold text-slate-600">
-            Memorize in 4 seconds, then match all 4 pairs.
+            Memorize in 8 seconds, then match all 4 pairs.
           </p>
         </div>
 
@@ -241,12 +241,12 @@ export default function Puzzle1Platform({ onSolved, onPenalty }) {
             className="w-full py-3 px-4 rounded-xl bg-[#009488] hover:bg-[#007E74] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-[#009488]/20 border-b-4 border-[#006E64] active:scale-[0.98] transition-all cursor-pointer"
           >
             <Eye className="w-4 h-4 text-[#F9BD20]" />
-            <span>Show Cards (4s) & Start</span>
+            <span>Show Cards (8s) & Start</span>
           </button>
         )}
       </div>
 
-      {/* 4-Second Initial Memorize Countdown Banner */}
+      {/* 8-Second Initial Memorize Countdown Banner */}
       {isMemorizing && (
         <div className="bg-amber-50 p-3 rounded-2xl border-2 border-[#F9BD20] space-y-1.5 text-center shadow-md animate-fade-in">
           <div className="flex items-center justify-center gap-2 text-xs font-black text-amber-900 uppercase">
@@ -259,7 +259,7 @@ export default function Puzzle1Platform({ onSolved, onPenalty }) {
           <div className="w-full bg-amber-200 h-2 rounded-full overflow-hidden p-0.5">
             <div
               className="h-full rounded-full bg-[#009488] transition-all duration-100 ease-linear"
-              style={{ width: `${(memorizeSecondsLeft / 4) * 100}%` }}
+              style={{ width: `${(memorizeSecondsLeft / 8) * 100}%` }}
             />
           </div>
         </div>

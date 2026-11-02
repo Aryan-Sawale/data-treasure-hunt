@@ -1,24 +1,109 @@
-import React from 'react';
+import React, { useState } from 'react';
+import Puzzle0CapabilityMatch from './puzzles/Puzzle0CapabilityMatch';
 import Puzzle1EmojiPhrase from './puzzles/Puzzle1EmojiPhrase';
+import Puzzle1LakehouseAsteroids from './puzzles/Puzzle1LakehouseAsteroids';
+import Puzzle1LakehouseSweeper from './puzzles/Puzzle1LakehouseSweeper';
 import Puzzle1Platform from './puzzles/Puzzle1Platform';
+import Puzzle2AnomalyWhack from './puzzles/Puzzle2AnomalyWhack';
 import Puzzle2Quality from './puzzles/Puzzle2Quality';
+import Puzzle3LineageSimon from './puzzles/Puzzle3LineageSimon';
 import Puzzle3Governance from './puzzles/Puzzle3Governance';
 import { isDevHelperEnabled } from '../config/questConfig';
 
 export default function PuzzleContainer({ currentStage, onPuzzleSolved, onPenalty }) {
+  const [stage1Step, setStage1Step] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dutch_banking_stage1_match_done') === 'true' ? 'EMOJI' : 'MATCH';
+    }
+    return 'MATCH';
+  });
+
+  const [stage2Step, setStage2Step] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dutch_banking_stage2_asteroids_done') === 'true' ? 'MEMORY' : 'ASTEROIDS';
+    }
+    return 'ASTEROIDS';
+  });
+
+  const [stage3Step, setStage3Step] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dutch_banking_stage3_whack_done') === 'true' ? 'AUDIT' : 'WHACK';
+    }
+    return 'WHACK';
+  });
+
+  const [stage4Step, setStage4Step] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dutch_banking_stage4_simon_done') === 'true' ? 'SEQUENCE' : 'MEMORY_BUTTONS';
+    }
+    return 'MEMORY_BUTTONS';
+  });
+
   const renderPuzzle = () => {
     switch (currentStage) {
       case 1:
-        // Stop 1: Data Marketplace (Emoji Phrase Guess)
+        // Stop 1: Data Marketplace (Challenge 1: Capability Matching -> Challenge 2: Emoji Phrase Decrypt)
+        if (stage1Step === 'MATCH') {
+          return (
+            <Puzzle0CapabilityMatch
+              onSolved={() => {
+                try {
+                  localStorage.setItem('dutch_banking_stage1_match_done', 'true');
+                } catch (e) {}
+                setStage1Step('EMOJI');
+              }}
+              onPenalty={onPenalty}
+            />
+          );
+        }
         return <Puzzle1EmojiPhrase onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       case 2:
-        // Stop 2: Enterprise Data Lake (Memory Matching Game)
+        // Stop 2: Enterprise Data Lake (Challenge 3: Stream Defender -> Challenge 4: Memory Matching Game)
+        if (stage2Step === 'ASTEROIDS') {
+          return (
+            <Puzzle1LakehouseAsteroids
+              onSolved={() => {
+                try {
+                  localStorage.setItem('dutch_banking_stage2_asteroids_done', 'true');
+                } catch (e) {}
+                setStage2Step('MEMORY');
+              }}
+              onPenalty={onPenalty}
+            />
+          );
+        }
         return <Puzzle1Platform onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       case 3:
-        // Stop 3: Enterprise Data Assets & Data Quality (Corrupted Record Audit)
+        // Stop 3: Enterprise Data Assets & Data Quality (Challenge 5: Anomaly Whacker -> Challenge 6: Corrupted Record Audit)
+        if (stage3Step === 'WHACK') {
+          return (
+            <Puzzle2AnomalyWhack
+              onSolved={() => {
+                try {
+                  localStorage.setItem('dutch_banking_stage3_whack_done', 'true');
+                } catch (e) {}
+                setStage3Step('AUDIT');
+              }}
+              onPenalty={onPenalty}
+            />
+          );
+        }
         return <Puzzle2Quality onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       case 4:
-        // Stop 4: BDM and Data Lineage (Sequence Game)
+        // Stop 4: BDM and Data Lineage (Challenge 7: Memory Buttons -> Challenge 8: Data Lineage Sequence)
+        if (stage4Step === 'MEMORY_BUTTONS') {
+          return (
+            <Puzzle3LineageSimon
+              onSolved={() => {
+                try {
+                  localStorage.setItem('dutch_banking_stage4_simon_done', 'true');
+                } catch (e) {}
+                setStage4Step('SEQUENCE');
+              }}
+              onPenalty={onPenalty}
+            />
+          );
+        }
         return <Puzzle3Governance onSolved={onPuzzleSolved} onPenalty={onPenalty} />;
       default:
         return null;

@@ -1,76 +1,149 @@
 import React, { useState, useRef } from 'react';
-import { CheckCircle2, AlertCircle, Lightbulb, KeyRound } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Lightbulb, KeyRound, Share2 } from 'lucide-react';
 import { soundService } from '../../services/soundService';
 import { hapticService } from '../../services/hapticService';
 import { isDevHelperEnabled } from '../../config/questConfig';
 
-const TARGET_PHRASE = 'DATA SHARING AGREEMENT';
-const NORMALIZED_TARGET = TARGET_PHRASE.replace(/\s+/g, '').toUpperCase();
-const WORD1_LEN = 4;
-const WORD2_LEN = 7;
-const WORD3_LEN = 9;
+const WORDS = [
+  {
+    id: 1,
+    word: 'DATA',
+    len: 4,
+    label: 'Word 1',
+    emojis: ['💾', '📊'],
+    hint: 'Digital facts or records stored in databases (D _ _ _)',
+  },
+  {
+    id: 2,
+    word: 'SHARING',
+    len: 7,
+    label: 'Word 2',
+    isShareIcon: true,
+    hint: 'Distributing or sending to others on social media (S _ _ _ _ _ _)',
+  },
+  {
+    id: 3,
+    word: 'AGREEMENT',
+    len: 9,
+    label: 'Word 3',
+    emojis: ['🤝', '📜'],
+    hint: 'Formal contract, accord, or legal pact between parties (A _ _ _ _ _ _ _ _)',
+  },
+];
 
 export default function Puzzle1EmojiPhrase({ onSolved, onPenalty }) {
-  const [guess, setGuess] = useState('');
+  const [solvedWords, setSolvedWords] = useState([]);
+  const [activeWordId, setActiveWordId] = useState(1);
+  const [currentGuess, setCurrentGuess] = useState('');
   const [errorMsg, setErrorMsg] = useState(null);
+  const [wordSuccessMsg, setWordSuccessMsg] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const inputRef = useRef(null);
 
-  // Compute dynamic slot states based on user typing
-  const clean = guess.trimStart().toUpperCase();
-  let w1 = '';
-  let w2 = '';
-  let w3 = '';
-
-  if (clean.includes(' ')) {
-    const parts = clean.split(' ');
-    w1 = (parts[0] || '').replace(/[^A-Z]/g, '').slice(0, WORD1_LEN);
-    w2 = (parts[1] || '').replace(/[^A-Z]/g, '').slice(0, WORD2_LEN);
-    w3 = (parts.slice(2).join('') || '').replace(/[^A-Z]/g, '').slice(0, WORD3_LEN);
-  } else {
-    const letters = clean.replace(/[^A-Z]/g, '');
-    w1 = letters.slice(0, WORD1_LEN);
-    w2 = letters.slice(WORD1_LEN, WORD1_LEN + WORD2_LEN);
-    w3 = letters.slice(WORD1_LEN + WORD2_LEN, WORD1_LEN + WORD2_LEN + WORD3_LEN);
-  }
-
-  const slots1 = Array.from({ length: WORD1_LEN }, (_, i) => w1[i] || '_');
-  const slots2 = Array.from({ length: WORD2_LEN }, (_, i) => w2[i] || '_');
-  const slots3 = Array.from({ length: WORD3_LEN }, (_, i) => w3[i] || '_');
+  const activeWord = WORDS.find((w) => w.id === activeWordId) || WORDS[0];
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
     if (isSuccess) return;
 
-    const cleanInput = guess.trim().toUpperCase();
-    const normalizedInput = cleanInput.replace(/\s+/g, '');
+    const rawClean = currentGuess.trim().toUpperCase();
+    const clean = rawClean.replace(/[^A-Z]/g, '');
 
-    if (!cleanInput) {
-      setErrorMsg('Please enter your phrase guess!');
+    if (!clean) {
+      setErrorMsg(`Please type your guess for ${activeWord.label}!`);
       soundService.playError();
       hapticService.error();
       return;
     }
 
-    if (normalizedInput === NORMALIZED_TARGET) {
-      setIsSuccess(true);
+    // 1. User typed entire target phrase "DATA SHARING AGREEMENT"
+    if (clean === 'DATASHARINGAGREEMENT' || rawClean.replace(/\s+/g, '') === 'DATASHARINGAGREEMENT') {
+      setSolvedWords([1, 2, 3]);
+      setCurrentGuess('');
       setErrorMsg(null);
+      setWordSuccessMsg('Brilliant! All 3 words solved at once!');
+      setIsSuccess(true);
       soundService.playSuccess();
       hapticService.success();
       setTimeout(() => {
         onSolved();
       }, 1200);
-    } else {
-      const nextAttempts = attempts + 1;
-      setAttempts(nextAttempts);
-      soundService.playError();
-      hapticService.error();
-      setErrorMsg('Not quite right! (-5 pts). Check the emojis and try again.');
-      if (onPenalty) {
-        onPenalty(5, 'Incorrect Phrase Guess');
+      return;
+    }
+
+    // 2. User guessed the currently active word
+    if (clean === activeWord.word) {
+      const nextSolved = [...new Set([...solvedWords, activeWord.id])];
+      setSolvedWords(nextSolved);
+      setCurrentGuess('');
+      setErrorMsg(null);
+
+      soundService.playSuccess();
+      hapticService.success();
+
+      if (nextSolved.length >= 3) {
+        setIsSuccess(true);
+        setWordSuccessMsg(`Correct! "${activeWord.word}" completes the phrase!`);
+        setTimeout(() => {
+          onSolved();
+        }, 1200);
+      } else {
+        setWordSuccessMsg(`Correct! "${activeWord.word}" solved!`);
+        // Advance to next unsolved word
+        const nextUnsolved = WORDS.find((w) => !nextSolved.includes(w.id));
+        if (nextUnsolved) {
+          setActiveWordId(nextUnsolved.id);
+        }
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 50);
       }
+      return;
+    }
+
+    // 3. User typed one of the other words (e.g., typed "SHARING" while Word 1 was active)
+    const matchedOther = WORDS.find((w) => w.word === clean && !solvedWords.includes(w.id));
+    if (matchedOther) {
+      const nextSolved = [...new Set([...solvedWords, matchedOther.id])];
+      setSolvedWords(nextSolved);
+      setCurrentGuess('');
+      setErrorMsg(null);
+
+      soundService.playSuccess();
+      hapticService.success();
+
+      if (nextSolved.length >= 3) {
+        setIsSuccess(true);
+        setWordSuccessMsg(`Correct! "${matchedOther.word}" completes the phrase!`);
+        setTimeout(() => {
+          onSolved();
+        }, 1200);
+      } else {
+        setWordSuccessMsg(`Nice! "${clean}" is ${matchedOther.label}! Now solve ${activeWord.label}.`);
+        if (matchedOther.id === activeWord.id) {
+          const nextUnsolved = WORDS.find((w) => !nextSolved.includes(w.id));
+          if (nextUnsolved) {
+            setActiveWordId(nextUnsolved.id);
+          }
+        }
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 50);
+      }
+      return;
+    }
+
+    // 4. Incorrect guess
+    const nextAttempts = attempts + 1;
+    setAttempts(nextAttempts);
+    soundService.playError();
+    hapticService.error();
+    setWordSuccessMsg(null);
+    setErrorMsg(`Not quite right! (-5 pts). Try guessing ${activeWord.label} again.`);
+    if (onPenalty) {
+      onPenalty(5, 'Incorrect Word Guess');
     }
   };
 
@@ -84,16 +157,29 @@ export default function Puzzle1EmojiPhrase({ onSolved, onPenalty }) {
     }
   };
 
+  const handleSelectWord = (wordId) => {
+    if (isSuccess) return;
+    soundService.playDialTick();
+    hapticService.light();
+    setActiveWordId(wordId);
+    setCurrentGuess('');
+    setErrorMsg(null);
+    setWordSuccessMsg(null);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 50);
+  };
+
   return (
     <div className="space-y-3.5">
-      {/* Challenge Header & Concise Prompt (Matching Memory Game Style) */}
+      {/* Challenge Header & Concise Prompt */}
       <div className="bg-[#FFFDF5] p-3.5 rounded-2xl border-2 border-[#F9BD20]/70 space-y-2 shadow-xs">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-mono font-black uppercase tracking-wider text-[#9E6E00]">
-            Challenge 1 of 4
+            Challenge 2
           </span>
           <span className="text-xs font-mono font-black px-2.5 py-0.5 rounded-lg bg-[#F0FDF4] border border-[#009488]/30 text-[#009488]">
-            3 Words
+            {solvedWords.length}/3 Words Solved
           </span>
         </div>
 
@@ -104,127 +190,210 @@ export default function Puzzle1EmojiPhrase({ onSolved, onPenalty }) {
             <span>Guess the Phrase!</span>
           </h2>
           <p className="text-xs sm:text-sm font-bold text-slate-600">
-            Decipher 3 words from the emojis below.
+            Guess each word from the emojis below.
           </p>
         </div>
       </div>
 
-      {/* 3 Emoji Clue Cards (Large Emojis, Minimalist Labels) */}
+      {/* 3 Emoji Clue Cards (Selectable Word Tabs) */}
       <div className="grid grid-cols-3 gap-2">
-        {/* Word 1 */}
-        <div className="bg-white border-2 border-slate-200 rounded-2xl p-3 flex flex-col items-center text-center space-y-1 shadow-2xs hover:border-[#009488]/50 transition-all">
-          <div className="text-3xl sm:text-4xl filter drop-shadow-xs flex items-center gap-1 select-none py-0.5">
-            <span>💾</span>
-            <span>📊</span>
-          </div>
-          <span className="text-[11px] font-mono font-bold text-slate-500">4 letters</span>
-        </div>
+        {WORDS.map((w) => {
+          const isSolved = solvedWords.includes(w.id);
+          const isActive = activeWordId === w.id;
 
-        {/* Word 2 */}
-        <div className="bg-white border-2 border-slate-200 rounded-2xl p-3 flex flex-col items-center text-center space-y-1 shadow-2xs hover:border-[#009488]/50 transition-all">
-          <div className="text-3xl sm:text-4xl filter drop-shadow-xs flex items-center gap-1 select-none py-0.5">
-            <span>🍕</span>
-            <span>🫂</span>
-          </div>
-          <span className="text-[11px] font-mono font-bold text-slate-500">7 letters</span>
-        </div>
+          return (
+            <button
+              key={w.id}
+              type="button"
+              onClick={() => handleSelectWord(w.id)}
+              className={`p-2.5 sm:p-3 rounded-2xl border-2 transition-all flex flex-col items-center text-center space-y-1 relative cursor-pointer select-none ${
+                isSolved
+                  ? 'bg-[#F0FDF4] border-[#009488] shadow-xs'
+                  : isActive
+                  ? 'bg-[#FFFDF5] border-[#F9BD20] ring-2 ring-[#F9BD20]/50 shadow-sm scale-[1.02]'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 shadow-2xs opacity-90'
+              }`}
+            >
+              {/* Top Status */}
+              <div className="w-full flex items-center justify-between text-[9px] font-mono font-bold">
+                <span className={isSolved ? 'text-[#009488] font-black' : isActive ? 'text-[#9E6E00] font-black' : 'text-slate-400'}>
+                  {w.label}
+                </span>
+                {isSolved ? (
+                  <span className="text-[#009488] font-black flex items-center gap-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 stroke-[3]" />
+                  </span>
+                ) : isActive ? (
+                  <span className="px-1.5 py-0.5 rounded-full bg-[#F9BD20] text-slate-950 font-black text-[8px] uppercase">
+                    Active
+                  </span>
+                ) : null}
+              </div>
 
-        {/* Word 3 */}
-        <div className="bg-white border-2 border-slate-200 rounded-2xl p-3 flex flex-col items-center text-center space-y-1 shadow-2xs hover:border-[#009488]/50 transition-all">
-          <div className="text-3xl sm:text-4xl filter drop-shadow-xs flex items-center gap-1 select-none py-0.5">
-            <span>🤝</span>
-            <span>📜</span>
-          </div>
-          <span className="text-[11px] font-mono font-bold text-slate-500">9 letters</span>
-        </div>
+              {/* Clue Visuals: Emojis or Social Media Share Icon */}
+              {w.isShareIcon ? (
+                <div className="flex items-center justify-center gap-1.5 py-0.5 filter drop-shadow-xs">
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center border shadow-2xs transition-colors ${
+                      isSolved
+                        ? 'bg-[#009488]/15 border-[#009488]/40 text-[#009488]'
+                        : 'bg-sky-50 border-sky-300 text-sky-600'
+                    }`}
+                  >
+                    <Share2 className="w-4 h-4 stroke-[2.5]" />
+                  </div>
+                  <span className="text-2xl sm:text-3xl">📲</span>
+                </div>
+              ) : (
+                <div className="text-3xl sm:text-4xl filter drop-shadow-xs flex items-center justify-center gap-1 select-none py-0.5">
+                  {w.emojis.map((em, i) => (
+                    <span key={i}>{em}</span>
+                  ))}
+                </div>
+              )}
+
+              {/* Bottom Label: Solved Word or Letter Count */}
+              {isSolved ? (
+                <span className="text-xs font-black text-[#009488] font-mono tracking-wider truncate w-full">
+                  {w.word}
+                </span>
+              ) : (
+                <span className={`text-[11px] font-mono font-bold ${isActive ? 'text-slate-800 font-black' : 'text-slate-500'}`}>
+                  {w.len} letters
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Clean Letter Slots (Completely Uniform Across All 3 Words) */}
-      <div 
-        onClick={() => inputRef.current?.focus()}
-        className="bg-[#F8FAFA] border-2 border-slate-200 rounded-2xl p-3 sm:p-3.5 space-y-2.5 shadow-inner cursor-pointer select-none"
-        title="Tap to type your guess"
-      >
-        {/* Word 1: 4 Boxes */}
-        <div className="flex items-center justify-center gap-1 sm:gap-1.5">
-          {slots1.map((char, idx) => (
-            <span
-              key={idx}
-              className={`w-7 h-9 sm:w-8 sm:h-10 flex items-center justify-center rounded-xl border-2 font-mono font-black text-xs sm:text-sm transition-all ${
-                char !== '_'
-                  ? 'bg-teal-50 border-[#009488] text-[#009488] shadow-xs'
-                  : 'bg-white border-slate-200 text-slate-300'
-              }`}
-            >
-              {char}
-            </span>
-          ))}
-        </div>
+      {/* Word Letter Slots (Stacked Rows, Perfectly Uniform Boxes) */}
+      <div className="bg-[#F8FAFA] border-2 border-slate-200 rounded-2xl p-3 sm:p-3.5 space-y-2.5 shadow-inner select-none">
+        {WORDS.map((w) => {
+          const isSolved = solvedWords.includes(w.id);
+          const isActive = activeWordId === w.id;
+          const currentWordGuess = isActive
+            ? currentGuess.trim().toUpperCase().replace(/[^A-Z]/g, '')
+            : '';
 
-        {/* Word 2: 7 Boxes */}
-        <div className="flex items-center justify-center gap-1 sm:gap-1.5">
-          {slots2.map((char, idx) => (
-            <span
-              key={idx}
-              className={`w-7 h-9 sm:w-8 sm:h-10 flex items-center justify-center rounded-xl border-2 font-mono font-black text-xs sm:text-sm transition-all ${
-                char !== '_'
-                  ? 'bg-teal-50 border-[#009488] text-[#009488] shadow-xs'
-                  : 'bg-white border-slate-200 text-slate-300'
+          return (
+            <div
+              key={w.id}
+              onClick={() => handleSelectWord(w.id)}
+              className={`p-1.5 rounded-xl transition-all cursor-pointer ${
+                isActive && !isSolved
+                  ? 'bg-amber-50/70 border border-[#F9BD20]/60 ring-2 ring-[#F9BD20]/20'
+                  : isSolved
+                  ? 'bg-teal-50/40 border border-[#009488]/30'
+                  : 'hover:bg-slate-100/60'
               }`}
+              title={isSolved ? `${w.word} (Solved)` : `Tap to guess ${w.label}`}
             >
-              {char}
-            </span>
-          ))}
-        </div>
+              {/* Row Header */}
+              <div className="flex items-center justify-between text-[10px] font-mono font-bold px-1 mb-1">
+                <span
+                  className={
+                    isSolved
+                      ? 'text-[#009488] font-black'
+                      : isActive
+                      ? 'text-[#9E6E00] font-black'
+                      : 'text-slate-400'
+                  }
+                >
+                  {w.label} {isSolved ? `✓ ${w.word}` : `(${w.len} letters)`}
+                </span>
+                {isActive && !isSolved && (
+                  <span className="text-[9px] font-mono text-[#9E6E00] font-bold">
+                    typing...
+                  </span>
+                )}
+              </div>
 
-        {/* Word 3: 9 Boxes */}
-        <div className="flex items-center justify-center gap-1 sm:gap-1.5">
-          {slots3.map((char, idx) => (
-            <span
-              key={idx}
-              className={`w-7 h-9 sm:w-8 sm:h-10 flex items-center justify-center rounded-xl border-2 font-mono font-black text-xs sm:text-sm transition-all ${
-                char !== '_'
-                  ? 'bg-teal-50 border-[#009488] text-[#009488] shadow-xs'
-                  : 'bg-white border-slate-200 text-slate-300'
-              }`}
-            >
-              {char}
-            </span>
-          ))}
-        </div>
+              {/* Uniform Boxes */}
+              <div className="flex items-center justify-center gap-1 sm:gap-1.5">
+                {Array.from({ length: w.len }, (_, i) => {
+                  const letter = isSolved
+                    ? w.word[i]
+                    : isActive
+                    ? currentWordGuess[i] || '_'
+                    : '_';
+
+                  const isFilled = letter !== '_';
+
+                  return (
+                    <span
+                      key={i}
+                      className={`w-7 h-9 sm:w-8 sm:h-10 flex items-center justify-center rounded-xl border-2 font-mono font-black text-xs sm:text-sm transition-all ${
+                        isSolved
+                          ? 'bg-teal-50 border-[#009488] text-[#009488] shadow-xs'
+                          : isFilled
+                          ? 'bg-amber-50 border-[#F9BD20] text-slate-900 shadow-xs'
+                          : 'bg-white border-slate-200 text-slate-300'
+                      }`}
+                    >
+                      {letter}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Form Input & Action Buttons */}
       <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="relative">
-          <input
-            ref={inputRef}
-            type="text"
-            value={guess}
-            disabled={isSuccess}
-            onChange={(e) => {
-              setGuess(e.target.value);
-              if (errorMsg) setErrorMsg(null);
-            }}
-            placeholder="Type guess here..."
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck="false"
-            className="w-full bg-white border-2 border-slate-200 focus:border-[#009488] rounded-xl px-3.5 py-3 text-sm text-slate-900 font-bold uppercase placeholder:text-slate-400 placeholder:normal-case focus:outline-none transition-all shadow-xs"
-          />
-          {guess && !isSuccess && (
-            <button
-              type="button"
-              onClick={() => {
-                setGuess('');
-                inputRef.current?.focus();
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs px-1">
+            <label className="font-bold text-slate-700 flex items-center gap-1.5">
+              <span>
+                Guess {activeWord.label} ({activeWord.len} letters):
+              </span>
+            </label>
+            <span className="text-[11px] font-mono font-bold text-[#009488]">
+              {solvedWords.length}/3 Solved
+            </span>
+          </div>
+
+          <div className="relative">
+            <input
+              ref={inputRef}
+              type="text"
+              value={currentGuess}
+              disabled={isSuccess}
+              onChange={(e) => {
+                setCurrentGuess(e.target.value);
+                if (errorMsg) setErrorMsg(null);
+                if (wordSuccessMsg) setWordSuccessMsg(null);
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold px-1.5 py-0.5 rounded bg-slate-100"
-            >
-              ✕
-            </button>
-          )}
+              placeholder={`Type ${activeWord.label.toLowerCase()} guess (${activeWord.len} letters)...`}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck="false"
+              className="w-full bg-white border-2 border-slate-200 focus:border-[#009488] rounded-xl px-3.5 py-3 text-sm text-slate-900 font-bold uppercase placeholder:text-slate-400 placeholder:normal-case focus:outline-none transition-all shadow-xs"
+            />
+            {currentGuess && !isSuccess && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentGuess('');
+                  inputRef.current?.focus();
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold px-1.5 py-0.5 rounded bg-slate-100"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Word Success Notice */}
+        {wordSuccessMsg && (
+          <div className="p-2.5 rounded-xl bg-[#F0FDF4] border border-[#009488]/40 flex items-center gap-2 text-[#009488] text-xs font-bold animate-fade-in">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-[#009488]" />
+            <span>{wordSuccessMsg}</span>
+          </div>
+        )}
 
         {/* Error notification */}
         {errorMsg && (
@@ -252,22 +421,33 @@ export default function Puzzle1EmojiPhrase({ onSolved, onPenalty }) {
             </button>
           </div>
         ) : (
-          <div className="p-2.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20] flex items-center gap-2 text-xs animate-fade-in shadow-2xs">
-            <Lightbulb className="w-4 h-4 text-[#F9BD20] shrink-0 fill-[#F9BD20]" />
-            <p className="text-slate-800 font-medium">
-              Hint: Formal agreement or contract to share data.
-            </p>
+          <div className="p-3 rounded-2xl bg-[#FFFDF5] border-2 border-[#F9BD20] space-y-1.5 text-xs animate-fade-in shadow-2xs">
+            <div className="flex items-center gap-1.5 font-mono font-black text-[10px] uppercase text-[#9E6E00]">
+              <Lightbulb className="w-4 h-4 text-[#F9BD20] fill-[#F9BD20]" />
+              <span>HINTS UNLOCKED (-5 PTS)</span>
+            </div>
+            <div className="space-y-1 text-slate-700 font-medium pl-1">
+              <p>
+                <strong className="text-[#009488]">Word 1:</strong> {WORDS[0].hint}
+              </p>
+              <p>
+                <strong className="text-[#009488]">Word 2:</strong> {WORDS[1].hint}
+              </p>
+              <p>
+                <strong className="text-[#009488]">Word 3:</strong> {WORDS[2].hint}
+              </p>
+            </div>
           </div>
         )}
 
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isSuccess || !guess.trim()}
+          disabled={isSuccess || !currentGuess.trim()}
           className="w-full py-3.5 px-4 rounded-xl bg-[#009488] hover:bg-[#007E74] disabled:opacity-50 text-white font-black text-sm flex items-center justify-center space-x-2 shadow-md shadow-[#009488]/20 border-b-4 border-[#006E64] active:scale-[0.98] transition-all cursor-pointer"
         >
           <KeyRound className="w-4 h-4 text-[#F9BD20]" />
-          <span>Submit Guess</span>
+          <span>Submit {activeWord.label} Guess</span>
         </button>
       </form>
 
