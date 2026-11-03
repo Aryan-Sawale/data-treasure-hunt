@@ -60,7 +60,7 @@ export default function PuzzleContainer({ currentStage, onPuzzleSolved, onPenalt
   const renderPuzzle = () => {
     switch (currentStage) {
       case 1:
-        // Stop 1: Data Marketplace (Challenge 1: Capability Matching -> Challenge 2: Emoji Phrase Decrypt)
+        // Stop 1: Metadata governance and solutions (Challenge 1: Capability Matching -> Challenge 2: Emoji Phrase Decrypt)
         if (stage1Step === 'MATCH') {
           return (
             <Puzzle0CapabilityMatch

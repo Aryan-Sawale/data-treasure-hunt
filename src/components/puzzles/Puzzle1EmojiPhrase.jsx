@@ -506,7 +506,7 @@ export default function Puzzle1EmojiPhrase({ onSolved, onPenalty }) {
             "Data Sharing Agreement" Decrypted!
           </h4>
           <p className="text-[11px] text-slate-600">
-            Stop 1: Data Marketplace Unlocked
+            Stop 1: Metadata governance and solutions Unlocked
           </p>
         </div>
       )}

@@ -691,7 +691,7 @@ export default function Puzzle1LakehouseSnake({ onSolved, onPenalty }) {
             onClick={onSolved}
             className="w-full py-3.5 px-4 rounded-xl bg-[#009488] hover:bg-[#007E74] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-[#009488]/20 border-b-4 border-[#006E64] active:scale-[0.98] transition-all cursor-pointer"
           >
-            <span>Proceed to Presentation Verification</span>
+            <span>Proceed to Presentation</span>
             <ArrowRight className="w-4 h-4 stroke-[3]" />
           </button>
         </div>

@@ -28,9 +28,9 @@ export const QUEST_CONFIG = {
   teams: [
     {
       id: 1,
-      name: "Data Marketplace",
-      shortName: "Data Marketplace",
-      codeName: "THE DATA MARKETPLACE",
+      name: "Metadata governance and solutions",
+      shortName: "Metadata governance and solutions",
+      codeName: "METADATA GOVERNANCE AND SOLUTIONS",
       badge: "🛒",
       house: "House Ravenclaw",
       houseEmoji: "🦅",
@@ -46,13 +46,13 @@ export const QUEST_CONFIG = {
         solvedMessage: "Phrase decrypted! Data Sharing Agreement established."
       },
       presentationSecretCode: "HACN",
-      presentationHint: "Look for the 4-letter code on the Data Marketplace presentation slide!",
+      presentationHint: "Look for the 4-letter code on the Metadata governance and solutions presentation slide!",
       letters: "HACN",
       fragmentReveal: {
         fragmentIndex: 0,
         letters: "HACN",
         title: "Letter Fragment #1 Discovered: HACN",
-        flavor: "You verified the Data Marketplace presentation! 4 letters added to your Datasphere cipher."
+        flavor: "You verified the Metadata governance and solutions presentation! 4 letters added to your Datasphere cipher."
       }
     },
     {

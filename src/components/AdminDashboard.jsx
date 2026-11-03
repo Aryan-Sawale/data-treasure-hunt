@@ -367,7 +367,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { stop: 1, name: 'Data Marketplace', house: 'Ravenclaw', game: 'Emoji Decrypt', puzzle: 'PUZZLE_1', code: 'CODE_1', letters: 'HACN' },
+              { stop: 1, name: 'Metadata governance and solutions', house: 'Ravenclaw', game: 'Emoji Decrypt', puzzle: 'PUZZLE_1', code: 'CODE_1', letters: 'HACN' },
               { stop: 2, name: 'Enterprise Data Lake', house: 'Hufflepuff', game: 'Memory Match', puzzle: 'PUZZLE_2', code: 'CODE_2', letters: 'EUL' },
               { stop: 3, name: 'Assets & Data Quality', house: 'Gryffindor', game: 'Quality Audit', puzzle: 'PUZZLE_3', code: 'CODE_3', letters: 'ATD' },
               { stop: 4, name: 'BDM & Data Lineage', house: 'Slytherin', game: 'Lineage Sequence', puzzle: 'PUZZLE_4', code: 'CODE_4', letters: 'AAIV' }
