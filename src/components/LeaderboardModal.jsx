@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, X, RefreshCw, Medal, Crown, Sparkles, User, ExternalLink } from 'lucide-react';
-import { apiService, getPlayerId, getPlayerName } from '../services/apiService';
+import { apiService, getPlayerId, getPlayerName, getRoomId } from '../services/apiService';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
 
-export default function LeaderboardModal({ isOpen, onClose, onOpenFullscreen }) {
+export default function LeaderboardModal({ isOpen, onClose, onOpenFullscreen, roomId = null }) {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const currentPlayerId = getPlayerId();
+  const activeRoom = (roomId || getRoomId()).trim().toUpperCase() || 'DEFAULT';
 
   const fetchScores = async () => {
     setIsLoading(true);
-    const result = await apiService.getLeaderboard();
+    const result = await apiService.getLeaderboard(50, activeRoom);
     setData(result);
     setIsLoading(false);
   };
@@ -20,7 +21,7 @@ export default function LeaderboardModal({ isOpen, onClose, onOpenFullscreen }) 
     if (isOpen) {
       fetchScores();
     }
-  }, [isOpen]);
+  }, [isOpen, activeRoom]);
 
   if (!isOpen) return null;
 
@@ -53,7 +54,7 @@ export default function LeaderboardModal({ isOpen, onClose, onOpenFullscreen }) 
             <div>
               <h3 className="font-black text-sm tracking-wide">Live Expedition Leaderboard</h3>
               <p className="text-[11px] text-white/80">
-                {data?.total_players || 0} competitive solvers
+                Room: <span className="font-mono font-bold text-[#F9BD20]">{data?.room_id || activeRoom}</span> • {data?.total_players || 0} solvers
               </p>
             </div>
           </div>
@@ -152,12 +153,12 @@ export default function LeaderboardModal({ isOpen, onClose, onOpenFullscreen }) 
           {/* Full Rankings List */}
           <div className="space-y-1.5">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block px-1">
-              All Rankings
+              All Rankings in Room {data?.room_id || activeRoom}
             </span>
 
             {leaderboard.length === 0 ? (
               <div className="p-6 text-center text-slate-400 text-xs">
-                No solvers yet. Be the first to solve a puzzle!
+                No solvers yet in this room. Be the first to solve a puzzle!
               </div>
             ) : (
               leaderboard.map((item) => {
@@ -236,4 +237,3 @@ export default function LeaderboardModal({ isOpen, onClose, onOpenFullscreen }) 
     </div>
   );
 }
-

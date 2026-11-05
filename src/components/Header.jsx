@@ -12,7 +12,8 @@ export default function Header({
   onOpenLeaderboard,
   playerScore = 0,
   playerRank = null,
-  vaultUnlocked
+  vaultUnlocked,
+  roomId = 'DEFAULT'
 }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -80,7 +81,7 @@ export default function Header({
                 The Data Vault
               </span>
             </div>
-            <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               <span className="bg-[#F9BD20] text-slate-950 px-1.5 py-0.5 rounded-md font-mono font-black text-[9px] uppercase tracking-wider shadow-2xs leading-none">
                 ABN AMRO
               </span>
@@ -88,6 +89,14 @@ export default function Header({
               <span className="text-[11px] text-[#878787] font-medium leading-none whitespace-nowrap">
                 Expedition
               </span>
+              {roomId && (
+                <>
+                  <span className="text-slate-300">•</span>
+                  <span className="bg-teal-50 border border-[#009488]/30 text-[#009488] px-1.5 py-0.5 rounded-md font-mono font-black text-[9px] uppercase tracking-wider leading-none">
+                    {roomId}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -10,10 +10,17 @@ import FacilitatorModal from './components/FacilitatorModal';
 import LeaderboardModal from './components/LeaderboardModal';
 import PublicLeaderboard from './components/PublicLeaderboard';
 import AdminDashboard from './components/AdminDashboard';
-import { QUEST_CONFIG, isDevHelperEnabled } from './config/questConfig';
+import { QUEST_CONFIG, isDevHelperEnabled, TIMED_CHALLENGES } from './config/questConfig';
 import { storageService } from './services/storageService';
 import { soundService } from './services/soundService';
-import { apiService, getPlayerName } from './services/apiService';
+import {
+  apiService,
+  getPlayerName,
+  getRoomId,
+  setRoomId,
+  connectRoomWebSocket,
+  subscribeToRoomEvents
+} from './services/apiService';
 import { Trophy, Sparkles, AlertTriangle } from 'lucide-react';
 
 const getInitialRoute = () => {
@@ -40,6 +47,9 @@ export default function App() {
   const [playerRank, setPlayerRank] = useState(null);
   const [scoreToast, setScoreToast] = useState(null);
   const [isBackendOnline, setIsBackendOnline] = useState(true);
+  const [roomId, setRoomIdState] = useState(() => getRoomId());
+  const [activeTimers, setActiveTimers] = useState([]);
+  const [expiredTimers, setExpiredTimers] = useState([]);
 
   const totalTeams = QUEST_CONFIG.teams.length;
   const vaultStage = totalTeams + 1; // Stage 5 is Vault
@@ -87,8 +97,9 @@ export default function App() {
 
     // 2. Initial player sync
     const existingName = getPlayerName();
+    const currentRoom = getRoomId();
     if (existingName) {
-      apiService.joinGame(existingName).then((res) => {
+      apiService.joinGame(existingName, currentRoom).then((res) => {
         if (res.player) {
           setPlayerScore(res.player.total_score || 0);
           setPlayerRank(res.player.rank || 1);
@@ -96,9 +107,27 @@ export default function App() {
       });
     }
 
-    // 3. Periodic rank and score polling every 8 seconds
+    // 3. Connect room WebSocket & subscribe to real-time timer events
+    connectRoomWebSocket(currentRoom);
+    const unsubscribeWs = subscribeToRoomEvents((msg) => {
+      if (msg.type === 'CHALLENGE_TIMER_STARTED') {
+        setActiveTimers((prev) => {
+          const filtered = prev.filter(t => t.challenge_id !== msg.challenge_id);
+          return [...filtered, msg];
+        });
+      }
+    });
+
+    // 4. Initial room timers query
+    apiService.getRoomStatus(currentRoom).then(status => {
+      if (status?.active_timers) setActiveTimers(status.active_timers);
+      if (status?.expired_timers) setExpiredTimers(status.expired_timers);
+    });
+
+    // 5. Periodic rank, score, and room timer polling every 5 seconds
     const interval = setInterval(() => {
       const name = getPlayerName();
+      const activeRoom = getRoomId();
       if (name) {
         apiService.getPlayer().then(player => {
           if (player) {
@@ -107,23 +136,39 @@ export default function App() {
           }
         });
       }
-    }, 8000);
+      apiService.getRoomStatus(activeRoom).then(status => {
+        if (status?.active_timers) setActiveTimers(status.active_timers);
+        if (status?.expired_timers) setExpiredTimers(status.expired_timers);
+      });
+    }, 5000);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      clearInterval(interval);
+      unsubscribeWs();
+    };
+  }, [roomId]);
 
   const handleToggleSound = () => {
     const muted = soundService.toggleMute();
     setIsMuted(muted);
   };
 
-  const handleStartQuest = async (name) => {
+  const handleStartQuest = async (name, roomCode) => {
+    const cleanRoom = setRoomId(roomCode);
+    setRoomIdState(cleanRoom);
+
     // Register/sync with backend
-    const res = await apiService.joinGame(name);
+    const res = await apiService.joinGame(name, cleanRoom);
     if (res.player) {
       setPlayerScore(res.player.total_score || 0);
       setPlayerRank(res.player.rank || 1);
     }
+
+    connectRoomWebSocket(cleanRoom);
+    apiService.getRoomStatus(cleanRoom).then(data => {
+      if (data?.active_timers) setActiveTimers(data.active_timers);
+      if (data?.expired_timers) setExpiredTimers(data.expired_timers);
+    });
 
     setState(prev => ({
       ...prev,
@@ -132,23 +177,40 @@ export default function App() {
     }));
   };
 
-  // Called when a team's puzzle is solved
-  const handlePuzzleSolved = async () => {
-    const currentTeamId = state.stage;
+  // Called when an individual puzzle mini-game is solved
+  const handleMiniGameSolved = async (challengeId) => {
+    const res = await apiService.completeMilestone(challengeId, state.stage, false, roomId);
 
-    // Award competitive rank-based points
-    const milestoneKey = `PUZZLE_${currentTeamId}`;
-    const res = await apiService.completeMilestone(milestoneKey, currentTeamId);
-
-    if (res.pointsAwarded > 0) {
+    if (res && res.pointsAwarded > 0) {
       setPlayerScore(res.totalScore);
+      const title = TIMED_CHALLENGES[challengeId]?.title || 'Challenge';
       setScoreToast({
         points: res.pointsAwarded,
         rank: res.rankOrder,
-        title: `Stop #${currentTeamId} Puzzle Solved`
+        title: res.firstSolver ? `⚡ 1st to solve! ${title}` : `${title} Solved (Rank #${res.rankOrder})`
       });
       setTimeout(() => setScoreToast(null), 3500);
     }
+  };
+
+  // Called when a mini-game 30s timer expires or caught up (0 points)
+  const handleMiniGameTimeout = async (challengeId) => {
+    await apiService.recordTimeout(challengeId, roomId);
+    setExpiredTimers(prev => Array.from(new Set([...prev, challengeId])));
+    setActiveTimers(prev => prev.filter(t => t.challenge_id !== challengeId));
+
+    const title = TIMED_CHALLENGES[challengeId]?.title || 'Challenge';
+    setScoreToast({
+      points: 0,
+      isPenalty: true,
+      title: `⏰ Time's up for ${title}! (0 pts)`
+    });
+    setTimeout(() => setScoreToast(null), 3000);
+  };
+
+  // Called when all mini-games in a stage are completed
+  const handlePuzzleSolved = async () => {
+    const currentTeamId = state.stage;
 
     setState(prev => ({
       ...prev,
@@ -159,7 +221,7 @@ export default function App() {
 
   // Called when wrong attempt penalty is applied
   const handlePenalty = async (points = 5, reason = 'Wrong Attempt') => {
-    const res = await apiService.deductPenalty(points, reason);
+    const res = await apiService.deductPenalty(points, reason, roomId);
     if (res) {
       setPlayerScore(res.totalScore);
       if (res.rank) setPlayerRank(res.rank);
@@ -174,9 +236,8 @@ export default function App() {
 
   // Called when a presentation is verified with secret letters
   const handleVerifyPresentation = async (teamId, letters) => {
-    // Award competitive rank-based points
     const milestoneKey = `CODE_${teamId}`;
-    const res = await apiService.completeMilestone(milestoneKey, teamId);
+    const res = await apiService.completeMilestone(milestoneKey, teamId, false, roomId);
 
     if (res.pointsAwarded > 0) {
       setPlayerScore(res.totalScore);
@@ -221,7 +282,7 @@ export default function App() {
 
   // Called when Datasphere is successfully unlocked by entering DATA VALUE CHAIN
   const handleDatasphereUnlocked = async () => {
-    await apiService.completeMilestone('VAULT_UNLOCKED', vaultStage, true);
+    await apiService.completeMilestone('VAULT_UNLOCKED', vaultStage, true, roomId);
     setState(prev => ({
       ...prev,
       isVaultCracked: true,
@@ -252,6 +313,8 @@ export default function App() {
     setState(reset);
     setPlayerScore(0);
     setPlayerRank(1);
+    setActiveTimers([]);
+    setExpiredTimers([]);
   };
 
   // Facilitator overrides
@@ -284,6 +347,7 @@ export default function App() {
   if (currentRoute === 'leaderboard') {
     return (
       <PublicLeaderboard
+        roomId={roomId}
         onNavigateHome={() => navigateTo('quest')}
       />
     );
@@ -293,6 +357,7 @@ export default function App() {
   if (currentRoute === 'admin') {
     return (
       <AdminDashboard
+        roomId={roomId}
         onNavigateHome={() => navigateTo('quest')}
         onNavigateLeaderboard={() => navigateTo('leaderboard')}
       />
@@ -303,7 +368,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-slate-800 flex flex-col justify-between selection:bg-[#009488] selection:text-white relative">
-      {/* Real-time Floating Score Toast (Bottom-centered, flexbox aligned, zero clipping) */}
+      {/* Real-time Floating Score Toast */}
       {scoreToast && (
         <div className="fixed bottom-6 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
           {scoreToast.isPenalty ? (
@@ -358,6 +423,7 @@ export default function App() {
         playerScore={playerScore}
         playerRank={playerRank}
         vaultUnlocked={state.isVaultCracked}
+        roomId={roomId}
       />
 
       {/* Main Content Area */}
@@ -388,6 +454,10 @@ export default function App() {
                     currentStage={state.stage}
                     onPuzzleSolved={handlePuzzleSolved}
                     onPenalty={handlePenalty}
+                    onMiniGameSolved={handleMiniGameSolved}
+                    onMiniGameTimeout={handleMiniGameTimeout}
+                    activeTimers={activeTimers}
+                    expiredTimers={expiredTimers}
                   />
                 ) : (
                   <TeamPresentationCard
@@ -459,6 +529,7 @@ export default function App() {
         isOpen={isLeaderboardOpen}
         onClose={() => setIsLeaderboardOpen(false)}
         onOpenFullscreen={() => navigateTo('leaderboard')}
+        roomId={roomId}
       />
     </div>
   );

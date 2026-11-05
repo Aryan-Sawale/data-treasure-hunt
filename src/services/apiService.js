@@ -1,6 +1,7 @@
 /**
  * API Service for The Data Vault real-time competitive scoring & leaderboard.
- * Communicates with the FastAPI backend with offline graceful fallback.
+ * Communicates with the FastAPI backend with offline graceful fallback,
+ * room isolation, and WebSocket real-time challenge timers.
  */
 
 export const getApiBaseUrl = () => {
@@ -34,6 +35,7 @@ export const getApiBaseUrl = () => {
 const STORAGE_KEYS = {
   PLAYER_ID: 'vault_player_id',
   PLAYER_NAME: 'vault_player_name',
+  ROOM_ID: 'vault_room_id',
   LOCAL_SCORE: 'vault_local_score',
   LOCAL_RANK: 'vault_local_rank',
   COMPLETED_MILESTONES: 'vault_completed_milestones',
@@ -56,40 +58,170 @@ export const setStoredApiUrl = (url) => {
 
 // Generates or retrieves a persistent player UUID
 export const getPlayerId = () => {
-  let id = localStorage.getItem(STORAGE_KEYS.PLAYER_ID);
+  let id = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.PLAYER_ID) : null;
   if (!id) {
     id = 'p-' + Math.random().toString(36).substring(2, 9) + '-' + Date.now().toString(36);
-    localStorage.setItem(STORAGE_KEYS.PLAYER_ID, id);
+    if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEYS.PLAYER_ID, id);
   }
   return id;
 };
 
 export const getPlayerName = () => {
-  return localStorage.getItem(STORAGE_KEYS.PLAYER_NAME) || '';
+  return (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEYS.PLAYER_NAME)) || '';
 };
 
 export const setPlayerName = (name) => {
-  localStorage.setItem(STORAGE_KEYS.PLAYER_NAME, name.trim());
+  if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEYS.PLAYER_NAME, name.trim());
+};
+
+export const getRoomId = () => {
+  if (typeof window !== 'undefined' && window.location) {
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get('room');
+    if (roomParam && roomParam.trim()) {
+      const clean = roomParam.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32);
+      if (clean) {
+        if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEYS.ROOM_ID, clean);
+        return clean;
+      }
+    }
+  }
+  return (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEYS.ROOM_ID)) || 'DEFAULT';
+};
+
+export const setRoomId = (roomId) => {
+  if (typeof localStorage === 'undefined') return;
+  const clean = (roomId || 'DEFAULT').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32) || 'DEFAULT';
+  localStorage.setItem(STORAGE_KEYS.ROOM_ID, clean);
+  return clean;
 };
 
 export const getAdminToken = () => {
-  return sessionStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN) || localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN) || '';
+  return (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN)) ||
+         (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN)) || '';
 };
 
 export const setAdminToken = (token) => {
-  sessionStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, token);
-  localStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, token);
+  if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, token);
+  if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, token);
 };
 
 export const clearAdminToken = () => {
-  sessionStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
-  localStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
+  if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
+  if (typeof localStorage !== 'undefined') localStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
+};
+
+// WebSocket Real-time Hub
+let activeWs = null;
+const wsSubscribers = new Set();
+let reconnectTimer = null;
+let currentWsRoom = null;
+
+if (typeof window !== 'undefined' && !window.__vault_ws_unload_attached) {
+  window.__vault_ws_unload_attached = true;
+  window.addEventListener('beforeunload', () => {
+    if (activeWs && activeWs.readyState === WebSocket.OPEN) {
+      try {
+        activeWs.close(1000, 'Page unload');
+      } catch (e) {}
+    }
+  });
+}
+
+export const connectRoomWebSocket = (roomId) => {
+  if (typeof window === 'undefined') return;
+  const cleanRoom = (roomId || getRoomId()).trim().toUpperCase() || 'DEFAULT';
+
+  // If already connecting or open for this room, avoid redundant reconnect
+  if (
+    activeWs &&
+    (activeWs.readyState === WebSocket.OPEN || activeWs.readyState === WebSocket.CONNECTING) &&
+    currentWsRoom === cleanRoom
+  ) {
+    return;
+  }
+
+  currentWsRoom = cleanRoom;
+  const base = getApiBaseUrl();
+  let wsUrl = '';
+
+  if (base.startsWith('http://')) {
+    wsUrl = base.replace('http://', 'ws://') + `/ws/${cleanRoom}`;
+  } else if (base.startsWith('https://')) {
+    wsUrl = base.replace('https://', 'wss://') + `/ws/${cleanRoom}`;
+  } else {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    wsUrl = `${protocol}//${host}/ws/${cleanRoom}`;
+  }
+
+  try {
+    if (activeWs) {
+      activeWs.onclose = null;
+      activeWs.onerror = null;
+      activeWs.onmessage = null;
+      if (activeWs.readyState === WebSocket.OPEN) {
+        try {
+          activeWs.close(1000, 'Switching room');
+        } catch (e) {}
+      }
+      activeWs = null;
+    }
+
+    activeWs = new WebSocket(wsUrl);
+
+    activeWs.onopen = () => {
+      // Periodic ping to keep alive
+      if (activeWs.pingInterval) clearInterval(activeWs.pingInterval);
+      activeWs.pingInterval = setInterval(() => {
+        if (activeWs && activeWs.readyState === WebSocket.OPEN) {
+          activeWs.send('ping');
+        }
+      }, 25000);
+    };
+
+    activeWs.onmessage = (event) => {
+      try {
+        if (event.data === 'pong') return;
+        const msg = JSON.parse(event.data);
+        wsSubscribers.forEach((cb) => {
+          try {
+            cb(msg);
+          } catch (e) {
+            console.error('Subscriber error:', e);
+          }
+        });
+      } catch (e) {
+        // Ignored
+      }
+    };
+
+    activeWs.onclose = (event) => {
+      // Only auto-reconnect if closure was unexpected (not code 1000)
+      if (event?.code !== 1000) {
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(() => {
+          connectRoomWebSocket(cleanRoom);
+        }, 4000);
+      }
+    };
+
+    activeWs.onerror = () => {
+      // Silent error, onclose handles reconnect
+    };
+  } catch (err) {
+    console.warn('[WS] Failed to connect:', err);
+  }
+};
+
+export const subscribeToRoomEvents = (callback) => {
+  wsSubscribers.add(callback);
+  return () => {
+    wsSubscribers.delete(callback);
+  };
 };
 
 export const apiService = {
-  /**
-   * Ping backend health endpoint to check connection
-   */
   checkHealth: async () => {
     const base = getApiBaseUrl();
     try {
@@ -98,31 +230,29 @@ export const apiService = {
         const data = await res.json();
         return { online: true, ...data };
       }
-    } catch (e) {
-      // Backend not currently reachable
-    }
+    } catch (e) {}
     return { online: false };
   },
 
-  /**
-   * Register or reconnect player with their display name
-   */
-  joinGame: async (name) => {
+  joinGame: async (name, roomId = null) => {
     const playerId = getPlayerId();
     setPlayerName(name);
+    if (roomId) setRoomId(roomId);
+    const activeRoom = getRoomId();
     const base = getApiBaseUrl();
 
     try {
       const res = await fetch(`${base}/api/players/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: playerId, name: name.trim() })
+        body: JSON.stringify({ id: playerId, name: name.trim(), room_id: activeRoom })
       });
 
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem(STORAGE_KEYS.LOCAL_SCORE, data.total_score.toString());
         localStorage.setItem(STORAGE_KEYS.LOCAL_RANK, (data.rank || 1).toString());
+        connectRoomWebSocket(activeRoom);
         return { success: true, player: data };
       }
     } catch (err) {
@@ -134,6 +264,7 @@ export const apiService = {
       player: {
         id: playerId,
         name: name.trim(),
+        room_id: activeRoom,
         total_score: parseInt(localStorage.getItem(STORAGE_KEYS.LOCAL_SCORE) || '0', 10),
         rank: parseInt(localStorage.getItem(STORAGE_KEYS.LOCAL_RANK) || '1', 10),
         offline: true
@@ -141,9 +272,6 @@ export const apiService = {
     };
   },
 
-  /**
-   * Fetch current stats for this or another player
-   */
   getPlayer: async (playerId = getPlayerId()) => {
     const base = getApiBaseUrl();
     try {
@@ -151,18 +279,13 @@ export const apiService = {
       if (res.ok) {
         return await res.json();
       }
-    } catch (e) {
-      console.warn('Failed to fetch player stats:', e);
-    }
+    } catch (e) {}
     return null;
   },
 
-  /**
-   * Submit a puzzle or secret code milestone completion
-   * Awards points (1st = 100, 2nd = 80, 3rd = 65, 4th+ = 50)
-   */
-  completeMilestone: async (milestoneKey, currentStage = 1, isVaultCracked = false) => {
+  completeMilestone: async (milestoneKey, currentStage = 1, isVaultCracked = false, roomId = null) => {
     const playerId = getPlayerId();
+    const activeRoom = roomId ? setRoomId(roomId) : getRoomId();
     const base = getApiBaseUrl();
 
     try {
@@ -172,6 +295,7 @@ export const apiService = {
         body: JSON.stringify({
           player_id: playerId,
           milestone_key: milestoneKey,
+          room_id: activeRoom,
           current_stage: currentStage,
           is_vault_cracked: isVaultCracked
         })
@@ -185,7 +309,8 @@ export const apiService = {
           pointsAwarded: data.points_awarded,
           rankOrder: data.rank_order,
           totalScore: data.total_score,
-          alreadyCompleted: data.already_completed
+          alreadyCompleted: data.already_completed,
+          firstSolver: data.first_solver
         };
       }
     } catch (err) {
@@ -203,15 +328,52 @@ export const apiService = {
       rankOrder: 1,
       totalScore: newScore,
       alreadyCompleted: false,
-      offline: true
+      offline: true,
+      firstSolver: false
     };
   },
 
-  /**
-   * Deduct penalty points for incorrect puzzle attempts
-   */
-  deductPenalty: async (penaltyPoints = 5, reason = 'Wrong Attempt') => {
+  recordTimeout: async (challengeId, roomId = null) => {
     const playerId = getPlayerId();
+    const activeRoom = roomId ? setRoomId(roomId) : getRoomId();
+    const base = getApiBaseUrl();
+
+    try {
+      const res = await fetch(`${base}/api/challenges/timeout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id: playerId,
+          room_id: activeRoom,
+          challenge_id: challengeId
+        })
+      });
+
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      console.warn('Failed to record timeout with backend:', e);
+    }
+    return { points_awarded: 0, total_score: parseInt(localStorage.getItem(STORAGE_KEYS.LOCAL_SCORE) || '0', 10) };
+  },
+
+  getRoomStatus: async (roomId = null) => {
+    const activeRoom = roomId ? setRoomId(roomId) : getRoomId();
+    const base = getApiBaseUrl();
+
+    try {
+      const res = await fetch(`${base}/api/rooms/${activeRoom}/status`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {}
+    return { room_id: activeRoom, active_timers: [], expired_timers: [], total_players: 1 };
+  },
+
+  deductPenalty: async (penaltyPoints = 5, reason = 'Wrong Attempt', roomId = null) => {
+    const playerId = getPlayerId();
+    const activeRoom = roomId || getRoomId();
     const base = getApiBaseUrl();
 
     try {
@@ -221,7 +383,8 @@ export const apiService = {
         body: JSON.stringify({
           player_id: playerId,
           penalty_points: penaltyPoints,
-          reason: reason
+          reason: reason,
+          room_id: activeRoom
         })
       });
 
@@ -240,7 +403,6 @@ export const apiService = {
       console.warn('API penalty submit failed, applying locally:', err);
     }
 
-    // Offline fallback: decrement local score (floor at 0)
     const currentScore = parseInt(localStorage.getItem(STORAGE_KEYS.LOCAL_SCORE) || '0', 10);
     const newScore = Math.max(0, currentScore - penaltyPoints);
     const applied = currentScore - newScore;
@@ -255,15 +417,13 @@ export const apiService = {
     };
   },
 
-  /**
-   * Fetch live leaderboard rankings
-   */
-  getLeaderboard: async (limit = 50) => {
+  getLeaderboard: async (limit = 50, roomId = null) => {
     const playerId = getPlayerId();
+    const activeRoom = roomId || getRoomId();
     const base = getApiBaseUrl();
 
     try {
-      const res = await fetch(`${base}/api/leaderboard?player_id=${playerId}&limit=${limit}`);
+      const res = await fetch(`${base}/api/leaderboard?player_id=${playerId}&limit=${limit}&room_id=${activeRoom}`);
       if (res.ok) {
         return await res.json();
       }
@@ -271,7 +431,6 @@ export const apiService = {
       console.warn('Failed to fetch live leaderboard:', err);
     }
 
-    // Offline dummy fallback
     const playerName = getPlayerName() || 'You';
     const score = parseInt(localStorage.getItem(STORAGE_KEYS.LOCAL_SCORE) || '0', 10);
     return {
@@ -280,21 +439,20 @@ export const apiService = {
           rank: 1,
           player_id: playerId,
           name: playerName,
+          room_id: activeRoom,
           total_score: score,
           milestones_count: 0,
           last_active: new Date().toISOString()
         }
       ],
       total_players: 1,
+      room_id: activeRoom,
       current_player_rank: 1,
       current_player_score: score,
       offline: true
     };
   },
 
-  /**
-   * Facilitator Admin Login
-   */
   adminLogin: async (password) => {
     const base = getApiBaseUrl();
     try {
@@ -317,15 +475,13 @@ export const apiService = {
     }
   },
 
-  /**
-   * Fetch full telemetry for Admin Dashboard
-   */
-  getAdminDashboard: async () => {
+  getAdminDashboard: async (roomId = null) => {
     const base = getApiBaseUrl();
     const token = getAdminToken();
+    const query = roomId ? `?room_id=${roomId}` : '';
 
     try {
-      const res = await fetch(`${base}/api/admin/dashboard`, {
+      const res = await fetch(`${base}/api/admin/dashboard${query}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'x-admin-token': token
@@ -344,9 +500,6 @@ export const apiService = {
     return { success: false, message: 'Could not connect to backend server.' };
   },
 
-  /**
-   * Delete a player (Admin)
-   */
   deletePlayer: async (playerId) => {
     const base = getApiBaseUrl();
     const token = getAdminToken() || 'abnamro2026';
@@ -366,15 +519,14 @@ export const apiService = {
     }
   },
 
-  /**
-   * Reset game scores and optionally delete all players (Admin / Facilitator)
-   */
-  resetLeaderboard: async (deletePlayers = false) => {
+  resetLeaderboard: async (deletePlayers = false, roomId = null) => {
     const base = getApiBaseUrl();
     const token = getAdminToken() || 'abnamro2026';
+    let url = `${base}/api/admin/reset?delete_players=${deletePlayers}`;
+    if (roomId) url += `&room_id=${roomId}`;
 
     try {
-      const res = await fetch(`${base}/api/admin/reset?delete_players=${deletePlayers}`, {
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

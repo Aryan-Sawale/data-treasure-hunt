@@ -1,24 +1,27 @@
 import os
 import hashlib
-from datetime import datetime, timezone
-from typing import Optional, List
-from fastapi import FastAPI, Depends, HTTPException, Query, Header
+from datetime import datetime, timezone, timedelta
+from typing import Optional, List, Set, Dict
+from fastapi import FastAPI, Depends, HTTPException, Query, Header, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, inspect, text
 
 try:
     from .database import engine, Base, get_db
-    from .models import Player, Completion
+    from .models import Player, Completion, Room, RoomChallengeTimer
     from .schemas import (
         PlayerJoinRequest,
         PlayerResponse,
         MilestoneCompleteRequest,
         MilestoneCompleteResponse,
+        TimeoutRequest,
         PenaltyRequest,
         PenaltyResponse,
         LeaderboardItem,
         LeaderboardResponse,
+        ChallengeTimerInfo,
+        RoomStatusResponse,
         ResetResponse,
         AdminLoginRequest,
         AdminLoginResponse,
@@ -29,16 +32,19 @@ try:
     from .scoring import calculate_points_for_rank
 except ImportError:
     from database import engine, Base, get_db
-    from models import Player, Completion
+    from models import Player, Completion, Room, RoomChallengeTimer
     from schemas import (
         PlayerJoinRequest,
         PlayerResponse,
         MilestoneCompleteRequest,
         MilestoneCompleteResponse,
+        TimeoutRequest,
         PenaltyRequest,
         PenaltyResponse,
         LeaderboardItem,
         LeaderboardResponse,
+        ChallengeTimerInfo,
+        RoomStatusResponse,
         ResetResponse,
         AdminLoginRequest,
         AdminLoginResponse,
@@ -48,13 +54,32 @@ except ImportError:
     )
     from scoring import calculate_points_for_rank
 
+# Automatic column migration for existing SQLite DBs
+try:
+    inspector = inspect(engine)
+    existing_tables = inspector.get_table_names()
+    if "players" in existing_tables:
+        cols = [c["name"] for c in inspector.get_columns("players")]
+        if "room_id" not in cols:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE players ADD COLUMN room_id VARCHAR(32) DEFAULT 'DEFAULT'"))
+                conn.commit()
+    if "completions" in existing_tables:
+        cols = [c["name"] for c in inspector.get_columns("completions")]
+        if "room_id" not in cols:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE completions ADD COLUMN room_id VARCHAR(32) DEFAULT 'DEFAULT'"))
+                conn.commit()
+except Exception as e:
+    print(f"[DB Migration Note] {e}")
+
 # Initialize database tables automatically
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="The Data Vault - Real-time Leaderboard API",
-    description="Backend API for competitive banking treasure hunt scoring",
-    version="1.0.0"
+    description="Backend API for competitive banking treasure hunt scoring with room isolation & 30s challenge rush timers",
+    version="2.0.0"
 )
 
 # Enable CORS for local dev and production frontend
@@ -66,24 +91,99 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# The 11 individual mini-games that trigger a 30s timer for room members on 1st solve
+TIMED_MINI_GAMES = {
+    "P1_CAPABILITY_MATCH",
+    "P1_EMOJI_PHRASE",
+    "P2_ASTEROIDS",
+    "P2_MEMORY_PAIRS",
+    "P2_INGESTION_SNAKE",
+    "P3_ANOMALY_WHACK",
+    "P3_DATA_AUDIT",
+    "P3_WORD_SEARCH",
+    "P4_SIMON_BUTTONS",
+    "P4_LINEAGE_ORDER",
+    "P4_BDM_BREAKOUT"
+}
+
+def clean_room_id(raw_room: Optional[str]) -> str:
+    if not raw_room or not raw_room.strip():
+        return "DEFAULT"
+    return raw_room.strip().upper()[:32]
+
+# In-memory WebSocket Connection Hub per Room
+class RoomConnectionManager:
+    def __init__(self):
+        self.rooms: Dict[str, Set[WebSocket]] = {}
+
+    async def connect(self, room_id: str, websocket: WebSocket):
+        await websocket.accept()
+        if room_id not in self.rooms:
+            self.rooms[room_id] = set()
+        self.rooms[room_id].add(websocket)
+
+    def disconnect(self, room_id: str, websocket: WebSocket):
+        if room_id in self.rooms:
+            self.rooms[room_id].discard(websocket)
+            if not self.rooms[room_id]:
+                del self.rooms[room_id]
+
+    async def broadcast_to_room(self, room_id: str, message: dict):
+        if room_id in self.rooms:
+            dead = set()
+            for ws in list(self.rooms[room_id]):
+                try:
+                    await ws.send_json(message)
+                except Exception:
+                    dead.add(ws)
+            for d in dead:
+                self.rooms[room_id].discard(d)
+
+ws_manager = RoomConnectionManager()
+
+@app.websocket("/ws/{room_id}")
+async def room_websocket_endpoint(websocket: WebSocket, room_id: str):
+    room_code = clean_room_id(room_id)
+    await ws_manager.connect(room_code, websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        ws_manager.disconnect(room_code, websocket)
+    except Exception:
+        ws_manager.disconnect(room_code, websocket)
+
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "app": "The Data Vault API", "timestamp": datetime.now(timezone.utc).isoformat()}
+    return {"status": "ok", "app": "The Data Vault API", "version": "2.0.0", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 @app.post("/api/players/join", response_model=PlayerResponse)
-def join_game(req: PlayerJoinRequest, db: Session = Depends(get_db)):
+async def join_game(req: PlayerJoinRequest, db: Session = Depends(get_db)):
     """
-    Registers a new player with their chosen name or updates existing session.
+    Registers a new player with their chosen name and room code, or reconnects existing player.
+    Anyone can join or create any room on the fly.
     """
+    room_code = clean_room_id(req.room_id)
+
+    # Ensure room record exists
+    room = db.query(Room).filter(Room.id == room_code).first()
+    if not room:
+        room = Room(id=room_code)
+        db.add(room)
+        db.commit()
+
     player = db.query(Player).filter(Player.id == req.id).first()
     
     if player:
-        # Update name and activity timestamp
         player.name = req.name.strip()
+        player.room_id = room_code
         player.last_active = datetime.now(timezone.utc)
     else:
         player = Player(
             id=req.id,
+            room_id=room_code,
             name=req.name.strip(),
             total_score=0,
             current_stage=1,
@@ -94,8 +194,11 @@ def join_game(req: PlayerJoinRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(player)
 
-    # Calculate current player rank
-    higher_count = db.query(Player).filter(Player.total_score > player.total_score).count()
+    # Calculate current player rank inside this room
+    higher_count = db.query(Player).filter(
+        Player.room_id == room_code,
+        Player.total_score > player.total_score
+    ).count()
     player_rank = higher_count + 1
 
     completed_keys = [c.milestone_key for c in player.completions]
@@ -103,6 +206,7 @@ def join_game(req: PlayerJoinRequest, db: Session = Depends(get_db)):
     return PlayerResponse(
         id=player.id,
         name=player.name,
+        room_id=player.room_id,
         total_score=player.total_score,
         rank=player_rank,
         current_stage=player.current_stage,
@@ -116,13 +220,17 @@ def get_player(player_id: str, db: Session = Depends(get_db)):
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
 
-    higher_count = db.query(Player).filter(Player.total_score > player.total_score).count()
+    higher_count = db.query(Player).filter(
+        Player.room_id == player.room_id,
+        Player.total_score > player.total_score
+    ).count()
     player_rank = higher_count + 1
     completed_keys = [c.milestone_key for c in player.completions]
 
     return PlayerResponse(
         id=player.id,
         name=player.name,
+        room_id=player.room_id,
         total_score=player.total_score,
         rank=player_rank,
         current_stage=player.current_stage,
@@ -131,16 +239,21 @@ def get_player(player_id: str, db: Session = Depends(get_db)):
     )
 
 @app.post("/api/milestones/complete", response_model=MilestoneCompleteResponse)
-def complete_milestone(req: MilestoneCompleteRequest, db: Session = Depends(get_db)):
+async def complete_milestone(req: MilestoneCompleteRequest, db: Session = Depends(get_db)):
     """
-    Awards points for completing a puzzle or presentation code.
-    First player to solve receives highest points (100 -> 80 -> 65 -> 50).
+    Awards points for completing an individual mini-game or presentation code.
+    If it's an individual mini-game, 1st solver triggers a 30s countdown timer for everyone in that room.
+    Subsequent solvers within 30s earn rank-based points; solvers after 30s receive 0 points.
     """
     player = db.query(Player).filter(Player.id == req.player_id).first()
     if not player:
         raise HTTPException(status_code=404, detail="Player not found. Join first.")
 
-    # Check if already awarded
+    room_code = clean_room_id(req.room_id or player.room_id)
+    if player.room_id != room_code:
+        player.room_id = room_code
+
+    # Check if already completed by this player
     existing = db.query(Completion).filter(
         Completion.player_id == req.player_id,
         Completion.milestone_key == req.milestone_key
@@ -152,27 +265,90 @@ def complete_milestone(req: MilestoneCompleteRequest, db: Session = Depends(get_
             rank_order=existing.rank_order,
             points_awarded=0,
             total_score=player.total_score,
-            already_completed=True
+            already_completed=True,
+            room_id=room_code,
+            first_solver=False
         )
 
-    # Determine rank for this milestone
-    previous_count = db.query(Completion).filter(Completion.milestone_key == req.milestone_key).count()
-    rank_order = previous_count + 1
-    points = calculate_points_for_rank(rank_order)
+    now = datetime.now(timezone.utc)
+    is_timed_mini_game = req.milestone_key in TIMED_MINI_GAMES
+    first_solver = False
+    points = 0
+    rank_order = 1
 
-    # Create completion record
+    if is_timed_mini_game:
+        # Check if a timer exists for this room & challenge
+        timer = db.query(RoomChallengeTimer).filter(
+            RoomChallengeTimer.room_id == room_code,
+            RoomChallengeTimer.challenge_id == req.milestone_key
+        ).first()
+
+        if not timer:
+            # 1st solver in the room!
+            first_solver = True
+            rank_order = 1
+            points = calculate_points_for_rank(1) # 100 points
+            expires_at = now + timedelta(seconds=30)
+
+            timer = RoomChallengeTimer(
+                room_id=room_code,
+                challenge_id=req.milestone_key,
+                first_solved_by_id=player.id,
+                first_solved_by_name=player.name,
+                first_solved_at=now,
+                expires_at=expires_at
+            )
+            db.add(timer)
+            db.commit()
+
+            # Broadcast 30-second timer to room via WebSocket
+            await ws_manager.broadcast_to_room(room_code, {
+                "type": "CHALLENGE_TIMER_STARTED",
+                "challenge_id": req.milestone_key,
+                "first_solved_by_name": player.name,
+                "first_solved_at": now.isoformat(),
+                "expires_at": expires_at.isoformat(),
+                "duration_seconds": 30
+            })
+        else:
+            # Timer already exists
+            exp = timer.expires_at if timer.expires_at.tzinfo else timer.expires_at.replace(tzinfo=timezone.utc)
+            if now <= exp:
+                # Solved within 30-second window! Award rank-based points
+                previous_count = db.query(Completion).filter(
+                    Completion.room_id == room_code,
+                    Completion.milestone_key == req.milestone_key,
+                    Completion.points_awarded > 0
+                ).count()
+                rank_order = previous_count + 1
+                points = calculate_points_for_rank(rank_order) # 80, 65, 50
+            else:
+                # Solved after 30-second window expired
+                rank_order = 999
+                points = 0
+    else:
+        # Non-timed milestone (presentation code or vault)
+        previous_count = db.query(Completion).filter(
+            Completion.room_id == room_code,
+            Completion.milestone_key == req.milestone_key
+        ).count()
+        rank_order = previous_count + 1
+        points = calculate_points_for_rank(rank_order)
+
+    # Record completion
     completion = Completion(
+        room_id=room_code,
         player_id=player.id,
         milestone_key=req.milestone_key,
         rank_order=rank_order,
         points_awarded=points,
-        created_at=datetime.now(timezone.utc)
+        created_at=now
     )
     db.add(completion)
 
     # Update player stats
     player.total_score += points
-    player.last_active = datetime.now(timezone.utc)
+    player.last_active = now
     if req.current_stage is not None:
         player.current_stage = max(player.current_stage, req.current_stage)
     if req.is_vault_cracked is not None:
@@ -186,7 +362,98 @@ def complete_milestone(req: MilestoneCompleteRequest, db: Session = Depends(get_
         rank_order=rank_order,
         points_awarded=points,
         total_score=player.total_score,
-        already_completed=False
+        already_completed=False,
+        room_id=room_code,
+        first_solver=first_solver
+    )
+
+@app.post("/api/challenges/timeout", response_model=MilestoneCompleteResponse)
+def challenge_timeout(req: TimeoutRequest, db: Session = Depends(get_db)):
+    """
+    Called when a player's 30s timer expires or when catching up on an already expired challenge.
+    Records a 0-point completion so they auto-advance without scoring.
+    """
+    player = db.query(Player).filter(Player.id == req.player_id).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    room_code = clean_room_id(req.room_id or player.room_id)
+
+    existing = db.query(Completion).filter(
+        Completion.player_id == req.player_id,
+        Completion.milestone_key == req.challenge_id
+    ).first()
+
+    if existing:
+        return MilestoneCompleteResponse(
+            milestone_key=existing.milestone_key,
+            rank_order=existing.rank_order,
+            points_awarded=0,
+            total_score=player.total_score,
+            already_completed=True,
+            room_id=room_code,
+            first_solver=False
+        )
+
+    now = datetime.now(timezone.utc)
+    completion = Completion(
+        room_id=room_code,
+        player_id=player.id,
+        milestone_key=req.challenge_id,
+        rank_order=999,
+        points_awarded=0,
+        created_at=now
+    )
+    db.add(completion)
+    player.last_active = now
+    db.commit()
+    db.refresh(player)
+
+    return MilestoneCompleteResponse(
+        milestone_key=req.challenge_id,
+        rank_order=999,
+        points_awarded=0,
+        total_score=player.total_score,
+        already_completed=False,
+        room_id=room_code,
+        first_solver=False
+    )
+
+@app.get("/api/rooms/{room_id}/status", response_model=RoomStatusResponse)
+def get_room_status(room_id: str, db: Session = Depends(get_db)):
+    """
+    Returns active 30s timers and expired timers for room state synchronization and catchup logic.
+    """
+    room_code = clean_room_id(room_id)
+    now = datetime.now(timezone.utc)
+    timers = db.query(RoomChallengeTimer).filter(RoomChallengeTimer.room_id == room_code).all()
+
+    active_timers = []
+    expired_timers = []
+
+    for t in timers:
+        exp = t.expires_at if t.expires_at.tzinfo else t.expires_at.replace(tzinfo=timezone.utc)
+        diff = (exp - now).total_seconds()
+        if diff > 0:
+            active_timers.append(ChallengeTimerInfo(
+                challenge_id=t.challenge_id,
+                first_solved_by_name=t.first_solved_by_name,
+                first_solved_at=t.first_solved_at,
+                expires_at=exp,
+                seconds_remaining=round(diff, 1),
+                is_expired=False
+            ))
+        else:
+            expired_timers.append(t.challenge_id)
+
+    total_players = db.query(Player).filter(Player.room_id == room_code).count()
+
+    return RoomStatusResponse(
+        room_id=room_code,
+        server_time=now,
+        active_timers=active_timers,
+        expired_timers=expired_timers,
+        total_players=total_players
     )
 
 @app.post("/api/players/penalty", response_model=PenaltyResponse)
@@ -208,7 +475,10 @@ def apply_penalty(req: PenaltyRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(player)
 
-    higher_count = db.query(Player).filter(Player.total_score > player.total_score).count()
+    higher_count = db.query(Player).filter(
+        Player.room_id == player.room_id,
+        Player.total_score > player.total_score
+    ).count()
     player_rank = higher_count + 1
 
     return PenaltyResponse(
@@ -220,15 +490,18 @@ def apply_penalty(req: PenaltyRequest, db: Session = Depends(get_db)):
 
 @app.get("/api/leaderboard", response_model=LeaderboardResponse)
 def get_leaderboard(
+    room_id: Optional[str] = Query("DEFAULT", description="Room identifier to filter scores"),
     player_id: Optional[str] = Query(None, description="Optional ID to get current player rank"),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
     """
-    Returns the live sorted leaderboard (Highest score first, ties broken by earliest active time).
-    Players with equal scores share the same rank.
+    Returns the live sorted leaderboard for a specific room.
     """
-    players = db.query(Player).order_by(desc(Player.total_score), Player.last_active.asc()).all()
+    room_code = clean_room_id(room_id)
+    players = db.query(Player).filter(Player.room_id == room_code).order_by(
+        desc(Player.total_score), Player.last_active.asc()
+    ).all()
     
     total_players = len(players)
     items = []
@@ -237,8 +510,6 @@ def get_leaderboard(
 
     current_rank = 1
     for idx, p in enumerate(players):
-        # Competition ranking with ties:
-        # e.g. scores [200, 200, 150] -> ranks [1, 1, 3]
         if idx > 0 and p.total_score < players[idx - 1].total_score:
             current_rank = idx + 1
 
@@ -251,6 +522,7 @@ def get_leaderboard(
                 rank=current_rank,
                 player_id=p.id,
                 name=p.name,
+                room_id=p.room_id,
                 total_score=p.total_score,
                 milestones_count=len(p.completions),
                 last_active=p.last_active
@@ -259,6 +531,7 @@ def get_leaderboard(
     return LeaderboardResponse(
         leaderboard=items,
         total_players=total_players,
+        room_id=room_code,
         current_player_rank=current_player_rank,
         current_player_score=current_player_score
     )
@@ -285,9 +558,6 @@ def verify_admin_auth(
 
 @app.post("/api/admin/login", response_model=AdminLoginResponse)
 def admin_login(req: AdminLoginRequest):
-    """
-    Validates facilitator password and issues an administrative session token.
-    """
     if req.password.strip() == ADMIN_PASSWORD:
         return AdminLoginResponse(
             success=True,
@@ -298,15 +568,29 @@ def admin_login(req: AdminLoginRequest):
 
 @app.get("/api/admin/dashboard", response_model=AdminDashboardResponse)
 def get_admin_dashboard(
+    room_id: Optional[str] = Query(None, description="Optional room ID filter"),
     db: Session = Depends(get_db),
     _: bool = Depends(verify_admin_auth)
 ):
-    """
-    Returns complete real-time session telemetry, player progress, and completion funnels.
-    """
-    players = db.query(Player).order_by(desc(Player.total_score), Player.last_active.asc()).all()
+    # Fetch all distinct room IDs
+    all_rooms = [r[0] for r in db.query(Player.room_id).distinct().all() if r[0]]
+    if not all_rooms:
+        all_rooms = ["DEFAULT"]
+
+    query = db.query(Player)
+    if room_id and room_id.strip():
+        room_code = clean_room_id(room_id)
+        query = query.filter(Player.room_id == room_code)
+    else:
+        room_code = None
+
+    players = query.order_by(desc(Player.total_score), Player.last_active.asc()).all()
     total_players = len(players)
-    completions = db.query(Completion).all()
+
+    comp_query = db.query(Completion)
+    if room_code:
+        comp_query = comp_query.filter(Completion.room_id == room_code)
+    completions = comp_query.all()
     total_completions = len(completions)
 
     top_score = max([p.total_score for p in players], default=0)
@@ -334,6 +618,7 @@ def get_admin_dashboard(
         player_details.append(AdminPlayerDetail(
             id=p.id,
             name=p.name,
+            room_id=p.room_id,
             total_score=p.total_score,
             rank=current_rank,
             current_stage=p.current_stage,
@@ -349,7 +634,9 @@ def get_admin_dashboard(
         top_score=top_score,
         average_score=avg_score,
         milestone_counts=milestone_counts,
-        players=player_details
+        players=player_details,
+        rooms=sorted(list(set(all_rooms))),
+        active_room=room_code
     )
 
 @app.delete("/api/admin/players/{player_id}")
@@ -358,9 +645,6 @@ def delete_player(
     db: Session = Depends(get_db),
     _: bool = Depends(verify_admin_auth)
 ):
-    """
-    Removes a player and all their completions from the leaderboard.
-    """
     player = db.query(Player).filter(Player.id == player_id).first()
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
@@ -372,24 +656,41 @@ def delete_player(
 
 @app.post("/api/admin/reset", response_model=ResetResponse)
 def reset_leaderboard(
+    room_id: Optional[str] = Query(None, description="Optional room ID to reset"),
     delete_players: bool = Query(False, description="Whether to also delete player records entirely"),
     db: Session = Depends(get_db),
     _: bool = Depends(verify_admin_auth)
 ):
-    """
-    Facilitator tool: wipes all milestone completions and resets player scores to 0 (or wipes all players).
-    """
-    db.query(Completion).delete()
+    room_code = clean_room_id(room_id) if room_id else None
+
+    # Delete timers for room or all
+    timer_q = db.query(RoomChallengeTimer)
+    if room_code:
+        timer_q = timer_q.filter(RoomChallengeTimer.room_id == room_code)
+    timer_q.delete()
+
+    # Clear completions
+    comp_q = db.query(Completion)
+    if room_code:
+        comp_q = comp_q.filter(Completion.room_id == room_code)
+    comp_q.delete()
+
     if delete_players:
-        db.query(Player).delete()
-        msg = "All milestone completions and player records have been permanently cleared."
+        player_q = db.query(Player)
+        if room_code:
+            player_q = player_q.filter(Player.room_id == room_code)
+        player_q.delete()
+        msg = f"All completions, timers, and player records for {room_code or 'all rooms'} have been permanently cleared."
     else:
-        for player in db.query(Player).all():
+        player_q = db.query(Player)
+        if room_code:
+            player_q = player_q.filter(Player.room_id == room_code)
+        for player in player_q.all():
             player.total_score = 0
             player.current_stage = 1
             player.is_vault_cracked = False
             player.last_active = datetime.now(timezone.utc)
-        msg = "All completions cleared and scores reset to 0."
+        msg = f"All completions and timers cleared; player scores reset to 0 for {room_code or 'all rooms'}."
 
     db.commit()
     return ResetResponse(status="success", message=msg)

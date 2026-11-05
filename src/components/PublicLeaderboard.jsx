@@ -12,13 +12,16 @@ import {
   Award,
   Zap,
   Play,
-  Pause
+  Pause,
+  Tag
 } from 'lucide-react';
-import { apiService, getPlayerId } from '../services/apiService';
+import { apiService, getPlayerId, getRoomId, setRoomId } from '../services/apiService';
 import { soundService } from '../services/soundService';
 import { isDevHelperEnabled } from '../config/questConfig';
 
-export default function PublicLeaderboard({ onNavigateHome }) {
+export default function PublicLeaderboard({ onNavigateHome, roomId = null }) {
+  const [currentRoom, setCurrentRoom] = useState(() => (roomId || getRoomId()).trim().toUpperCase() || 'DEFAULT');
+  const [roomInput, setRoomInput] = useState(currentRoom);
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -27,7 +30,7 @@ export default function PublicLeaderboard({ onNavigateHome }) {
 
   const fetchScores = async (showSpinner = false) => {
     if (showSpinner) setIsLoading(true);
-    const result = await apiService.getLeaderboard(100);
+    const result = await apiService.getLeaderboard(100, currentRoom);
     setData(result);
     setLastUpdated(new Date());
     if (showSpinner) setIsLoading(false);
@@ -35,7 +38,7 @@ export default function PublicLeaderboard({ onNavigateHome }) {
 
   useEffect(() => {
     fetchScores(true);
-  }, []);
+  }, [currentRoom]);
 
   // Real-time polling every 3 seconds
   useEffect(() => {
@@ -44,7 +47,7 @@ export default function PublicLeaderboard({ onNavigateHome }) {
       fetchScores(false);
     }, 3000);
     return () => clearInterval(interval);
-  }, [autoRefresh]);
+  }, [autoRefresh, currentRoom]);
 
   const handleManualRefresh = () => {
     soundService.playClick();
@@ -54,6 +57,14 @@ export default function PublicLeaderboard({ onNavigateHome }) {
   const handleToggleAuto = () => {
     soundService.playClick();
     setAutoRefresh(prev => !prev);
+  };
+
+  const handleRoomSubmit = (e) => {
+    e.preventDefault();
+    const clean = roomInput.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32) || 'DEFAULT';
+    setCurrentRoom(clean);
+    setRoomInput(clean);
+    setRoomId(clean);
   };
 
   const leaderboard = data?.leaderboard || [];
@@ -66,7 +77,6 @@ export default function PublicLeaderboard({ onNavigateHome }) {
 
   const formatTimeAgo = (isoString) => {
     if (!isoString) return 'Just now';
-    // Ensure string without timezone offset is treated as UTC
     const normalized = (typeof isoString === 'string' && !isoString.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(isoString))
       ? (isoString + 'Z')
       : isoString;
@@ -87,7 +97,7 @@ export default function PublicLeaderboard({ onNavigateHome }) {
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#009488]/20 shadow-xs">
         <div className="h-1 bg-[#009488]" />
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center space-x-3">
             <button
               onClick={() => onNavigateHome ? onNavigateHome() : window.location.assign('./')}
@@ -105,21 +115,39 @@ export default function PublicLeaderboard({ onNavigateHome }) {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="font-black text-sm sm:text-base tracking-wider uppercase text-[#009488]">
-                    Live Expedition Leaderboard
+                    Expedition Leaderboard
                   </h1>
                   <span className="bg-[#F9BD20] text-slate-950 px-2 py-0.5 rounded-md font-mono font-black text-[9px] uppercase tracking-wider shadow-2xs">
                     ABN AMRO
                   </span>
                 </div>
                 <p className="text-[11px] text-[#878787] font-medium hidden sm:block">
-                  Real-time competitive standings for client treasure hunt
+                  Live scores & standings for room: <span className="font-mono font-black text-[#009488]">{currentRoom}</span>
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Controls: Live indicator & Refresh */}
-          <div className="flex items-center space-x-2">
+          {/* Controls: Room Switcher, Live indicator & Refresh */}
+          <div className="flex items-center space-x-2 flex-wrap">
+            {/* Room Switcher Form */}
+            <form onSubmit={handleRoomSubmit} className="flex items-center gap-1 bg-[#F8FAFA] p-1 rounded-xl border border-slate-300">
+              <Tag className="w-3.5 h-3.5 text-slate-500 ml-1.5" />
+              <input
+                type="text"
+                value={roomInput}
+                onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
+                placeholder="Room Code"
+                className="w-24 px-1.5 py-0.5 bg-transparent text-xs font-mono font-black text-slate-800 uppercase focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="px-2 py-1 bg-[#009488] hover:bg-[#007E74] text-white text-[10px] font-black rounded-lg transition-all"
+              >
+                Go
+              </button>
+            </form>
+
             <button
               onClick={handleToggleAuto}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all border shadow-2xs ${
@@ -157,7 +185,7 @@ export default function PublicLeaderboard({ onNavigateHome }) {
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-[#878787] uppercase tracking-wider">Total Solvers</p>
+              <p className="text-[11px] font-bold text-[#878787] uppercase tracking-wider">Solvers in Room</p>
               <p className="text-xl font-black text-slate-900">{totalPlayers}</p>
             </div>
           </div>
@@ -206,7 +234,7 @@ export default function PublicLeaderboard({ onNavigateHome }) {
             <div className="text-center mb-6 relative">
               <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#F9BD20]/20 border border-[#F9BD20] text-[#F9BD20] text-xs font-black mb-2 shadow-xs">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>EXPEDITION PODIUM LEADERS</span>
+                <span>EXPEDITION PODIUM LEADERS • ROOM {currentRoom}</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
                 Who Will Open The Vault First?
@@ -287,9 +315,9 @@ export default function PublicLeaderboard({ onNavigateHome }) {
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-[#F8FAFA]">
             <div>
-              <h3 className="font-black text-slate-900 text-base">Complete Standings</h3>
+              <h3 className="font-black text-slate-900 text-base">Complete Standings • Room {currentRoom}</h3>
               <p className="text-xs text-[#878787]">
-                First solvers to crack puzzles and presentation codes get the highest rewards
+                First solvers trigger a 30-second rush timer. Subsequent solvers within 30s earn rank points!
               </p>
             </div>
             <div className="text-xs font-mono font-bold text-[#009488]">
@@ -302,9 +330,9 @@ export default function PublicLeaderboard({ onNavigateHome }) {
               <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
                 <Trophy className="w-7 h-7" />
               </div>
-              <p className="font-bold text-slate-700">No expedition solvers yet</p>
+              <p className="font-bold text-slate-700">No solvers in room {currentRoom} yet</p>
               <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                Once participants join and solve their first puzzle, rankings will appear here live!
+                Once participants join room "{currentRoom}" and solve a challenge, scores will appear here live!
               </p>
             </div>
           ) : (
@@ -412,4 +440,3 @@ export default function PublicLeaderboard({ onNavigateHome }) {
     </div>
   );
 }
-

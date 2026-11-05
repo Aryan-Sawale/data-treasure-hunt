@@ -1,4 +1,3 @@
-
 const parseUtcDate = (isoString) => {
   if (!isoString) return new Date();
   const normalized = (typeof isoString === 'string' && !isoString.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(isoString))
@@ -11,7 +10,6 @@ import {
   Shield, 
   Key, 
   Lock, 
-  Unlock, 
   RefreshCw, 
   Trash2, 
   LogOut, 
@@ -25,18 +23,20 @@ import {
   BarChart3,
   Search,
   Eye,
-  EyeOff
+  EyeOff,
+  Tag
 } from 'lucide-react';
-import { apiService, getAdminToken } from '../services/apiService';
+import { apiService, getAdminToken, getRoomId } from '../services/apiService';
 import { soundService } from '../services/soundService';
 
-export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }) {
+export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard, roomId = null }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!getAdminToken());
   const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  const [selectedRoom, setSelectedRoom] = useState('');
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,7 +48,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
 
   const fetchDashboard = async () => {
     setIsLoading(true);
-    const res = await apiService.getAdminDashboard();
+    const res = await apiService.getAdminDashboard(selectedRoom || null);
     if (res.success) {
       setDashboardData(res.data);
       setIsAuthenticated(true);
@@ -61,15 +61,14 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
   useEffect(() => {
     if (isAuthenticated) {
       fetchDashboard();
-      // Auto-poll dashboard telemetry every 5s
       const timer = setInterval(() => {
-        apiService.getAdminDashboard().then(res => {
+        apiService.getAdminDashboard(selectedRoom || null).then(res => {
           if (res.success) setDashboardData(res.data);
         });
       }, 5000);
       return () => clearInterval(timer);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, selectedRoom]);
 
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
@@ -117,12 +116,12 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
 
   const handleResetSession = async (deleteEntirely = false) => {
     soundService.playClick();
-    const success = await apiService.resetLeaderboard(deleteEntirely);
+    const success = await apiService.resetLeaderboard(deleteEntirely, selectedRoom || null);
     if (success) {
       setActionSuccess(
         deleteEntirely
-          ? 'All participants and completions permanently wiped.'
-          : 'Scores reset to 0. All players reset to Stage 1.'
+          ? `All participants and timers for ${selectedRoom || 'all rooms'} permanently wiped.`
+          : `Scores reset to 0 for ${selectedRoom || 'all rooms'}.`
       );
       setTimeout(() => setActionSuccess(''), 4000);
       setShowResetModal(false);
@@ -216,10 +215,12 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
   // Authenticated Admin Dashboard
   const players = dashboardData?.players || [];
   const milestoneCounts = dashboardData?.milestone_counts || {};
+  const availableRooms = dashboardData?.rooms || ['DEFAULT'];
 
   const filteredPlayers = players.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.id.toLowerCase().includes(searchQuery.toLowerCase())
+    p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (p.room_id && p.room_id.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -227,7 +228,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#009488]/20 shadow-xs">
         <div className="h-1 bg-[#009488]" />
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 rounded-xl bg-[#009488] flex items-center justify-center text-white shadow-xs">
               <Shield className="w-5 h-5 text-[#F9BD20]" />
@@ -242,19 +243,34 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                 </span>
               </div>
               <p className="text-[11px] text-[#878787] font-medium hidden sm:block">
-                Session telemetry, solver milestones, and leaderboard governance
+                Session telemetry, solver milestones, and room governance
               </p>
             </div>
           </div>
 
-          {/* Action Links */}
-          <div className="flex items-center space-x-2">
+          {/* Action Links & Room Filter */}
+          <div className="flex items-center space-x-2 flex-wrap">
+            {/* Room Selector */}
+            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <Tag className="w-3.5 h-3.5 text-slate-500 ml-1.5" />
+              <select
+                value={selectedRoom}
+                onChange={(e) => setSelectedRoom(e.target.value)}
+                className="bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold px-2 py-1 text-slate-800 focus:outline-none"
+              >
+                <option value="">All Rooms</option>
+                {availableRooms.map((r) => (
+                  <option key={r} value={r}>Room: {r}</option>
+                ))}
+              </select>
+            </div>
+
             <button
               onClick={() => onNavigateLeaderboard ? onNavigateLeaderboard() : window.location.assign('./#leaderboard')}
               className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Public Leaderboard</span>
+              <span className="hidden sm:inline">Leaderboard</span>
             </button>
 
             <button
@@ -262,7 +278,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
               className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Play Quest</span>
+              <span className="hidden sm:inline">Quest</span>
             </button>
 
             <button
@@ -306,7 +322,9 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
             <p className="text-2xl sm:text-3xl font-black text-slate-900">
               {dashboardData?.total_players ?? '—'}
             </p>
-            <p className="text-[10px] text-slate-400 mt-1">Total joined sessions</p>
+            <p className="text-[10px] text-slate-400 mt-1">
+              {selectedRoom ? `In room ${selectedRoom}` : 'Across all rooms'}
+            </p>
           </div>
 
           <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs">
@@ -319,7 +337,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
             <p className="text-2xl sm:text-3xl font-black text-slate-900">
               {dashboardData?.total_completions ?? '—'}
             </p>
-            <p className="text-[10px] text-slate-400 mt-1">Across all 4 stops</p>
+            <p className="text-[10px] text-slate-400 mt-1">Total puzzle completions</p>
           </div>
 
           <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs">
@@ -351,7 +369,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
 
         {/* Milestone Completion Funnel Grid */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <h3 className="font-black text-sm uppercase tracking-wider text-[#009488]">
                 Milestone Progress Funnel
@@ -367,10 +385,10 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { stop: 1, name: 'Metadata governance and solutions', house: 'Ravenclaw', game: 'Emoji Decrypt', puzzle: 'PUZZLE_1', code: 'CODE_1', letters: 'HACN' },
-              { stop: 2, name: 'Enterprise Data Lake', house: 'Hufflepuff', game: 'Memory Match', puzzle: 'PUZZLE_2', code: 'CODE_2', letters: 'EUL' },
-              { stop: 3, name: 'Assets & Data Quality', house: 'Gryffindor', game: 'Quality Audit', puzzle: 'PUZZLE_3', code: 'CODE_3', letters: 'ATD' },
-              { stop: 4, name: 'BDM & Data Lineage', house: 'Slytherin', game: 'Lineage Sequence', puzzle: 'PUZZLE_4', code: 'CODE_4', letters: 'AAIV' }
+              { stop: 1, name: 'Metadata governance', house: 'Ravenclaw', game: 'Emoji Decrypt', puzzle: 'P1_EMOJI_PHRASE', code: 'CODE_1', letters: 'HACN' },
+              { stop: 2, name: 'Enterprise Data Lake', house: 'Hufflepuff', game: 'Ingestion Snake', puzzle: 'P2_INGESTION_SNAKE', code: 'CODE_2', letters: 'EUL' },
+              { stop: 3, name: 'Assets & Quality', house: 'Gryffindor', game: 'Word Search', puzzle: 'P3_WORD_SEARCH', code: 'CODE_3', letters: 'ATD' },
+              { stop: 4, name: 'BDM & Lineage', house: 'Slytherin', game: 'BDM Breakout', puzzle: 'P4_BDM_BREAKOUT', code: 'CODE_4', letters: 'AAIV' }
             ].map(m => (
               <div key={m.stop} className="p-3.5 rounded-2xl bg-[#F8FAFA] border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between">
@@ -384,8 +402,8 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                 </div>
                 <div className="space-y-1 text-xs pt-1 border-t border-slate-200/60">
                   <div className="flex justify-between items-center text-slate-600">
-                    <span>🧩 Puzzle Solved:</span>
-                    <strong className="text-slate-900 font-mono">{milestoneCounts[m.puzzle] || 0}</strong>
+                    <span>🧩 Stop Completed:</span>
+                    <strong className="text-slate-900 font-mono">{(milestoneCounts[m.puzzle] || milestoneCounts[`PUZZLE_${m.stop}`]) || 0}</strong>
                   </div>
                   <div className="flex justify-between items-center text-slate-600">
                     <span>🔑 Code [{m.letters}]:</span>
@@ -445,27 +463,18 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                   <option value="" disabled>🗑️ Delete Player...</option>
                   {players.map(p => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.total_score} pts)
+                      {p.name} [{p.room_id || 'DEFAULT'}] ({p.total_score} pts)
                     </option>
                   ))}
                 </select>
               )}
 
               <button
-                onClick={fetchDashboard}
-                disabled={isLoading}
-                className="p-2 rounded-xl bg-white border border-slate-200 hover:border-[#009488] text-slate-700 active:scale-95 transition-all shadow-2xs"
-                title="Refresh Table"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-[#009488]' : ''}`} />
-              </button>
-
-              <button
                 onClick={() => setShowResetModal(true)}
-                className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-700 font-bold text-xs flex items-center gap-1.5 transition-all shadow-2xs"
+                className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
               >
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span>Reset Session</span>
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Reset Leaderboard</span>
               </button>
             </div>
           </div>
@@ -484,6 +493,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                   <tr className="bg-slate-50 text-[11px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
                     <th className="py-3 px-4 w-12 text-center">Rank</th>
                     <th className="py-3 px-4">Player Name</th>
+                    <th className="py-3 px-4 text-center">Room</th>
                     <th className="py-3 px-4 text-center">Stage</th>
                     <th className="py-3 px-4">Completed Milestones</th>
                     <th className="py-3 px-4 text-center">Last Active</th>
@@ -508,6 +518,11 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                         </div>
                       </td>
                       <td className="py-3 px-4 text-center">
+                        <span className="px-2 py-0.5 rounded-md bg-teal-50 border border-[#009488]/30 text-[#009488] font-mono font-bold text-[10px]">
+                          {player.room_id || 'DEFAULT'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
                         <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-[11px]">
                           {player.is_vault_cracked ? '🎁 Vault' : `Stage ${player.current_stage}`}
                         </span>
@@ -517,32 +532,16 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                           {player.completions.length === 0 ? (
                             <span className="text-slate-400 italic">None yet</span>
                           ) : (
-                            player.completions.map((c, i) => {
-                              const friendlyName = 
-                                c.milestone_key === 'PUZZLE_1' ? 'P1 (Marketplace)' :
-                                c.milestone_key === 'CODE_1' ? 'C1 [HACN]' :
-                                c.milestone_key === 'PUZZLE_2' ? 'P2 (Data Lake)' :
-                                c.milestone_key === 'CODE_2' ? 'C2 [EUL]' :
-                                c.milestone_key === 'PUZZLE_3' ? 'P3 (Quality)' :
-                                c.milestone_key === 'CODE_3' ? 'C3 [ATD]' :
-                                c.milestone_key === 'PUZZLE_4' ? 'P4 (Lineage)' :
-                                c.milestone_key === 'CODE_4' ? 'C4 [AAIV]' :
-                                c.milestone_key === 'VAULT_UNLOCKED' ? 'Datasphere' :
-                                c.milestone_key;
-
-                              const icon = c.milestone_key.startsWith('PUZZLE') ? '🧩' : c.milestone_key === 'VAULT_UNLOCKED' ? '🌐' : '🔑';
-
-                              return (
-                                <span
-                                  key={i}
-                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-teal-50 border border-[#009488]/30 text-[#009488] font-mono text-[10px] font-bold"
-                                  title={`Awarded ${c.points_awarded} pts (${c.rank_order === 1 ? '1st' : `${c.rank_order}th`} solver)`}
-                                >
-                                  {icon} {friendlyName}
-                                  <span className="text-[#9E6E00]">+{c.points_awarded}</span>
-                                </span>
-                              );
-                            })
+                            player.completions.map((c, i) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-teal-50 border border-[#009488]/30 text-[#009488] font-mono text-[10px] font-bold"
+                                title={`Awarded ${c.points_awarded} pts (${c.rank_order === 1 ? '1st' : `${c.rank_order}th`} solver)`}
+                              >
+                                {c.milestone_key}
+                                <span className="text-[#9E6E00]">+{c.points_awarded}</span>
+                              </span>
+                            ))
                           )}
                         </div>
                       </td>
@@ -550,7 +549,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                         {parseUtcDate(player.last_active).toLocaleTimeString()}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <span className="font-mono font-black text-base text-[#009488]">
+                        <span className="font-mono font-black text-sm text-[#009488]">
                           {player.total_score}
                         </span>
                         <span className="text-[10px] text-[#9E6E00] font-bold ml-1">PTS</span>
@@ -558,7 +557,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                       <td className="py-3 px-4 text-center">
                         <button
                           onClick={() => setPlayerToDelete(player)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                           title={`Delete ${player.name}`}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -573,7 +572,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
         </div>
       </main>
 
-      {/* Delete Single Player Modal */}
+      {/* Delete Confirmation Modal */}
       {playerToDelete && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full border-2 border-rose-200 shadow-2xl space-y-4">
@@ -581,12 +580,12 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
               <Trash2 className="w-6 h-6" />
             </div>
             <div className="text-center space-y-1">
-              <h4 className="font-black text-slate-900 text-lg">Remove Participant?</h4>
-              <p className="text-xs text-slate-600">
-                Are you sure you want to delete <strong className="text-slate-900">"{playerToDelete.name}"</strong>? All their milestone completions and rank points will be permanently deleted.
+              <h4 className="font-black text-slate-900 text-base">Remove Player?</h4>
+              <p className="text-xs text-slate-500">
+                Are you sure you want to remove <strong className="text-slate-900">{playerToDelete.name}</strong> [{playerToDelete.room_id || 'DEFAULT'}] ({playerToDelete.total_score} pts)?
               </p>
             </div>
-            <div className="flex space-x-2 pt-2">
+            <div className="flex items-center space-x-2 pt-2">
               <button
                 onClick={() => setPlayerToDelete(null)}
                 className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs"
@@ -595,7 +594,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
               </button>
               <button
                 onClick={handleDeletePlayer}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md shadow-rose-600/20"
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs shadow-md shadow-rose-600/30"
               >
                 Delete Player
               </button>
@@ -612,9 +611,9 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div className="text-center space-y-1">
-              <h4 className="font-black text-slate-900 text-lg">Reset Session Leaderboard</h4>
+              <h4 className="font-black text-slate-900 text-lg">Reset Leaderboard</h4>
               <p className="text-xs text-slate-600">
-                Choose the reset level for this ABN AMRO treasure hunt session:
+                Target: <strong className="text-[#009488]">{selectedRoom ? `Room ${selectedRoom}` : 'ALL ROOMS'}</strong>
               </p>
             </div>
 
@@ -624,10 +623,10 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                 className="w-full p-3.5 rounded-2xl bg-[#F8FAFA] hover:bg-amber-50 border border-slate-200 hover:border-amber-300 text-left transition-all group"
               >
                 <div className="font-bold text-xs text-slate-900 group-hover:text-amber-900">
-                  Option A: Reset Scores & Milestones Only
+                  Option A: Reset Scores, Timers & Milestones
                 </div>
                 <div className="text-[11px] text-slate-500 mt-0.5">
-                  Retains player names/logins, but wipes all scores to 0 and resets everybody to Stage 1.
+                  Retains player names, but clears all 30s timers, wipes scores to 0, and resets everybody to Stage 1.
                 </div>
               </button>
 
@@ -636,10 +635,10 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
                 className="w-full p-3.5 rounded-2xl bg-rose-50/70 hover:bg-rose-100 border border-rose-200 text-left transition-all group"
               >
                 <div className="font-bold text-xs text-rose-700">
-                  Option B: Complete Factory Wipe (Fresh Session)
+                  Option B: Complete Factory Wipe
                 </div>
                 <div className="text-[11px] text-rose-600/80 mt-0.5">
-                  Permanently deletes ALL player accounts, completions, and scores. Ideal for a brand-new visit group.
+                  Permanently deletes ALL player accounts, completions, and timers.
                 </div>
               </button>
             </div>
@@ -661,4 +660,3 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard }
     </div>
   );
 }
-

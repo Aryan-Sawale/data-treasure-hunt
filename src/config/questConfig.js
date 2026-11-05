@@ -144,3 +144,100 @@ export const QUEST_CONFIG = {
     }
   ]
 };
+
+// 11 Individual Puzzle Mini-Games with 30s Rush Timers
+export const TIMED_CHALLENGES = {
+  P1_CAPABILITY_MATCH: {
+    id: "P1_CAPABILITY_MATCH",
+    stage: 1,
+    step: "MATCH",
+    nextStep: "EMOJI",
+    title: "Capability Match",
+    storageKey: "dutch_banking_stage1_match_done"
+  },
+  P1_EMOJI_PHRASE: {
+    id: "P1_EMOJI_PHRASE",
+    stage: 1,
+    step: "EMOJI",
+    nextStep: null,
+    title: "Emoji Phrase Decrypt",
+    storageKey: "dutch_banking_stage1_emoji_done"
+  },
+  P2_ASTEROIDS: {
+    id: "P2_ASTEROIDS",
+    stage: 2,
+    step: "ASTEROIDS",
+    nextStep: "MEMORY",
+    title: "Lakehouse Stream Defender",
+    storageKey: "dutch_banking_stage2_asteroids_done"
+  },
+  P2_MEMORY_PAIRS: {
+    id: "P2_MEMORY_PAIRS",
+    stage: 2,
+    step: "MEMORY",
+    nextStep: "SNAKE",
+    title: "Data Lake Memory Matching",
+    storageKey: "dutch_banking_stage2_memory_done"
+  },
+  P2_INGESTION_SNAKE: {
+    id: "P2_INGESTION_SNAKE",
+    stage: 2,
+    step: "SNAKE",
+    nextStep: null,
+    title: "Pipeline Snake Ingestion",
+    storageKey: "dutch_banking_stage2_snake_done"
+  },
+  P3_ANOMALY_WHACK: {
+    id: "P3_ANOMALY_WHACK",
+    stage: 3,
+    step: "WHACK",
+    nextStep: "AUDIT",
+    title: "Anomaly Hunter",
+    storageKey: "dutch_banking_stage3_whack_done"
+  },
+  P3_DATA_AUDIT: {
+    id: "P3_DATA_AUDIT",
+    stage: 3,
+    step: "AUDIT",
+    nextStep: "WORD_SEARCH",
+    title: "Data Quality Audit",
+    storageKey: "dutch_banking_stage3_audit_done"
+  },
+  P3_WORD_SEARCH: {
+    id: "P3_WORD_SEARCH",
+    stage: 3,
+    step: "WORD_SEARCH",
+    nextStep: null,
+    title: "Governance Word Search",
+    storageKey: "dutch_banking_stage3_wordsearch_done"
+  },
+  P4_SIMON_BUTTONS: {
+    id: "P4_SIMON_BUTTONS",
+    stage: 4,
+    step: "MEMORY_BUTTONS",
+    nextStep: "SEQUENCE",
+    title: "Lineage Simon Sequence",
+    storageKey: "dutch_banking_stage4_simon_done"
+  },
+  P4_LINEAGE_ORDER: {
+    id: "P4_LINEAGE_ORDER",
+    stage: 4,
+    step: "SEQUENCE",
+    nextStep: "BDM_BREAKOUT",
+    title: "Lineage Pipeline Order",
+    storageKey: "dutch_banking_stage4_sequence_done"
+  },
+  P4_BDM_BREAKOUT: {
+    id: "P4_BDM_BREAKOUT",
+    stage: 4,
+    step: "BDM_BREAKOUT",
+    nextStep: null,
+    title: "BDM Breakout",
+    storageKey: "dutch_banking_stage4_breakout_done"
+  }
+};
+
+export const isTimedChallenge = (challengeId) => {
+  return !!TIMED_CHALLENGES[challengeId];
+};
+

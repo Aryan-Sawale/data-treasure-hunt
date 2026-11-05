@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, Gift, Compass, ChevronDown, ChevronUp, User, Globe2, Loader2, Maximize, Minimize } from 'lucide-react';
+import { ArrowRight, Sparkles, Gift, Compass, ChevronDown, ChevronUp, User, Tag, Loader2, Maximize, Minimize } from 'lucide-react';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
-import { getPlayerName, setPlayerName } from '../services/apiService';
+import { getPlayerName, setPlayerName, getRoomId, setRoomId } from '../services/apiService';
 
 export default function WelcomeScreen({ onStart }) {
   const [playerName, setPlayerNameState] = useState(() => getPlayerName());
+  const [roomCode, setRoomCodeState] = useState(() => getRoomId());
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [nameError, setNameError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,9 +64,11 @@ export default function WelcomeScreen({ onStart }) {
     soundService.playSuccess();
     hapticService.success();
     const cleanName = playerName.trim();
+    const cleanRoom = (roomCode || 'DEFAULT').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32) || 'DEFAULT';
     setPlayerName(cleanName);
+    setRoomId(cleanRoom);
     setTimeout(() => {
-      onStart(cleanName);
+      onStart(cleanName, cleanRoom);
     }, 250);
   };
 
@@ -229,6 +232,32 @@ export default function WelcomeScreen({ onStart }) {
             Please enter your name or team name to join the leaderboard!
           </p>
         )}
+      </div>
+
+      {/* Enter Room Code Field */}
+      <div className="bg-white p-4 rounded-2xl border-2 border-slate-200 shadow-sm space-y-2">
+        <div className="flex items-center justify-between">
+          <label htmlFor="roomCode" className="text-xs font-black uppercase tracking-wider text-[#009488] flex items-center gap-1.5">
+            <Tag className="w-3.5 h-3.5" />
+            <span>Room Code</span>
+          </label>
+          <span className="text-[10px] text-slate-400 font-bold">Join or create room</span>
+        </div>
+        <input
+          id="roomCode"
+          type="text"
+          value={roomCode}
+          onChange={(e) => setRoomCodeState(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleStart();
+          }}
+          placeholder="e.g. ALPHA, ROOM1, or RAVENCLAW"
+          maxLength={20}
+          className="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:border-[#009488] focus:ring-2 focus:ring-[#009488]/20 bg-[#F8FAFA] focus:bg-white text-sm font-mono font-black tracking-wider text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all uppercase"
+        />
+        <p className="text-[10px] text-slate-500 font-medium">
+          Compete with colleagues in the same room! 30s rush timers are shared per room.
+        </p>
       </div>
 
       {/* Start Button & Controls */}
