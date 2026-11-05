@@ -615,7 +615,7 @@ export default function Puzzle1LakehouseSnake({ onSolved, onPenalty }) {
       </div>
 
       {/* Ergonomic Mobile D-Pad Controls */}
-      {gameStarted && (
+      {!isSuccess && (
         <div className="flex flex-col items-center justify-center gap-5 sm:gap-6 pt-1 select-none">
           {/* UP button */}
           <button
@@ -661,7 +661,7 @@ export default function Puzzle1LakehouseSnake({ onSolved, onPenalty }) {
       <div
         ref={bottomAnchorRef}
         className={`w-full pointer-events-none transition-all ${
-          gameStarted && !isSuccess ? 'h-20 sm:h-24' : 'h-0'
+          !isSuccess ? 'h-20 sm:h-24' : 'h-0'
         }`}
       />
 

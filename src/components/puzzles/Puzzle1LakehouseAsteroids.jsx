@@ -666,7 +666,7 @@ export default function Puzzle1LakehouseAsteroids({ onSolved, onPenalty }) {
       </div>
 
       {/* Mobile Control Buttons (Steer Left / Right) */}
-      {gameStarted && (
+      {!isSuccess && (
         <div className="flex items-center justify-between gap-3 pt-0.5">
           <button
             type="button"
@@ -699,7 +699,7 @@ export default function Puzzle1LakehouseAsteroids({ onSolved, onPenalty }) {
       <div
         ref={bottomAnchorRef}
         className={`w-full pointer-events-none transition-all ${
-          gameStarted && !isSuccess ? 'h-20 sm:h-24' : 'h-0'
+          !isSuccess ? 'h-20 sm:h-24' : 'h-0'
         }`}
       />
 
