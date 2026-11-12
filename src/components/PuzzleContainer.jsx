@@ -12,6 +12,7 @@ import Puzzle3LineageSimon from './puzzles/Puzzle3LineageSimon';
 import Puzzle3Governance from './puzzles/Puzzle3Governance';
 import Puzzle3BdmBreakout from './puzzles/Puzzle3BdmBreakout';
 import ChallengeTimerBanner from './ChallengeTimerBanner';
+import HowToPlayAccordion from './HowToPlayAccordion';
 import { isDevHelperEnabled, TIMED_CHALLENGES } from '../config/questConfig';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
@@ -285,6 +286,9 @@ export default function PuzzleContainer({
       )}
 
       {renderPuzzle()}
+
+      {/* Expandable How To Play Section */}
+      <HowToPlayAccordion challengeId={currentChallengeId} />
     </div>
   );
 }

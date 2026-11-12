@@ -161,7 +161,7 @@ export default function Puzzle3Governance({ onSolved, onPenalty }) {
       </div>
 
       {/* Sequential Lineage Chain (Neutral styling - no early green spoiler) */}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {items.map((item, idx) => {
           const isSelected = selectedIdx === idx;
 
@@ -169,7 +169,7 @@ export default function Puzzle3Governance({ onSolved, onPenalty }) {
             <div
               key={item.stepId}
               onClick={() => handleCardClick(idx)}
-              className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs active:scale-[0.99] select-none ${
+              className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs active:scale-[0.99] select-none ${
                 isSelected
                   ? 'bg-[#FFFDF5] border-[#F9BD20] ring-2 ring-[#F9BD20]/30 shadow-md'
                   : isSuccess
@@ -178,50 +178,50 @@ export default function Puzzle3Governance({ onSolved, onPenalty }) {
               }`}
             >
               {/* Step Slot & Icon */}
-              <div className="flex items-center space-x-3 min-w-0">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-xs ${
+              <div className="flex items-center space-x-3.5 min-w-0">
+                <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-xs ${
                   isSuccess
                     ? 'bg-[#009488] text-white'
                     : 'bg-slate-100 text-slate-700'
                 }`}>
-                  {isSuccess ? <CheckCircle2 className="w-4 h-4" /> : `${idx + 1}`}
+                  {isSuccess ? <CheckCircle2 className="w-5 h-5" /> : `${idx + 1}`}
                 </div>
-                <div className="text-2xl shrink-0">{item.icon}</div>
+                <div className="text-2xl sm:text-3xl shrink-0">{item.icon}</div>
                 <div className="min-w-0">
-                  <h4 className="font-extrabold text-xs text-slate-900 leading-tight truncate">
+                  <h4 className="font-black text-sm sm:text-base text-slate-900 leading-snug">
                     {item.title}
                   </h4>
-                  <p className="text-[11px] text-[#878787] mt-0.5 leading-tight truncate">
+                  <p className="text-xs sm:text-sm font-semibold text-slate-600 mt-1 leading-snug">
                     {item.subtitle}
                   </p>
                 </div>
               </div>
 
               {/* Move Buttons */}
-              <div className="flex items-center space-x-1 shrink-0">
+              <div className="flex items-center space-x-1.5 shrink-0">
                 <button
                   onClick={(e) => moveUp(e, idx)}
                   disabled={idx === 0 || isSuccess}
-                  className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all ${
+                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center transition-all ${
                     idx === 0 || isSuccess
                       ? 'opacity-20 border-slate-200 text-slate-300 cursor-not-allowed'
-                      : 'bg-[#F8FAFA] hover:bg-slate-100 border-slate-200 text-[#009488] active:scale-90'
+                      : 'bg-[#F8FAFA] hover:bg-slate-100 border-slate-200 text-[#009488] active:scale-90 shadow-2xs'
                   }`}
                   aria-label="Move up"
                 >
-                  <ArrowUp className="w-4 h-4 stroke-[2.5]" />
+                  <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
                 </button>
                 <button
                   onClick={(e) => moveDown(e, idx)}
                   disabled={idx === items.length - 1 || isSuccess}
-                  className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all ${
+                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center transition-all ${
                     idx === items.length - 1 || isSuccess
                       ? 'opacity-20 border-slate-200 text-slate-300 cursor-not-allowed'
-                      : 'bg-[#F8FAFA] hover:bg-slate-100 border-slate-200 text-[#009488] active:scale-90'
+                      : 'bg-[#F8FAFA] hover:bg-slate-100 border-slate-200 text-[#009488] active:scale-90 shadow-2xs'
                   }`}
                   aria-label="Move down"
                 >
-                  <ArrowDown className="w-4 h-4 stroke-[2.5]" />
+                  <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
                 </button>
               </div>
             </div>
@@ -268,13 +268,13 @@ export default function Puzzle3Governance({ onSolved, onPenalty }) {
       )}
 
       {isDevHelperEnabled() && showHint && (
-        <div className="p-2.5 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700 space-y-1">
+        <div className="p-3 rounded-xl bg-[#FFFDF5] border border-[#F9BD20]/50 text-xs text-slate-700 space-y-1.5">
           <p className="font-bold text-[#9E6E00]">Standard Lineage Lifecycle:</p>
-          <ol className="list-decimal pl-4 space-y-0.5 text-[11px] text-slate-600">
-            <li>Discover & Scan Metadata</li>
-            <li>Enrich & Understand Data</li>
-            <li>Connect & Trace Lineage</li>
-            <li>Visualize & Act</li>
+          <ol className="list-decimal pl-4 space-y-1 text-xs text-slate-700">
+            <li><strong className="text-slate-900">Discover & Scan Metadata</strong> – Scan technical data catalogs</li>
+            <li><strong className="text-slate-900">Enrich & Understand Data</strong> – Classify and assign ownership</li>
+            <li><strong className="text-slate-900">Connect & Trace Lineage</strong> – Trace end-to-end pipeline hops</li>
+            <li><strong className="text-slate-900">Visualize & Act</strong> – Analyze impacts and act</li>
           </ol>
         </div>
       )}

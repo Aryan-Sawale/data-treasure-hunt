@@ -14,6 +14,7 @@ import { QUEST_CONFIG, isDevHelperEnabled, DATASPHERE_PHRASE } from '../config/q
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
 import { getPlayerName } from '../services/apiService';
+import HowToPlayAccordion from './HowToPlayAccordion';
 
 const TARGET_PHRASE = DATASPHERE_PHRASE || 'DATA VALUE CHAIN';
 const NORMALIZED_TARGET = TARGET_PHRASE.replace(/\s+/g, '').toUpperCase();
@@ -642,6 +643,9 @@ export default function VaultScreen({
               Target Phrase: <strong className="font-mono text-[#009488] font-black">{TARGET_PHRASE}</strong>
             </div>
           )}
+
+          {/* How To Play Expandable Section */}
+          <HowToPlayAccordion challengeId="VAULT" />
         </div>
       ) : (
         /* State B: Unlocked -> Master Safe Code Display */
