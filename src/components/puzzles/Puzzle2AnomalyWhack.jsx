@@ -6,9 +6,10 @@ import { isDevHelperEnabled } from '../../config/questConfig';
 
 const GRID_SIZE = 9; // 3x3
 const TARGET_CLEANSED = 8;
-const TIME_LIMIT = 10; // 15 seconds countdown
-const POPUP_LIFETIME = 1200; // ms item stays visible (brisk reaction required)
-const SPAWN_INTERVAL = 680; // ms between spawns
+const TIME_LIMIT = 8; // 8 seconds intense arcade countdown
+const POPUP_LIFETIME = 950; // ms item stays visible (brisk reflex required)
+const SPAWN_INTERVAL = 460; // ms between spawns (~17 spawns in 8s)
+const MIN_BUGS_GUARANTEE = 11; // guarantees at least 11 bugs appear per 8s round
 
 const BUG_TYPES = [
   { type: 'bug', icon: '🐛', label: 'Bad Schema' },
@@ -37,6 +38,9 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
   const countdownTimerRef = useRef(null);
   const startTimeRef = useRef(null);
   const itemTimeoutsRef = useRef({});
+  const gameActiveRef = useRef(false);
+  const totalBugsSpawnedRef = useRef(0);
+  const recentlyExpiredRef = useRef({}); // Coyote time buffer { [slotIdx]: { item, expiredAt } }
 
   // Stop all active timers & timeouts
   const clearAllTimers = () => {
@@ -50,14 +54,20 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
     }
     Object.values(itemTimeoutsRef.current).forEach((tid) => clearTimeout(tid));
     itemTimeoutsRef.current = {};
+    recentlyExpiredRef.current = {};
   };
 
   useEffect(() => {
-    return () => clearAllTimers();
+    return () => {
+      gameActiveRef.current = false;
+      clearAllTimers();
+    };
   }, []);
 
   // Spawn an item in a free slot
-  const spawnItem = useCallback(() => {
+  const spawnItem = useCallback((forcedType = null) => {
+    if (!gameActiveRef.current) return;
+
     setSlots((prevSlots) => {
       // Find empty slots
       const emptyIndices = [];
@@ -70,8 +80,26 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
       // Pick random empty slot
       const randomSlotIdx = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
 
-      // 75% chance bug, 25% chance clean asset
-      const isBug = Math.random() < 0.75;
+      // Calculate estimated remaining spawns in round
+      const elapsed = startTimeRef.current ? (Date.now() - startTimeRef.current) / 1000 : 0;
+      const timeLeftSec = Math.max(0, TIME_LIMIT - elapsed);
+      const estRemainingSpawns = Math.ceil((timeLeftSec * 1000) / SPAWN_INTERVAL);
+
+      // 72% chance bug, 28% clean trap
+      let isBug = Math.random() < 0.72;
+
+      // Guarantee at least 12 bugs appear across the 10-second round so winning is always fair and achievable
+      if (totalBugsSpawnedRef.current + estRemainingSpawns <= MIN_BUGS_GUARANTEE) {
+        isBug = true;
+      }
+
+      if (forcedType === 'clean') isBug = false;
+      if (forcedType === 'bug') isBug = true;
+
+      if (isBug) {
+        totalBugsSpawnedRef.current++;
+      }
+
       const template = isBug
         ? BUG_TYPES[Math.floor(Math.random() * BUG_TYPES.length)]
         : CLEAN_TYPES[Math.floor(Math.random() * CLEAN_TYPES.length)];
@@ -88,6 +116,12 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
       }
 
       itemTimeoutsRef.current[randomSlotIdx] = setTimeout(() => {
+        // Record as recently expired for 200ms grace period / coyote time
+        recentlyExpiredRef.current[randomSlotIdx] = {
+          item,
+          expiredAt: Date.now(),
+        };
+
         setSlots((curr) => {
           const next = [...curr];
           if (next[randomSlotIdx] && next[randomSlotIdx].id === item.id) {
@@ -95,6 +129,13 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
           }
           return next;
         });
+
+        // Clean up grace period cache after 250ms
+        setTimeout(() => {
+          if (recentlyExpiredRef.current[randomSlotIdx]?.item.id === item.id) {
+            delete recentlyExpiredRef.current[randomSlotIdx];
+          }
+        }, 250);
       }, POPUP_LIFETIME);
 
       const next = [...prevSlots];
@@ -105,6 +146,7 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
 
   // Handle countdown timeout
   const handleTimeout = useCallback(() => {
+    gameActiveRef.current = false;
     clearAllTimers();
     setGameStarted(false);
     setIsExpired(true);
@@ -129,6 +171,8 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
     soundService.playSuccess();
     hapticService.medium();
 
+    gameActiveRef.current = true;
+    totalBugsSpawnedRef.current = 0;
     setGameStarted(true);
     setIsExpired(false);
     setCleansedCount(0);
@@ -138,8 +182,10 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
 
     startTimeRef.current = Date.now();
 
-    // Spawn loop
-    spawnItem();
+    // Spawn 1 bug at launch
+    spawnItem('bug');
+
+    // Continuous spawn loop
     spawnTimerRef.current = setInterval(() => {
       spawnItem();
     }, SPAWN_INTERVAL);
@@ -160,7 +206,18 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
   const handleSlotClick = (slotIdx) => {
     if (!gameStarted || isSuccess || isExpired) return;
 
-    const currentItem = slots[slotIdx];
+    let currentItem = slots[slotIdx];
+
+    // Coyote Time / Grace Period:
+    // If the card just submerged in the last 200ms while the user was tapping, count it!
+    if (!currentItem && recentlyExpiredRef.current[slotIdx]) {
+      const recent = recentlyExpiredRef.current[slotIdx];
+      if (Date.now() - recent.expiredAt <= 200) {
+        currentItem = recent.item;
+        delete recentlyExpiredRef.current[slotIdx];
+      }
+    }
+
     if (!currentItem) return;
 
     // Clear timeout for this slot
@@ -168,6 +225,7 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
       clearTimeout(itemTimeoutsRef.current[slotIdx]);
       delete itemTimeoutsRef.current[slotIdx];
     }
+    delete recentlyExpiredRef.current[slotIdx];
 
     if (currentItem.type === 'bug') {
       // Successfully whacked an anomaly!
@@ -197,6 +255,7 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
 
       // Check win condition
       if (nextCleansed >= TARGET_CLEANSED) {
+        gameActiveRef.current = false;
         clearAllTimers();
         setIsSuccess(true);
         setGameStarted(false);
@@ -227,6 +286,7 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
 
   // Dev Quick Complete
   const handleAutoSolve = () => {
+    gameActiveRef.current = false;
     clearAllTimers();
     soundService.playSuccess();
     hapticService.medium();
@@ -236,7 +296,7 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
     setSlots(Array(GRID_SIZE).fill(null));
   };
 
-  const isLowTime = timeLeft <= 5.0 && timeLeft > 0;
+  const isLowTime = timeLeft <= 3.0 && timeLeft > 0;
 
   return (
     <div className="space-y-3.5 animate-fade-in">
@@ -301,7 +361,7 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
           ) : (
             <>
               <Play className="w-4 h-4 fill-current text-[#F9BD20]" />
-              <span>Start Anomaly Hunt ({TIME_LIMIT}s Timer)</span>
+              <span>Start Anomaly Cleansing ({TIME_LIMIT}s Timer)</span>
             </>
           )}
         </button>
@@ -351,15 +411,18 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
               <button
                 key={idx}
                 type="button"
-                onClick={() => handleSlotClick(idx)}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  handleSlotClick(idx);
+                }}
                 disabled={!gameStarted || isSuccess}
-                className={`aspect-square rounded-2xl border-2 transition-all select-none flex flex-col items-center justify-center relative p-2 ${
+                className={`aspect-square rounded-2xl border-2 select-none flex flex-col items-center justify-center relative p-2 transition-transform active:scale-95 ${
                   isWhacked
                     ? 'bg-emerald-100 border-emerald-500 scale-95 shadow-inner'
                     : item
                     ? item.type === 'bug'
-                      ? 'bg-rose-50 border-rose-400 hover:bg-rose-100 shadow-md shadow-rose-200/50 scale-[1.04] active:scale-95 cursor-pointer animate-bounce'
-                      : 'bg-emerald-50 border-emerald-400 hover:bg-emerald-100 shadow-md shadow-emerald-200/50 scale-[1.04] active:scale-95 cursor-pointer ring-2 ring-emerald-300'
+                      ? 'bg-rose-50 border-rose-400 hover:bg-rose-100 shadow-md shadow-rose-200/50 scale-[1.03] cursor-pointer'
+                      : 'bg-emerald-50 border-emerald-400 hover:bg-emerald-100 shadow-md shadow-emerald-200/50 scale-[1.03] cursor-pointer ring-2 ring-emerald-300'
                     : 'bg-slate-200/70 border-slate-300/80 shadow-2xs'
                 } ${!gameStarted ? 'opacity-80' : ''}`}
               >
