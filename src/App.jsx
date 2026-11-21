@@ -193,7 +193,7 @@ export default function App() {
     }
   };
 
-  // Called when a mini-game 30s timer expires or caught up (0 points)
+  // Called when a mini-game 45s timer expires or caught up (0 points)
   const handleMiniGameTimeout = async (challengeId) => {
     await apiService.recordTimeout(challengeId, roomId);
     setExpiredTimers(prev => Array.from(new Set([...prev, challengeId])));

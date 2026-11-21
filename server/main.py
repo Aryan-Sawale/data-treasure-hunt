@@ -78,7 +78,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="The Data Vault - Real-time Leaderboard API",
-    description="Backend API for competitive banking treasure hunt scoring with room isolation & 30s challenge rush timers",
+    description="Backend API for competitive banking treasure hunt scoring with room isolation & 45s challenge rush timers",
     version="2.0.0"
 )
 
@@ -91,7 +91,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# The 11 individual mini-games that trigger a 30s timer for room members on 1st solve
+# The 11 individual mini-games that trigger a 45s timer for room members on 1st solve
 TIMED_MINI_GAMES = {
     "P1_CAPABILITY_MATCH",
     "P1_EMOJI_PHRASE",
@@ -242,8 +242,8 @@ def get_player(player_id: str, db: Session = Depends(get_db)):
 async def complete_milestone(req: MilestoneCompleteRequest, db: Session = Depends(get_db)):
     """
     Awards points for completing an individual mini-game or presentation code.
-    If it's an individual mini-game, 1st solver triggers a 30s countdown timer for everyone in that room.
-    Subsequent solvers within 30s earn rank-based points; solvers after 30s receive 0 points.
+    If it's an individual mini-game, 1st solver triggers a 45s countdown timer for everyone in that room.
+    Subsequent solvers within 45s earn rank-based points; solvers after 45s receive 0 points.
     """
     player = db.query(Player).filter(Player.id == req.player_id).first()
     if not player:
@@ -288,7 +288,7 @@ async def complete_milestone(req: MilestoneCompleteRequest, db: Session = Depend
             first_solver = True
             rank_order = 1
             points = calculate_points_for_rank(1) # 100 points
-            expires_at = now + timedelta(seconds=30)
+            expires_at = now + timedelta(seconds=45)
 
             timer = RoomChallengeTimer(
                 room_id=room_code,
@@ -301,20 +301,20 @@ async def complete_milestone(req: MilestoneCompleteRequest, db: Session = Depend
             db.add(timer)
             db.commit()
 
-            # Broadcast 30-second timer to room via WebSocket
+            # Broadcast 45-second timer to room via WebSocket
             await ws_manager.broadcast_to_room(room_code, {
                 "type": "CHALLENGE_TIMER_STARTED",
                 "challenge_id": req.milestone_key,
                 "first_solved_by_name": player.name,
                 "first_solved_at": now.isoformat(),
                 "expires_at": expires_at.isoformat(),
-                "duration_seconds": 30
+                "duration_seconds": 45
             })
         else:
             # Timer already exists
             exp = timer.expires_at if timer.expires_at.tzinfo else timer.expires_at.replace(tzinfo=timezone.utc)
             if now <= exp:
-                # Solved within 30-second window! Award rank-based points
+                # Solved within 45-second window! Award rank-based points
                 previous_count = db.query(Completion).filter(
                     Completion.room_id == room_code,
                     Completion.milestone_key == req.milestone_key,
@@ -323,7 +323,7 @@ async def complete_milestone(req: MilestoneCompleteRequest, db: Session = Depend
                 rank_order = previous_count + 1
                 points = calculate_points_for_rank(rank_order) # 80, 65, 50
             else:
-                # Solved after 30-second window expired
+                # Solved after 45-second window expired
                 rank_order = 999
                 points = 0
     else:
@@ -370,7 +370,7 @@ async def complete_milestone(req: MilestoneCompleteRequest, db: Session = Depend
 @app.post("/api/challenges/timeout", response_model=MilestoneCompleteResponse)
 def challenge_timeout(req: TimeoutRequest, db: Session = Depends(get_db)):
     """
-    Called when a player's 30s timer expires or when catching up on an already expired challenge.
+    Called when a player's 45s timer expires or when catching up on an already expired challenge.
     Records a 0-point completion so they auto-advance without scoring.
     """
     player = db.query(Player).filter(Player.id == req.player_id).first()
@@ -422,7 +422,7 @@ def challenge_timeout(req: TimeoutRequest, db: Session = Depends(get_db)):
 @app.get("/api/rooms/{room_id}/status", response_model=RoomStatusResponse)
 def get_room_status(room_id: str, db: Session = Depends(get_db)):
     """
-    Returns active 30s timers and expired timers for room state synchronization and catchup logic.
+    Returns active 45s timers and expired timers for room state synchronization and catchup logic.
     """
     room_code = clean_room_id(room_id)
     now = datetime.now(timezone.utc)

@@ -317,7 +317,7 @@ export default function PublicLeaderboard({ onNavigateHome, roomId = null }) {
             <div>
               <h3 className="font-black text-slate-900 text-base">Complete Standings • Room {currentRoom}</h3>
               <p className="text-xs text-[#878787]">
-                First solvers trigger a 30-second rush timer. Subsequent solvers within 30s earn rank points!
+                First solvers trigger a 45-second rush timer. Subsequent solvers within 45s earn rank points!
               </p>
             </div>
             <div className="text-xs font-mono font-bold text-[#009488]">

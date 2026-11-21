@@ -401,7 +401,7 @@ class SoundService {
     }
   }
 
-  // Urgent two-tone chime when someone finishes and 30s countdown begins
+  // Urgent two-tone chime when someone finishes and 45s countdown begins
   playTimerAlert() {
     if (this.muted) return;
     this.init();

@@ -41,6 +41,8 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
   const gameActiveRef = useRef(false);
   const totalBugsSpawnedRef = useRef(0);
   const recentlyExpiredRef = useRef({}); // Coyote time buffer { [slotIdx]: { item, expiredAt } }
+  const gridRef = useRef(null);
+  const gridBottomRef = useRef(null);
 
   // Stop all active timers & timeouts
   const clearAllTimers = () => {
@@ -165,6 +167,21 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
     setErrorMsg(`⏱️ Time expired (-5 pts)! Cleansed ${cleansedCount} of ${TARGET_CLEANSED} bugs. Try again!`);
   }, [cleansedCount, onPenalty]);
 
+  // Auto-scroll all the way to the bottom upon starting
+  const scrollToBottom = useCallback(() => {
+    const doScroll = () => {
+      const targetY = (document.scrollingElement || document.documentElement || document.body).scrollHeight;
+      window.scrollTo({
+        top: targetY,
+        behavior: 'smooth',
+      });
+    };
+
+    // Immediate frame + delayed pass for full DOM stability
+    setTimeout(doScroll, 50);
+    setTimeout(doScroll, 160);
+  }, []);
+
   // Start or restart game handler
   const handleStartGame = () => {
     clearAllTimers();
@@ -181,6 +198,9 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
     setSlots(Array(GRID_SIZE).fill(null));
 
     startTimeRef.current = Date.now();
+
+    // Auto-scroll all the way to the bottom
+    scrollToBottom();
 
     // Spawn 1 bug at launch
     spawnItem('bug');
@@ -399,6 +419,7 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
 
       {/* 3x3 Database Server Rack Grid */}
       <div
+        ref={gridRef}
         className={`bg-slate-100/90 p-3 rounded-2xl border-2 border-slate-200 shadow-inner transition-transform ${
           isBoardShaking ? 'animate-shake' : ''
         }`}
@@ -457,6 +478,9 @@ export default function Puzzle2AnomalyWhack({ onSolved, onPenalty }) {
           })}
         </div>
       </div>
+
+      {/* Auto-scroll anchor right below grid to bring full grid into comfortable view */}
+      <div ref={gridBottomRef} className="h-4 w-full pointer-events-none" />
 
       {/* Error alert */}
       {errorMsg && (

@@ -54,7 +54,7 @@ export default function FacilitatorModal({
   if (!isOpen) return null;
 
   const handleSaveCode = () => {
-    if (codeDraft.length === 4 && /^\d+$/.test(codeDraft)) {
+    if (codeDraft.length >= 3 && /^\d+$/.test(codeDraft)) {
       soundService.playSuccess();
       hapticService.success();
       onUpdateVaultCode(codeDraft);
@@ -63,7 +63,7 @@ export default function FacilitatorModal({
     } else {
       soundService.playError();
       hapticService.error();
-      alert("Combination must be exactly 4 numeric digits (e.g. 2347)");
+      alert("Combination must be numeric digits (e.g. 021)");
     }
   };
 
@@ -125,7 +125,7 @@ export default function FacilitatorModal({
           <div className="flex items-center justify-between text-xs">
             <span className="font-bold text-slate-800 flex items-center gap-1.5">
               <Key className="w-3.5 h-3.5 text-[#009488]" />
-              Physical 4-Digit Padlock Code
+              Physical Padlock Code
             </span>
             <span className="text-[10px] text-[#878787]">Match your box</span>
           </div>
@@ -133,10 +133,10 @@ export default function FacilitatorModal({
           <div className="flex space-x-2">
             <input
               type="text"
-              maxLength={4}
+              maxLength={6}
               value={codeDraft}
               onChange={(e) => setCodeDraft(e.target.value.replace(/\D/g, ''))}
-              placeholder="4-digit code"
+              placeholder="e.g. 021"
               className="w-24 bg-white border border-slate-300 rounded-xl px-3 py-2 text-center text-lg font-mono font-bold text-[#009488] tracking-widest focus:outline-none focus:border-[#009488]"
             />
             <button

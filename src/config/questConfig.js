@@ -3,7 +3,7 @@
  * 4 Teams mapped to Harry Potter Houses and ABN AMRO brand colors.
  */
 
-export const DEFAULT_VAULT_CODE = "2347";
+export const DEFAULT_VAULT_CODE = "021";
 export const DATASPHERE_PHRASE = "DATA VALUE CHAIN";
 
 // Set to true to re-enable hints, quick-complete buttons, and dev helpers (or visit with ?debug=1 or ?dev=1 or ?test=1)
@@ -22,7 +22,7 @@ export const QUEST_CONFIG = {
   title: "The Data Vault",
   subtitle: "ABN AMRO Banking Expedition",
   organization: "Enterprise Data & Analytics",
-  vaultLocation: "Main Reception / Host Welcome Table",
+  vaultLocation: "Stage",
   
   // The 4 Teams in exact presentation order with Harry Potter House locations
   teams: [
@@ -145,7 +145,7 @@ export const QUEST_CONFIG = {
   ]
 };
 
-// 11 Individual Puzzle Mini-Games with 30s Rush Timers
+// 11 Individual Puzzle Mini-Games with 45s Rush Timers
 export const TIMED_CHALLENGES = {
   P1_CAPABILITY_MATCH: {
     id: "P1_CAPABILITY_MATCH",

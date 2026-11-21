@@ -256,7 +256,7 @@ export default function WelcomeScreen({ onStart }) {
           className="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:border-[#009488] focus:ring-2 focus:ring-[#009488]/20 bg-[#F8FAFA] focus:bg-white text-sm font-mono font-black tracking-wider text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all uppercase"
         />
         <p className="text-[10px] text-slate-500 font-medium">
-          Compete with colleagues in the same room! 30s rush timers are shared per room.
+          Compete with colleagues in the same room! 45s rush timers are shared per room.
         </p>
       </div>
 

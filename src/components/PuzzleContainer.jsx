@@ -114,7 +114,7 @@ export default function PuzzleContainer({
     }
   };
 
-  // Handle timeout (30s elapsed or room catch-up)
+  // Handle timeout (45s elapsed or room catch-up)
   const handleTimeout = async (challengeId) => {
     soundService.playBuzzer();
     hapticService.error();
@@ -276,7 +276,7 @@ export default function PuzzleContainer({
         </div>
       )}
 
-      {/* 30-Second Rush Countdown Banner */}
+      {/* 45-Second Rush Countdown Banner */}
       {activeTimer && (
         <ChallengeTimerBanner
           timer={activeTimer}

@@ -10,7 +10,7 @@ import {
   Layers,
   RotateCcw
 } from 'lucide-react';
-import { QUEST_CONFIG, isDevHelperEnabled, DATASPHERE_PHRASE } from '../config/questConfig';
+import { QUEST_CONFIG, isDevHelperEnabled, DATASPHERE_PHRASE, DEFAULT_VAULT_CODE } from '../config/questConfig';
 import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
 import { getPlayerName } from '../services/apiService';
@@ -39,7 +39,7 @@ const COLLECTED_TILES = [
 ];
 
 export default function VaultScreen({
-  vaultCode = '2347',
+  vaultCode = DEFAULT_VAULT_CODE || '021',
   playerScore = 0,
   playerRank = null,
   isUnlockedInitially = false,
@@ -62,7 +62,7 @@ export default function VaultScreen({
   const touchStartPos = useRef({ x: 0, y: 0 });
   const justTouchedRef = useRef(false);
 
-  const codeDigits = (vaultCode || '2347').split('');
+  const codeDigits = (vaultCode || DEFAULT_VAULT_CODE || '021').split('');
   const playerName = getPlayerName() || 'Data Explorer';
 
   const usedTileIds = new Set(slots.filter(Boolean).map((s) => s.id));
@@ -682,7 +682,7 @@ export default function VaultScreen({
 
             <div className="text-xs text-slate-700 leading-relaxed pt-1">
               <p>
-                Walk over to the locked box at the <strong>{QUEST_CONFIG.vaultLocation}</strong>, dial <strong className="font-mono text-[#009488] font-black">{codeDigits.join(' - ')}</strong>, and unlock the padlock to claim your prize!
+                Walk over to the treasure box on the <strong>{QUEST_CONFIG.vaultLocation}</strong>, dial <strong className="font-mono text-[#009488] font-black">{codeDigits.join(' - ')}</strong>, and unlock the padlock to claim your prize!
               </p>
             </div>
           </div>

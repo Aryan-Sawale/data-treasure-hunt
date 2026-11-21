@@ -209,11 +209,11 @@ export default function Puzzle2Quality({ onSolved, onPenalty }) {
               </div>
 
               {/* Record Metadata & Value */}
-              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
-                <span className="text-xs text-slate-600 font-semibold">
+              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-xs sm:text-sm">
+                <span className="text-xs text-slate-600 font-semibold min-w-0">
                   {record.detail}
                 </span>
-                <span className="font-mono font-black text-slate-900 text-xs sm:text-sm">
+                <span className="font-mono font-black text-slate-900 text-xs sm:text-sm shrink-0 whitespace-nowrap">
                   {record.amount}
                 </span>
               </div>

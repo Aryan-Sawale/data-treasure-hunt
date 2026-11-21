@@ -626,7 +626,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard, 
                   Option A: Reset Scores, Timers & Milestones
                 </div>
                 <div className="text-[11px] text-slate-500 mt-0.5">
-                  Retains player names, but clears all 30s timers, wipes scores to 0, and resets everybody to Stage 1.
+                  Retains player names, but clears all 45s timers, wipes scores to 0, and resets everybody to Stage 1.
                 </div>
               </button>
 

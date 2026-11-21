@@ -4,8 +4,10 @@ import { soundService } from '../services/soundService';
 import { hapticService } from '../services/hapticService';
 
 export default function ChallengeTimerBanner({ timer, onTimeout, challengeTitle }) {
+  const totalDuration = timer?.duration_seconds || 45;
+
   const [secondsLeft, setSecondsLeft] = useState(() => {
-    if (!timer?.expires_at) return 30;
+    if (!timer?.expires_at) return totalDuration;
     const diff = Math.ceil((new Date(timer.expires_at).getTime() - Date.now()) / 1000);
     return Math.max(0, diff);
   });
@@ -48,10 +50,10 @@ export default function ChallengeTimerBanner({ timer, onTimeout, challengeTitle 
   }, [timer?.expires_at, onTimeout]);
 
   // Color gradient based on urgency
-  const isUrgent = secondsLeft <= 10;
-  const isMedium = secondsLeft > 10 && secondsLeft <= 18;
+  const isUrgent = secondsLeft <= 12;
+  const isMedium = secondsLeft > 12 && secondsLeft <= 25;
 
-  const pct = Math.max(0, Math.min(100, (secondsLeft / 30) * 100));
+  const pct = Math.max(0, Math.min(100, (secondsLeft / totalDuration) * 100));
 
   const solverName = timer?.first_solved_by_name || 'Someone in your room';
 
@@ -95,7 +97,7 @@ export default function ChallengeTimerBanner({ timer, onTimeout, challengeTitle 
                     : 'bg-amber-200 text-amber-900'
                 }`}
               >
-                30s Rush
+                {totalDuration}s Rush
               </span>
             </div>
             <p className="text-[10px] text-slate-600 font-bold leading-tight">

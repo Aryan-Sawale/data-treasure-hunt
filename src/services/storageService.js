@@ -25,8 +25,8 @@ export const storageService = {
         const parsed = JSON.parse(data);
         const state = { ...getInitialState(), ...parsed };
         
-        // Ensure vaultCode defaults to 2347 if previously on older versions
-        if (state.vaultCode === '7394' || state.vaultCode === '2374') {
+        // Ensure vaultCode defaults to DEFAULT_VAULT_CODE if previously on older versions
+        if (state.vaultCode === '7394' || state.vaultCode === '2374' || state.vaultCode === '2347') {
           state.vaultCode = DEFAULT_VAULT_CODE;
         }
 

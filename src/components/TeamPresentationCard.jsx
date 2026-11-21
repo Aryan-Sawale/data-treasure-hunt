@@ -81,27 +81,9 @@ export default function TeamPresentationCard({
         </div>
 
         <h2 className="text-xl font-extrabold tracking-tight mb-1 text-white">{team.name}</h2>
-        <p className="text-xs text-white/90 font-medium leading-relaxed mb-3">
+        <p className="text-xs text-white/90 font-medium leading-relaxed">
           {team.tagline}
         </p>
-
-        {/* Booth Location: Harry Potter House */}
-        <div className="bg-black/35 backdrop-blur-md p-3 rounded-xl border border-[#F9BD20]/50 flex items-center justify-between text-xs">
-          <div className="flex items-center space-x-2.5">
-            <span className="text-2xl">{team.houseEmoji || "🏰"}</span>
-            <div>
-              <span className="text-slate-300 text-[10px] uppercase font-bold tracking-wider block">
-                Booth Location:
-              </span>
-              <span className="font-black text-[#F9BD20] text-sm tracking-wide">
-                {team.room}
-              </span>
-            </div>
-          </div>
-          <span className="text-[10px] font-mono bg-[#F9BD20] text-slate-950 px-2 py-0.5 rounded font-black shadow-xs">
-            ABN AMRO
-          </span>
-        </div>
       </div>
 
       {/* Presentation Check-In Section */}
@@ -192,7 +174,7 @@ export default function TeamPresentationCard({
               <div className="flex items-center space-x-2.5">
                 <CheckCircle2 className="w-5 h-5 shrink-0 text-[#009488]" />
                 <span>
-                  Verified at {team.room}! Letter fragment collected:
+                  Presentation verified! Letter fragment collected:
                 </span>
               </div>
               <span className="font-mono font-black text-sm px-2.5 py-0.5 rounded-lg bg-white border border-[#009488]/40 text-[#009488]">
