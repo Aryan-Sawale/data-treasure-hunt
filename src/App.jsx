@@ -10,6 +10,7 @@ import FacilitatorModal from './components/FacilitatorModal';
 import LeaderboardModal from './components/LeaderboardModal';
 import PublicLeaderboard from './components/PublicLeaderboard';
 import AdminDashboard from './components/AdminDashboard';
+import PresentationScreen from './components/PresentationScreen';
 import { QUEST_CONFIG, isDevHelperEnabled, TIMED_CHALLENGES } from './config/questConfig';
 import { storageService } from './services/storageService';
 import { soundService } from './services/soundService';
@@ -33,6 +34,9 @@ const getInitialRoute = () => {
   }
   if (path.includes('/admin') || hash.includes('admin')) {
     return 'admin';
+  }
+  if (path.includes('/present') || hash.includes('present')) {
+    return 'present';
   }
   return 'quest';
 };
@@ -70,15 +74,22 @@ export default function App() {
 
   const navigateTo = (route) => {
     if (route === 'leaderboard') {
+      window.history.pushState(null, '', '/leaderboard');
       window.location.hash = 'leaderboard';
       setCurrentRoute('leaderboard');
     } else if (route === 'admin') {
+      window.history.pushState(null, '', '/admin');
       window.location.hash = 'admin';
       setCurrentRoute('admin');
+    } else if (route === 'present') {
+      window.history.pushState(null, '', '/present');
+      window.location.hash = 'present';
+      setCurrentRoute('present');
     } else {
-      if (window.location.hash) {
-        window.history.pushState(null, '', window.location.pathname);
+      if (window.location.hash || window.location.pathname !== '/') {
+        window.history.pushState(null, '', '/');
       }
+      window.location.hash = '';
       setCurrentRoute('quest');
     }
   };
@@ -343,12 +354,25 @@ export default function App() {
     setIsFacilitatorOpen(false);
   };
 
+  // Route: Stage Presentation Big Screen Display
+  if (currentRoute === 'present') {
+    return (
+      <PresentationScreen
+        roomId={roomId}
+        onNavigateLeaderboard={() => navigateTo('leaderboard')}
+        onNavigateHome={() => navigateTo('quest')}
+        onNavigateAdmin={() => navigateTo('admin')}
+      />
+    );
+  }
+
   // Route: Public Standalone Leaderboard
   if (currentRoute === 'leaderboard') {
     return (
       <PublicLeaderboard
         roomId={roomId}
         onNavigateHome={() => navigateTo('quest')}
+        onNavigatePresent={() => navigateTo('present')}
       />
     );
   }
@@ -360,6 +384,7 @@ export default function App() {
         roomId={roomId}
         onNavigateHome={() => navigateTo('quest')}
         onNavigateLeaderboard={() => navigateTo('leaderboard')}
+        onNavigatePresent={() => navigateTo('present')}
       />
     );
   }
@@ -496,6 +521,13 @@ export default function App() {
               className="hover:text-[#009488] font-bold underline"
             >
               Leaderboard
+            </button>
+            <span>•</span>
+            <button
+              onClick={() => navigateTo('present')}
+              className="hover:text-[#009488] font-bold"
+            >
+              Present Screen
             </button>
             {isDevHelperEnabled() && (
               <>

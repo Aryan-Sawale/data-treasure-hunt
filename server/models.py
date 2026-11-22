@@ -18,7 +18,7 @@ class Player(Base):
     __tablename__ = "players"
 
     id = Column(String(64), primary_key=True, index=True)
-    room_id = Column(String(32), default="DEFAULT", index=True)
+    room_id = Column(String(32), default="ABN2026", index=True)
     name = Column(String(100), nullable=False)
     total_score = Column(Integer, default=0, index=True)
     current_stage = Column(Integer, default=1)
@@ -32,7 +32,7 @@ class Completion(Base):
     __tablename__ = "completions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    room_id = Column(String(32), default="DEFAULT", index=True)
+    room_id = Column(String(32), default="ABN2026", index=True)
     player_id = Column(String(64), ForeignKey("players.id", ondelete="CASCADE"), nullable=False, index=True)
     milestone_key = Column(String(50), nullable=False, index=True)
     rank_order = Column(Integer, nullable=False)

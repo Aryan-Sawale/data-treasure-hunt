@@ -24,12 +24,13 @@ import {
   Search,
   Eye,
   EyeOff,
-  Tag
+  Tag,
+  Tv
 } from 'lucide-react';
 import { apiService, getAdminToken, getRoomId } from '../services/apiService';
 import { soundService } from '../services/soundService';
 
-export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard, roomId = null }) {
+export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard, onNavigatePresent, roomId = null }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!getAdminToken());
   const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -215,7 +216,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard, 
   // Authenticated Admin Dashboard
   const players = dashboardData?.players || [];
   const milestoneCounts = dashboardData?.milestone_counts || {};
-  const availableRooms = dashboardData?.rooms || ['DEFAULT'];
+  const availableRooms = dashboardData?.rooms || ['ABN2026'];
 
   const filteredPlayers = players.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -267,11 +268,22 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard, 
 
             <button
               onClick={() => onNavigateLeaderboard ? onNavigateLeaderboard() : window.location.assign('./#leaderboard')}
-              className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all"
+              className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Leaderboard</span>
             </button>
+
+            {onNavigatePresent && (
+              <button
+                onClick={onNavigatePresent}
+                className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 border border-teal-300 text-teal-900 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                title="Stage Presentation Screen"
+              >
+                <Tv className="w-3.5 h-3.5 text-[#009488]" />
+                <span className="hidden sm:inline">Present</span>
+              </button>
+            )}
 
             <button
               onClick={() => onNavigateHome ? onNavigateHome() : window.location.assign('./')}
@@ -463,7 +475,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard, 
                   <option value="" disabled>🗑️ Delete Player...</option>
                   {players.map(p => (
                     <option key={p.id} value={p.id}>
-                      {p.name} [{p.room_id || 'DEFAULT'}] ({p.total_score} pts)
+                      {p.name} [{p.room_id || 'ABN2026'}] ({p.total_score} pts)
                     </option>
                   ))}
                 </select>
@@ -519,7 +531,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard, 
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className="px-2 py-0.5 rounded-md bg-teal-50 border border-[#009488]/30 text-[#009488] font-mono font-bold text-[10px]">
-                          {player.room_id || 'DEFAULT'}
+                          {player.room_id || 'ABN2026'}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center">
@@ -582,7 +594,7 @@ export default function AdminDashboard({ onNavigateHome, onNavigateLeaderboard, 
             <div className="text-center space-y-1">
               <h4 className="font-black text-slate-900 text-base">Remove Player?</h4>
               <p className="text-xs text-slate-500">
-                Are you sure you want to remove <strong className="text-slate-900">{playerToDelete.name}</strong> [{playerToDelete.room_id || 'DEFAULT'}] ({playerToDelete.total_score} pts)?
+                Are you sure you want to remove <strong className="text-slate-900">{playerToDelete.name}</strong> [{playerToDelete.room_id || 'ABN2026'}] ({playerToDelete.total_score} pts)?
               </p>
             </div>
             <div className="flex items-center space-x-2 pt-2">

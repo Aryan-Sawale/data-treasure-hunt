@@ -8,7 +8,7 @@ export default function LeaderboardModal({ isOpen, onClose, onOpenFullscreen, ro
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const currentPlayerId = getPlayerId();
-  const activeRoom = (roomId || getRoomId()).trim().toUpperCase() || 'DEFAULT';
+  const activeRoom = (roomId || getRoomId()).trim().toUpperCase() || 'ABN2026';
 
   const fetchScores = async () => {
     setIsLoading(true);

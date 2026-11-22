@@ -4,6 +4,7 @@
  */
 
 export const DEFAULT_VAULT_CODE = "021";
+export const DEFAULT_ROOM_ID = "ABN2026";
 export const DATASPHERE_PHRASE = "DATA VALUE CHAIN";
 
 // Set to true to re-enable hints, quick-complete buttons, and dev helpers (or visit with ?debug=1 or ?dev=1 or ?test=1)

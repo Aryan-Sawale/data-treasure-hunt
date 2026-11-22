@@ -62,13 +62,21 @@ try:
         cols = [c["name"] for c in inspector.get_columns("players")]
         if "room_id" not in cols:
             with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE players ADD COLUMN room_id VARCHAR(32) DEFAULT 'DEFAULT'"))
+                conn.execute(text("ALTER TABLE players ADD COLUMN room_id VARCHAR(32) DEFAULT 'ABN2026'"))
+                conn.commit()
+        else:
+            with engine.connect() as conn:
+                conn.execute(text("UPDATE players SET room_id = 'ABN2026' WHERE room_id = 'DEFAULT'"))
                 conn.commit()
     if "completions" in existing_tables:
         cols = [c["name"] for c in inspector.get_columns("completions")]
         if "room_id" not in cols:
             with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE completions ADD COLUMN room_id VARCHAR(32) DEFAULT 'DEFAULT'"))
+                conn.execute(text("ALTER TABLE completions ADD COLUMN room_id VARCHAR(32) DEFAULT 'ABN2026'"))
+                conn.commit()
+        else:
+            with engine.connect() as conn:
+                conn.execute(text("UPDATE completions SET room_id = 'ABN2026' WHERE room_id = 'DEFAULT'"))
                 conn.commit()
 except Exception as e:
     print(f"[DB Migration Note] {e}")
@@ -108,7 +116,7 @@ TIMED_MINI_GAMES = {
 
 def clean_room_id(raw_room: Optional[str]) -> str:
     if not raw_room or not raw_room.strip():
-        return "DEFAULT"
+        return "ABN2026"
     return raw_room.strip().upper()[:32]
 
 # In-memory WebSocket Connection Hub per Room
@@ -490,7 +498,7 @@ def apply_penalty(req: PenaltyRequest, db: Session = Depends(get_db)):
 
 @app.get("/api/leaderboard", response_model=LeaderboardResponse)
 def get_leaderboard(
-    room_id: Optional[str] = Query("DEFAULT", description="Room identifier to filter scores"),
+    room_id: Optional[str] = Query("ABN2026", description="Room identifier to filter scores"),
     player_id: Optional[str] = Query(None, description="Optional ID to get current player rank"),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db)
@@ -575,7 +583,7 @@ def get_admin_dashboard(
     # Fetch all distinct room IDs
     all_rooms = [r[0] for r in db.query(Player.room_id).distinct().all() if r[0]]
     if not all_rooms:
-        all_rooms = ["DEFAULT"]
+        all_rooms = ["ABN2026"]
 
     query = db.query(Player)
     if room_id and room_id.strip():

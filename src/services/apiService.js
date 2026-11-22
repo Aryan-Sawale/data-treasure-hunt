@@ -86,12 +86,18 @@ export const getRoomId = () => {
       }
     }
   }
-  return (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEYS.ROOM_ID)) || 'DEFAULT';
+  if (typeof localStorage !== 'undefined') {
+    const stored = localStorage.getItem(STORAGE_KEYS.ROOM_ID);
+    // Automatically migrate legacy 'DEFAULT' room to 'ABN2026'
+    if (stored && stored !== 'DEFAULT') return stored;
+    localStorage.setItem(STORAGE_KEYS.ROOM_ID, 'ABN2026');
+  }
+  return 'ABN2026';
 };
 
 export const setRoomId = (roomId) => {
-  if (typeof localStorage === 'undefined') return;
-  const clean = (roomId || 'DEFAULT').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32) || 'DEFAULT';
+  if (typeof localStorage === 'undefined') return 'ABN2026';
+  const clean = (roomId || 'ABN2026').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32) || 'ABN2026';
   localStorage.setItem(STORAGE_KEYS.ROOM_ID, clean);
   return clean;
 };
@@ -130,7 +136,7 @@ if (typeof window !== 'undefined' && !window.__vault_ws_unload_attached) {
 
 export const connectRoomWebSocket = (roomId) => {
   if (typeof window === 'undefined') return;
-  const cleanRoom = (roomId || getRoomId()).trim().toUpperCase() || 'DEFAULT';
+  const cleanRoom = (roomId || getRoomId()).trim().toUpperCase() || 'ABN2026';
 
   // If already connecting or open for this room, avoid redundant reconnect
   if (

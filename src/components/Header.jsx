@@ -13,7 +13,7 @@ export default function Header({
   playerScore = 0,
   playerRank = null,
   vaultUnlocked,
-  roomId = 'DEFAULT'
+  roomId = 'ABN2026'
 }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 

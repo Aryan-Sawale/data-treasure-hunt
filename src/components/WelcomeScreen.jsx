@@ -64,7 +64,7 @@ export default function WelcomeScreen({ onStart }) {
     soundService.playSuccess();
     hapticService.success();
     const cleanName = playerName.trim();
-    const cleanRoom = (roomCode || 'DEFAULT').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32) || 'DEFAULT';
+    const cleanRoom = (roomCode || 'ABN2026').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32) || 'ABN2026';
     setPlayerName(cleanName);
     setRoomId(cleanRoom);
     setTimeout(() => {
@@ -174,7 +174,7 @@ export default function WelcomeScreen({ onStart }) {
                 <span className="w-5 h-5 rounded-full bg-[#F9BD20] text-slate-950 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-xs">
                   1
                 </span>
-                <span><strong>Solve the Data Puzzle:</strong> Decrypt clues to discover each secret team and their Harry Potter house booth.</span>
+                <span><strong>Solve the Data Puzzle:</strong> Decrypt clues to discover each kiosk name.</span>
               </div>
 
               <div className="flex items-start gap-2.5">
@@ -251,7 +251,7 @@ export default function WelcomeScreen({ onStart }) {
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleStart();
           }}
-          placeholder="e.g. ALPHA, ROOM1, or RAVENCLAW"
+          placeholder="e.g. ABN2026, ROOM1, or RAVENCLAW"
           maxLength={20}
           className="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:border-[#009488] focus:ring-2 focus:ring-[#009488]/20 bg-[#F8FAFA] focus:bg-white text-sm font-mono font-black tracking-wider text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all uppercase"
         />

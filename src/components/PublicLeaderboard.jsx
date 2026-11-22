@@ -13,14 +13,15 @@ import {
   Zap,
   Play,
   Pause,
-  Tag
+  Tag,
+  Tv
 } from 'lucide-react';
 import { apiService, getPlayerId, getRoomId, setRoomId } from '../services/apiService';
 import { soundService } from '../services/soundService';
 import { isDevHelperEnabled } from '../config/questConfig';
 
-export default function PublicLeaderboard({ onNavigateHome, roomId = null }) {
-  const [currentRoom, setCurrentRoom] = useState(() => (roomId || getRoomId()).trim().toUpperCase() || 'DEFAULT');
+export default function PublicLeaderboard({ onNavigateHome, onNavigatePresent, roomId = null }) {
+  const [currentRoom, setCurrentRoom] = useState(() => (roomId || getRoomId()).trim().toUpperCase() || 'ABN2026');
   const [roomInput, setRoomInput] = useState(currentRoom);
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,7 +62,7 @@ export default function PublicLeaderboard({ onNavigateHome, roomId = null }) {
 
   const handleRoomSubmit = (e) => {
     e.preventDefault();
-    const clean = roomInput.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32) || 'DEFAULT';
+    const clean = roomInput.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32) || 'ABN2026';
     setCurrentRoom(clean);
     setRoomInput(clean);
     setRoomId(clean);
@@ -98,15 +99,26 @@ export default function PublicLeaderboard({ onNavigateHome, roomId = null }) {
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#009488]/20 shadow-xs">
         <div className="h-1 bg-[#009488]" />
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <button
               onClick={() => onNavigateHome ? onNavigateHome() : window.location.assign('./')}
-              className="p-2 rounded-xl bg-[#F8FAFA] hover:bg-[#FFFDF5] border border-slate-200 hover:border-[#009488] text-slate-700 hover:text-[#009488] transition-all flex items-center gap-1.5 text-xs font-bold shadow-2xs"
+              className="p-2 rounded-xl bg-[#F8FAFA] hover:bg-[#FFFDF5] border border-slate-200 hover:border-[#009488] text-slate-700 hover:text-[#009488] transition-all flex items-center gap-1.5 text-xs font-bold shadow-2xs cursor-pointer"
               title="Return to Quest"
             >
               <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
               <span className="hidden sm:inline">Back to Quest</span>
             </button>
+
+            {onNavigatePresent && (
+              <button
+                onClick={onNavigatePresent}
+                className="p-2 rounded-xl bg-[#F8FAFA] hover:bg-[#FFFDF5] border border-slate-200 hover:border-[#009488] text-slate-700 hover:text-[#009488] transition-all flex items-center gap-1.5 text-xs font-bold shadow-2xs cursor-pointer"
+                title="Stage Presentation Screen"
+              >
+                <Tv className="w-4 h-4 text-[#009488]" />
+                <span className="hidden sm:inline">Present</span>
+              </button>
+            )}
 
             <div className="flex items-center space-x-2.5">
               <div className="w-9 h-9 rounded-xl bg-[#009488] flex items-center justify-center text-white shadow-xs border border-[#007A70]">
